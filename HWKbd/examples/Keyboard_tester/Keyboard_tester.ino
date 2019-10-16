@@ -1,10 +1,9 @@
 #include "HWKbd.h"
-//#include "Morse_Code.h"
-#include "Cyrillic_Unicode.h"
+#include "Cyrillic_Phonetic.h"
 
 #define CONSOLE_BAUD 115200
 #define COMM_LEN 255
-#define BEEPER_PIN 2
+#define BEEPER_PIN 9
 #define NOTE_C3  131
 #define NOTE_A4  440
 #define NOTE_B4  494
@@ -14,7 +13,9 @@ char Command[COMM_LEN+1];
 size_t Command_position = 0;
 
 static HWKbd hwKeyboard;
-static HWKbd_Encoder hwEncoder(HWKBD_Codepage_UTF8, HWKBD_Macropage_UTF8);
+static HWKbd_Encoder hwEncoder(
+  HWKBD_Codepage_Cyrillic_Phonetic_UTF8,
+  HWKBD_Macropage_Cyrillic_Phonetic_UTF8);
 
 void setup() {
   Serial.begin(CONSOLE_BAUD);
