@@ -1,3 +1,7 @@
+#
+# International Morse Code (just for fun)
+#
+
 class Button():
     def __init__(self, strokes=[], modeswitches=[]):
         self.keystrokes = ["", "", "", "", "", "", "", ""]
@@ -121,7 +125,7 @@ keyb.buttons += [Button(["","","","","","","",""], [1,1,1,1,5,5,5,5])] # 59 SHIF
 
 addressSequence, macroSequence = keyb.makeArrays()
 
-print("const static uint16_t HWKBD_Codepage[] PROGMEM = {")
+print("const static uint16_t HWKBD_Codepage_IMC[] PROGMEM = {")
 for i in range( 0, len( addressSequence), 8):
     s = ""
     for seq in addressSequence[i:i+8]: s += "{:s},".format(seq)
@@ -130,7 +134,7 @@ for i in range( 0, len( addressSequence), 8):
     print(s)
 print("};")
 print()
-print("const static byte HWKBD_Macropage[] PROGMEM = {")
+print("const static byte HWKBD_Macropage_IMC[] PROGMEM = {")
 for i in range( 0, len( macroSequence), 16):
     s = ""
     for j in range( i, i+16):

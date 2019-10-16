@@ -1,5 +1,5 @@
 #
-# (Almost) Standard Cyrillic Keyboard (ЙЦУКЕН)
+# (Almost) Standard Cyrillic Phonetic Keyboard (ЯЖЕРТЫ)
 #
 
 class Button():
@@ -72,42 +72,42 @@ keyb.buttons += [Button(["2","@",   "",  "","ъ","Ъ",  "",  ""], [0,0,0,0,4,4,4
 keyb.buttons += [Button(["3","~",   "",  "","ь","Ь",  "",  ""], [0,0,0,0,4,4,4,4])] # 13 3
 keyb.buttons += [Button(["4","''",  "",  "","э","Э",  "",  ""], [0,0,0,0,4,4,4,4])] # 14 4
 keyb.buttons += [Button(["5",'""',  "",  "","ю","Ю",  "",  ""], [0,0,0,0,4,4,4,4])] # 15 5
-keyb.buttons += [Button(["6","()","[]","{}","х","Х",  "",  ""], [0,0,0,0,4,4,4,4])] # 16 6
-keyb.buttons += [Button(["7","<", "<>",  "","ж","Ж",  "",  ""], [0,0,0,0,4,4,4,4])] # 17 7
+keyb.buttons += [Button(["6","()","[]","{}","ш","Ш",  "",  ""], [0,0,0,0,4,4,4,4])] # 16 6
+keyb.buttons += [Button(["7","<", "<>",  "","щ","Щ",  "",  ""], [0,0,0,0,4,4,4,4])] # 17 7
 keyb.buttons += [Button(["8",">","</>",  "", "", "",  "",  ""], [0,0,0,0,4,4,4,4])] # 18 8
 keyb.buttons += [Button(["9","!",   "",  "", "", "",  "",  ""], [0,0,0,0,4,4,4,4])] # 19 9
 keyb.buttons += [Button(["0","=", "==","!=","0","=","==","!="], [0,0,0,0,4,4,4,4])] # 20 0
 
-keyb.buttons += [Button(["q","Q","","","й","Й","",""], [0,0,0,0,4,4,4,4])] # 21 q
-keyb.buttons += [Button(["w","W","","","ц","Ц","",""], [0,0,0,0,4,4,4,4])] # 22 w
-keyb.buttons += [Button(["e","E","","","у","У","",""], [0,0,0,0,4,4,4,4])] # 23 e
-keyb.buttons += [Button(["r","R","","","к","К","",""], [0,0,0,0,4,4,4,4])] # 24 r
-keyb.buttons += [Button(["t","T","","","е","Е","",""], [0,0,0,0,4,4,4,4])] # 25 t
-keyb.buttons += [Button(["y","Y","","","н","Н","",""], [0,0,0,0,4,4,4,4])] # 26 y
-keyb.buttons += [Button(["u","U","","","г","Г","",""], [0,0,0,0,4,4,4,4])] # 27 u
-keyb.buttons += [Button(["i","i","","","ш","Ш","",""], [0,0,0,0,4,4,4,4])] # 28 i
-keyb.buttons += [Button(["o","o","","","щ","Щ","",""], [0,0,0,0,4,4,4,4])] # 29 o
-keyb.buttons += [Button(["p","P","","","з","З","",""], [0,0,0,0,4,4,4,4])] # 30 p
+keyb.buttons += [Button(["q","Q","","","я","Я","",""], [0,0,0,0,4,4,4,4])] # 21 q
+keyb.buttons += [Button(["w","W","","","ж","Ж","",""], [0,0,0,0,4,4,4,4])] # 22 w
+keyb.buttons += [Button(["e","E","","","е","Е","",""], [0,0,0,0,4,4,4,4])] # 23 e
+keyb.buttons += [Button(["r","R","","","р","Р","",""], [0,0,0,0,4,4,4,4])] # 24 r
+keyb.buttons += [Button(["t","T","","","т","Т","",""], [0,0,0,0,4,4,4,4])] # 25 t
+keyb.buttons += [Button(["y","Y","","","ы","Ы","",""], [0,0,0,0,4,4,4,4])] # 26 y
+keyb.buttons += [Button(["u","U","","","у","У","",""], [0,0,0,0,4,4,4,4])] # 27 u
+keyb.buttons += [Button(["i","i","","","и","И","",""], [0,0,0,0,4,4,4,4])] # 28 i
+keyb.buttons += [Button(["o","o","","","о","О","",""], [0,0,0,0,4,4,4,4])] # 29 o
+keyb.buttons += [Button(["p","P","","","п","П","",""], [0,0,0,0,4,4,4,4])] # 30 p
 
-keyb.buttons += [Button(["a","A","","","ф","Ф","",""], [0,0,0,0,4,4,4,4])] # 31 a
-keyb.buttons += [Button(["s","S","","","ы","Ы","",""], [0,0,0,0,4,4,4,4])] # 32 s
-keyb.buttons += [Button(["d","D","","","в","В","",""], [0,0,0,0,4,4,4,4])] # 33 d
-keyb.buttons += [Button(["f","F","","","а","А","",""], [0,0,0,0,4,4,4,4])] # 34 f
-keyb.buttons += [Button(["g","G","","","п","П","",""], [0,0,0,0,4,4,4,4])] # 35 g
-keyb.buttons += [Button(["h","H","","","р","Р","",""], [0,0,0,0,4,4,4,4])] # 36 h
-keyb.buttons += [Button(["j","J","","","о","О","",""], [0,0,0,0,4,4,4,4])] # 37 j
-keyb.buttons += [Button(["k","K","","","л","Л","",""], [0,0,0,0,4,4,4,4])] # 38 k
-keyb.buttons += [Button(["l","L","","","д","Д","",""], [0,0,0,0,4,4,4,4])] # 39 l
+keyb.buttons += [Button(["a","A","","","а","А","",""], [0,0,0,0,4,4,4,4])] # 31 a
+keyb.buttons += [Button(["s","S","","","с","С","",""], [0,0,0,0,4,4,4,4])] # 32 s
+keyb.buttons += [Button(["d","D","","","д","Д","",""], [0,0,0,0,4,4,4,4])] # 33 d
+keyb.buttons += [Button(["f","F","","","ф","Ф","",""], [0,0,0,0,4,4,4,4])] # 34 f
+keyb.buttons += [Button(["g","G","","","г","Г","",""], [0,0,0,0,4,4,4,4])] # 35 g
+keyb.buttons += [Button(["h","H","","","ч","Ч","",""], [0,0,0,0,4,4,4,4])] # 36 h
+keyb.buttons += [Button(["j","J","","","й","Й","",""], [0,0,0,0,4,4,4,4])] # 37 j
+keyb.buttons += [Button(["k","K","","","к","К","",""], [0,0,0,0,4,4,4,4])] # 38 k
+keyb.buttons += [Button(["l","L","","","л","Л","",""], [0,0,0,0,4,4,4,4])] # 39 l
 keyb.buttons += [Button([", ","; ",";\n","",", ","; ",";\n",""], [0,0,0,0,4,4,4,4])] # 40 , ;
 
-keyb.buttons += [Button(["z","Z","","","я","Я","",""], [0,0,0,0,4,4,4,4])] # 41 z
-keyb.buttons += [Button(["x","X","","","ч","Ч","",""], [0,0,0,0,4,4,4,4])] # 42 x
-keyb.buttons += [Button(["c","C","","","с","С","",""], [0,0,0,0,4,4,4,4])] # 43 c
-keyb.buttons += [Button(["v","V","","","м","М","",""], [0,0,0,0,4,4,4,4])] # 44 v
+keyb.buttons += [Button(["z","Z","","","з","З","",""], [0,0,0,0,4,4,4,4])] # 41 z
+keyb.buttons += [Button(["x","X","","","х","Х","",""], [0,0,0,0,4,4,4,4])] # 42 x
+keyb.buttons += [Button(["c","C","","","ц","Ц","",""], [0,0,0,0,4,4,4,4])] # 43 c
+keyb.buttons += [Button(["v","V","","","в","В","",""], [0,0,0,0,4,4,4,4])] # 44 v
 keyb.buttons += [Button([" ","_","",""," ","_","",""], [0,0,0,0,4,4,4,4])] # 45 SPACE
-keyb.buttons += [Button(["b","B","","","и","И","",""], [0,0,0,0,4,4,4,4])] # 46 b
-keyb.buttons += [Button(["n","N","","","т","Т","",""], [0,0,0,0,4,4,4,4])] # 47 n
-keyb.buttons += [Button(["m","M","","","б","Б","",""], [0,0,0,0,4,4,4,4])] # 48 m
+keyb.buttons += [Button(["b","B","","","б","Б","",""], [0,0,0,0,4,4,4,4])] # 46 b
+keyb.buttons += [Button(["n","N","","","н","Н","",""], [0,0,0,0,4,4,4,4])] # 47 n
+keyb.buttons += [Button(["m","M","","","м","М","",""], [0,0,0,0,4,4,4,4])] # 48 m
 keyb.buttons += [Button([".","?",". ","? ",". ","? ",".","?"], [0,0,1,1,5,5,4,4])] # 49 . ?
 keyb.buttons += [Button(["","","","","","","",""], [0,0,0,0,4,4,4,4])] # 50 BACKSP
 
@@ -123,7 +123,7 @@ keyb.buttons += [Button(["","","","","","","",""], [1,1,1,1,5,5,5,5])] # 59 SHIF
 
 addressSequence, macroSequence = keyb.makeArrays()
 
-print("const static uint16_t HWKBD_Codepage_Cyrillic_UTF8[] PROGMEM = {")
+print("const static uint16_t HWKBD_Codepage_Cyrillic_Phonetic_UTF8[] PROGMEM = {")
 for i in range( 0, len( addressSequence), 8):
     s = ""
     for seq in addressSequence[i:i+8]: s += "{:s},".format(seq)
@@ -132,7 +132,7 @@ for i in range( 0, len( addressSequence), 8):
     print(s)
 print("};")
 print()
-print("const static byte HWKBD_Macropage_Cyrillic_UTF8[] PROGMEM = {")
+print("const static byte HWKBD_Macropage_Cyrillic_Phonetic_UTF8[] PROGMEM = {")
 for i in range( 0, len( macroSequence), 16):
     s = ""
     for j in range( i, i+16):
