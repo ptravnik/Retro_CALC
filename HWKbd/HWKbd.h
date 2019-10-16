@@ -39,7 +39,7 @@
   Note that the software presimes that no PWM is sent to the keyboard ports!
 
   Software Notes.
-  The keyboard communicates in Unicode. The current implementation supports
+  The keyboard communicates in UTF-8. The current implementation supports
   8 reading modes:
   0. English character set, small letters, numbers
   1. SHIFT. English character set, capital letters, punctuation marks.
@@ -52,12 +52,11 @@
   
   The key codes are composed of 16-bit integers, 8 numbers per button
   (by the number of modes). The bit pattern is as following:
-  SMMMuuuu cccccccc
-  S - 0 for single character and 1 for a macro;
+  0MMM0000 cccccccc
+  1MMMaaaa aaaaaaaa
   MMM - the next mode (from 0 to 7)
-  uuuu if S==0, the upper byte of the Unicode character
-  cccccccc - the lower byte of the Unicode character
-  if S==1. uuuucccccccc represent a 12-bit shift in the macros table;
+  cccccccc - a single-byte Unicode character (if >128, it is a control character, such as an arrow)
+  aaaaa aaaaaaaaa - a 12-bit shift in the macros table;
   the latter is composed of null-terminated strings, up to 4k in length.
 */
 
@@ -86,12 +85,28 @@
 
 #include <avr/pgmspace.h>
 #include <Arduino.h>
-//#include "Morse_Code.h"
-#include "Cyrillic_Unicode.h"
+
+
+class HWKbd_Encoder
+{  
+  public:
+    const uint16_t *codepage = 0;
+    const byte *macropage = 0;
+    HWKbd_Encoder( const uint16_t *c, const byte *m);
+    byte encode( byte r, byte _mode);
+    byte available(void);
+    char read(void);
+    char peek(void);
+  private:
+    volatile char _buffer[HWKBD_BUFFER_SIZE];
+    volatile uint8_t _head = 0;
+    volatile uint8_t _tail = 0;
+    volatile uint8_t _buflen = 0;
+};
 
 
 class HWKbd
-{
+{    
   public:
     bool isConnected = false;
     int pinKBD_reset = -1;
@@ -105,14 +120,15 @@ class HWKbd
     volatile long lastPressTime = 0L;
     volatile bool buttonPressed = false;
     volatile char lastButtonRegistered = 0;
-    void connect(int pKBDrst, int pKBDclk, int pKBDread, int pLEDrst, int pLEDclk);
+    void connect(int pKBDrst, int pKBDclk, int pKBDread, int pLEDrst, int pLEDclk, HWKbd_Encoder *enc);
     void setLEDs( byte n);
     void setMode( byte newmode);
     byte scan( void);
     bool input( void);
-    byte available(void);
-    char read(void);
-    char peek(void);
+    inline byte available(void){ return _encoder->available();};
+    inline char read(void){ return _encoder->read();};
+    inline char peek(void){ return _encoder->peek();};
+
   private:
     volatile uint8_t _mode = 0;
 #ifdef HWKBD_FAST_PORTS
@@ -126,13 +142,10 @@ class HWKbd
     volatile uint8_t *_prtKBD_read;
     volatile uint8_t *_prtLED_reset;
     volatile uint8_t *_prtLED_clock;
-    volatile char _buffer[HWKBD_BUFFER_SIZE];
-    volatile uint8_t _head = 0;
-    volatile uint8_t _tail = 0;
-    volatile uint8_t _buflen = 0;
 #else
     void _sendPulse(int pin);
 #endif
+    HWKbd_Encoder *_encoder; 
     byte _debounce( void);
 };
 

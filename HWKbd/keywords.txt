@@ -1,5 +1,7 @@
 HWKbd	KEYWORD1
 hwKeyboard	KEYWORD1
+HWKbd_Encoder	KEYWORD1
+hwEncoder	KEYWORD1
 isConnected	KEYWORD2
 modeLEDsEnabled	KEYWORD2
 setKeysOnScan	KEYWORD2

@@ -1,7 +1,91 @@
 #include "Arduino.h"
 #include "HWKbd.h"
 
-void HWKbd::connect(int pKBDrst, int pKBDclk, int pKBDread, int pLEDrst, int pLEDclk){
+//
+// Encoder constructor
+//
+HWKbd_Encoder::HWKbd_Encoder( const uint16_t *c, const byte *m){
+  codepage = c;
+  macropage = m;
+}
+
+
+//
+// returns the number of bytes available in the buffer
+//
+byte HWKbd_Encoder::available( void){
+  return _buflen;
+}
+
+
+//
+// returns the next character from the buffer
+//
+char HWKbd_Encoder::read( void){
+  if( !_buflen) return 0;
+  char c = (char)_buffer[_tail++];
+  _tail = _tail & (HWKBD_BUFFER_SIZE-1);
+  _buflen--;
+  return c;
+}
+
+
+//
+// allows to look into the buffer without changing the counters
+//
+char HWKbd_Encoder::peek( void){
+  if( !_buflen) return 0;
+  return (char)_buffer[_tail];
+}
+
+
+//
+// Converts a scan sharacter into a buffer entry
+// returns the new mode
+//
+byte HWKbd_Encoder::encode( byte r, byte _mode){
+  if( codepage==0 || macropage == 0) return _mode;
+  size_t loc = ((r-1)<<3) + _mode;
+  uint16_t code = pgm_read_word( &codepage[loc]);
+#ifdef HWKBD_DEBUG_
+  Serial.println("Encoder call");
+  Serial.print("Location: ");
+  Serial.println(loc);
+  Serial.print("Code: ");
+  Serial.println(code);
+#endif
+  _mode = (code & 0x7000) >> 12;
+  if( code & 0x8000){
+    char *ptr = macropage + (code & 0x0FFF);
+    while( _buflen <= HWKBD_BUFFER_SIZE){
+      char c = pgm_read_byte(ptr++);
+      if( !c) break;
+      _buffer[_head++] = c;
+      _head = _head & (HWKBD_BUFFER_SIZE-1);
+      _buflen++; 
+    }
+    return _mode;
+  }
+  byte byte0 = (byte)((code & 0x0F00) >> 8);
+  byte byte1 = (byte)((code & 0x00FF));
+  if( byte0 && _buflen <= HWKBD_BUFFER_SIZE-2){
+    _buffer[_head++] = byte0;
+    _head = _head & (HWKBD_BUFFER_SIZE-1);
+    _buffer[_head++] = byte1;
+    _head = _head & (HWKBD_BUFFER_SIZE-1);
+    _buflen += 2;
+    return _mode;
+  }
+  if( byte1 && _buflen < HWKBD_BUFFER_SIZE){
+    _buffer[_head++] = byte1;
+    _head = _head & (HWKBD_BUFFER_SIZE-1);
+    _buflen++;
+  }
+  return _mode;  
+}
+
+
+void HWKbd::connect(int pKBDrst, int pKBDclk, int pKBDread, int pLEDrst, int pLEDclk, HWKbd_Encoder *enc){
   pinMode(pKBDrst, OUTPUT);
   pinMode(pKBDclk, OUTPUT);
   pinMode(pKBDread, INPUT);
@@ -12,6 +96,7 @@ void HWKbd::connect(int pKBDrst, int pKBDclk, int pKBDread, int pLEDrst, int pLE
   pinKBD_read  = pKBDread;
   pinLED_reset = pLEDrst;
   pinLED_clock = pLEDclk;
+  _encoder = enc;
 #ifdef HWKBD_FAST_PORTS
   _bitKBD_reset = digitalPinToBitMask(pinKBD_reset);
   _bitKBD_clock = digitalPinToBitMask(pinKBD_clock);
@@ -26,7 +111,6 @@ void HWKbd::connect(int pKBDrst, int pKBDclk, int pKBDread, int pLEDrst, int pLE
 #endif
   isConnected = true;
   setLEDs( 0);
-  for( byte i=0; i<sizeof(_buffer); i++) _buffer[i] = 0; 
 #ifdef HWKBD_DEBUG_
   Serial.println( "hwKeyboard connected, ports: ");
   Serial.print( pinKBD_reset);
@@ -195,69 +279,7 @@ bool HWKbd::input( void){
   if( r == 0) return false;
   lastButtonRegistered = r;
   if( r > HWKBD_LAST_CODEPAGE) return true;
-  size_t loc = ((r-1)<<3) + _mode;
-  uint16_t code = pgm_read_word(&HWKBD_Codepage[loc]);
-#ifdef HWKBD_DEBUG_
-  Serial.print("Location: ");
-  Serial.println(loc);
-  Serial.print("Code: ");
-  Serial.println(code);
-#endif
-  setMode((code & 0x7000) >> 12);
-  if( code & 0x8000){
-    char *ptr = HWKBD_Macropage + (code & 0x0FFF);
-    while( _buflen <= HWKBD_BUFFER_SIZE){
-      char c = pgm_read_byte(ptr++);
-      if( !c) break;
-      _buffer[_head++] = c;
-      _head = _head & (HWKBD_BUFFER_SIZE-1);
-      _buflen++; 
-    }
-    return true;
-  }
-  byte byte0 = (byte)((code & 0x0F00) >> 8);
-  byte byte1 = (byte)((code & 0x00FF));
-  if( byte0 && _buflen <= HWKBD_BUFFER_SIZE-2){
-    _buffer[_head++] = byte0;
-    _head = _head & (HWKBD_BUFFER_SIZE-1);
-    _buffer[_head++] = byte1;
-    _head = _head & (HWKBD_BUFFER_SIZE-1);
-    _buflen += 2;
-    return true;
-  }
-  if( byte1 && _buflen < HWKBD_BUFFER_SIZE){
-    _buffer[_head++] = byte1;
-    _head = _head & (HWKBD_BUFFER_SIZE-1);
-    _buflen++;
-  }
+  byte newMode = _encoder->encode( r, _mode);
+  setMode(newMode);
   return true;
-}
-
-
-//
-// returns the number of bytes available in the buffer
-//
-byte HWKbd::available( void){
-  return _buflen;
-}
-
-
-//
-// returns the next character from the buffer
-//
-char HWKbd::read( void){
-  if( !_buflen) return 0;
-  char c = (char)_buffer[_tail++];
-  _tail = _tail & (HWKBD_BUFFER_SIZE-1);
-  _buflen--;
-  return c;
-}
-
-
-//
-// allows to look into the buffer without changing the counters
-//
-char HWKbd::peek( void){
-  if( !_buflen) return 0;
-  return (char)_buffer[_tail];
 }
