@@ -1,4 +1,6 @@
 #include "HWKbd.h"
+//#include "Morse_Code.h"
+#include "Cyrillic_Unicode.h"
 
 #define CONSOLE_BAUD 115200
 #define COMM_LEN 255
@@ -11,12 +13,16 @@
 char Command[COMM_LEN+1];
 size_t Command_position = 0;
 
-HWKbd hwKeyboard;
+static HWKbd hwKeyboard;
+static HWKbd_Encoder hwEncoder(HWKBD_Codepage_UTF8, HWKBD_Macropage_UTF8);
 
 void setup() {
   Serial.begin(CONSOLE_BAUD);
   Serial.println();
-  hwKeyboard.connect(3,4,5,6,7);
+  hwKeyboard.connect(3,4,5,6,7, &hwEncoder);
+  Serial.println("Keyboard connected:");
+  Serial.println("Type a string, followed by <Enter>.");
+  Serial.println("Or press button #10 for Dog-and-Pony show.");
   return;
 }
 
