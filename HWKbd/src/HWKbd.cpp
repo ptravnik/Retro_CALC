@@ -81,7 +81,7 @@ byte HWKbd_Encoder::encode( byte r, byte _mode){
     _head = _head & (HWKBD_BUFFER_SIZE-1);
     _buflen++;
   }
-  return _mode;  
+  return _mode;
 }
 
 
