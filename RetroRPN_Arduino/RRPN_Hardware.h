@@ -5,17 +5,21 @@
 /////////////////////////////////////////////////////
 
 #include <math.h>
-#include <U8g2lib.h>
 #include <SPI.h>
 #include <HWKbd.h>
 #include <Cyrillic_Phonetic.h>
+#include "LCD_Console.h"
 
 // Older SD library is used, so can use software SPI in the mockup
 #include "SD2.h"
 
 // Store strings in program memory to save RAM
 // This is required only for Arduino; ESP32 implements it better
+#ifdef __AVR__
 #include <avr/pgmspace.h>
+#else
+#include <pgmspace.h>
+#endif
 
 /////////////////////////////////////////////////////
 //
@@ -159,36 +163,7 @@ static const byte EEPROM_FORMAT_MSG[]          PROGMEM = " EEPROM clear";
 //
 /////////////////////////////////////////////////////
 
-// Controller delay 72 us
-#define LCD_CONTROLLER_DELAY 72
-#define LCD_RESET 50
-#define LCD_CS_PIN 53
-#define LCD_SCREEN_ROWS 8
-#define LCD_STACK_ROWS 6
-#define LCD_SCREEN_COLUMNS 25
-
-// Buffer length must acommodate for Unicode in each position plus trailing zeros
-// (2*LCD_SCREEN_COLUMNS + 1)*LCD_SCREEN_ROWS
-#define LCD_TEXT_BUFFER_LINE_LENGTH 51
-#define LCD_TEXT_BUFFER_LENGTH 408
-#define LCD_STACK_BUFFER_LINE_LENGTH 51
-#define LCD_STACK_BUFFER_LENGTH 306
-
-static bool LCD_initialized = false;
-static char LCD_Text_Buffer[LCD_TEXT_BUFFER_LENGTH]; 
-static char *LCD_Line_Pointers[LCD_SCREEN_ROWS];
-static char LCD_Stack_Buffer[LCD_STACK_BUFFER_LENGTH]; 
-static char *LCD_Stack_Pointers[LCD_STACK_ROWS];
-static char LCD_Message[LCD_TEXT_BUFFER_LINE_LENGTH];
-static char LCD_NumberLine[LCD_TEXT_BUFFER_LINE_LENGTH];
-static char LCD_OutputLine[LCD_TEXT_BUFFER_LINE_LENGTH];
-static bool LCD_Output_Keep = false; // used in print
-
-static const byte STACK_LABEL_X[]           PROGMEM = "X:";
-static const byte STACK_LABEL_Y[]           PROGMEM = "Y:";
-static const byte STACK_LABEL_Z[]           PROGMEM = "Z:";
-
-U8G2_ST7920_128X64_F_HW_SPI u8g2(U8G2_R0, LCD_CS_PIN, LCD_RESET);
+static LCD_Console Terminal;
 
 /////////////////////////////////////////////////////
 //

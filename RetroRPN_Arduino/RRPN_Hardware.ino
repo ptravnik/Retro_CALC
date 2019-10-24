@@ -10,11 +10,15 @@
 //
 static void Hard_Reset(){  
   // Always start with memory init
-  //init_XRAM();
+  init_XRAM();
 
   // Init hardware keyboard
   hwKeyboard.connect(A0,A1,A2,A3,A4, &hwEncoder);
 
+  // Init LCD terminal
+  void *nextXRAMptr = Terminal.connect(XRAM_START);
+  Terminal.splash( RRPN_INITIAL_MSG, RRPN_VERSION_MSG);
+  while(millis() - Terminal.lastUpdateMillis < SPLASH_SHOW) delay(50);
 
 //  environment_Reset();
 //

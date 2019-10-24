@@ -26,16 +26,22 @@
     Oli Kraus (LCD library)
     Mike Yakimov (TinyBasic with real numbers)
     Andrey Skvortsov (Terminal-BASIC and Arduino SRAM)
+    David Boucher (Tiny Keyboard)
+    User "Dita Schop" (Arduino RPN calc)
 */
 
 /////////////////////////////////////////////////////
 
 #define RRPN_VERSION "2019-10"
+#define SPLASH_SHOW 5000
 
 // Valid: 9600, 19200, 38400, 115200, etc
 #define CONSOLE_BAUD 115200
 
 #include "RRPN_Hardware.h"
+
+static const byte RRPN_INITIAL_MSG[]       PROGMEM = "ЭЛЕКТРОНИКА МК-2090";
+static const byte RRPN_VERSION_MSG[]       PROGMEM = "version " RRPN_VERSION;
 
 //
 // Hardware reset upon power-up
@@ -43,9 +49,9 @@
 //
 void setup() {
   Serial.begin(CONSOLE_BAUD);
-  //CONSOLE_PrintPROGMEM(ARMEBA_INITIAL_MSG);
-  //CONSOLE_PrintPROGMEM(ARMEBA_VERSION_MSG);
   Hard_Reset();
+  Terminal.printlnPROGMEM((char *)RRPN_INITIAL_MSG);
+  Terminal.printlnPROGMEM((char *)RRPN_VERSION_MSG);
 }
 
 //
