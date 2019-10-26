@@ -33,7 +33,8 @@
 /////////////////////////////////////////////////////
 
 #define RRPN_VERSION "2019-10"
-#define SPLASH_SHOW 5000
+// in milliseconds
+#define SPLASH_SHOW 2000
 
 // Valid: 9600, 19200, 38400, 115200, etc
 #define CONSOLE_BAUD 115200
@@ -43,6 +44,9 @@
 static const byte RRPN_INITIAL_MSG[]       PROGMEM = "ЭЛЕКТРОНИКА МК-2090";
 static const byte RRPN_VERSION_MSG[]       PROGMEM = "version " RRPN_VERSION;
 
+static RRPN_Parser Parser;
+static RRPN_Calculator RPN;
+
 //
 // Hardware reset upon power-up
 // The current hardware does not allow SD card swapping
@@ -50,18 +54,30 @@ static const byte RRPN_VERSION_MSG[]       PROGMEM = "version " RRPN_VERSION;
 void setup() {
   Serial.begin(CONSOLE_BAUD);
   Hard_Reset();
-  Terminal.printlnPROGMEM((char *)RRPN_INITIAL_MSG);
-  Terminal.printlnPROGMEM((char *)RRPN_VERSION_MSG);
+  Terminal.println_P((char *)RRPN_INITIAL_MSG, true);
+  Terminal.println_P((char *)RRPN_VERSION_MSG, true);
+  RPN.display();
 }
 
 //
 // Arduino sketch runs in a loop, periodically yielding to the system
 //
 void loop() {
-  if( !hwKeyboard.input()){
+  char c;
+  if( Terminal.wantsToBlink()){
+    Terminal.flopCursor();
+    Terminal.displayStackX( RPN.input, RPN.cursorPosition);
+  }
+  hwKeyboard.input();
+  if( !hwKeyboard.available() && !Serial.available()){
     delay(10);
     return;
   }
-  char c = hwKeyboard.read();
-  //RPN.send(c);
+  if( hwKeyboard.available()){
+    c = hwKeyboard.read();
+  }
+  else if( Serial.available()){
+    c = Serial.read();
+  }
+  RPN.send(c);
 }

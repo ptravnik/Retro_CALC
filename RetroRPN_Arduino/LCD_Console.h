@@ -57,6 +57,7 @@
 #define LCD_CS_PIN 53
 #define LCD_SCREEN_ROWS 8
 #define LCD_SCREEN_COLUMNS 25
+#define LCD_BLINK_RATE 400
 
 // Buffer length must acommodate for Unicode in each position plus the trailing zero
 // (2*LCD_SCREEN_COLUMNS + 1)
@@ -74,19 +75,27 @@
 #include <pgmspace.h>
 #endif
 
-class LCD_Console
-{    
+static char *ConvertDouble( double n, char *buff, byte decimal_places=6);
+
+class LCD_Console{    
   public:
     bool isConnected = false;
     bool duplicateToSerial = true;
     long lastUpdateMillis = 0L;
+    long lastBlinkMillis = 0L;
+    bool cursorOn = false;
     size_t screen_position = 0;
     void *connect(  void *xram);
     void splash( const byte* line1, const byte* line2);
-    void displayPROGMEM(uint8_t x, uint8_t y, const byte *msg);
-    void printPROGMEM( const byte *msg, bool serial_only=false);
-    void printlnPROGMEM( const byte *msg, bool serial_only=false);
-    void append_from_PROGMEM( const byte *msg, bool reset, bool unicode_clip);
+    void display_P(uint8_t x, uint8_t y, const byte *msg);
+    void print_P( const byte *msg, bool serial_only=false);
+    void println_P( const byte *msg, bool serial_only=false);
+    void displayRPN( char* stackX, double *stack, char* labels[]);
+    void displayStackX( char* stackX, size_t cursor_Position);
+    void append( byte *msg, bool reset=true, bool unicode_clip=false);
+    void append_P( const byte *msg, bool reset=true, bool unicode_clip=false);
+    inline bool wantsToBlink(){ return (millis() - lastBlinkMillis) > LCD_BLINK_RATE;};
+    inline bool flopCursor(){ cursorOn = !cursorOn;};
   private:
     volatile char *_buffer;
 };

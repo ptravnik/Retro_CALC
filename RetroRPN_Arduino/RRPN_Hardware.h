@@ -8,7 +8,10 @@
 #include <SPI.h>
 #include <HWKbd.h>
 #include <Cyrillic_Phonetic.h>
+#include <RPN_Calc_Encoding.h>
 #include "LCD_Console.h"
+#include "RRPN_Parser.h"
+#include "RRPN_Calculator.h"
 
 // Older SD library is used, so can use software SPI in the mockup
 #include "SD2.h"
@@ -57,9 +60,12 @@ static const byte XRAM_AVAILABLE_MSG[]       PROGMEM = " XRAM free   : ";
 /////////////////////////////////////////////////////
 
 static HWKbd hwKeyboard;
+//static HWKbd_Encoder hwEncoder(
+//  HWKBD_Codepage_Cyrillic_Phonetic_UTF8,
+//  HWKBD_Macropage_Cyrillic_Phonetic_UTF8);
 static HWKbd_Encoder hwEncoder(
-  HWKBD_Codepage_Cyrillic_Phonetic_UTF8,
-  HWKBD_Macropage_Cyrillic_Phonetic_UTF8);
+  HWKBD_Codepage_RPN,
+  HWKBD_Macropage_RPN);
 
 /////////////////////////////////////////////////////
 //

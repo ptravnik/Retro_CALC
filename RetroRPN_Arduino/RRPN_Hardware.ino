@@ -18,6 +18,10 @@ static void Hard_Reset(){
   // Init LCD terminal
   void *nextXRAMptr = Terminal.connect(XRAM_START);
   Terminal.splash( RRPN_INITIAL_MSG, RRPN_VERSION_MSG);
+
+  // Init RPN calculator
+  nextXRAMptr = RPN.init(nextXRAMptr, &Terminal);
+  
   while(millis() - Terminal.lastUpdateMillis < SPLASH_SHOW) delay(50);
 
 //  environment_Reset();
