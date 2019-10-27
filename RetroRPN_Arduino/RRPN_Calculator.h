@@ -19,6 +19,14 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+  Keyboard commands:
+  1 - arrow left - moves input cursor to the left 
+  2 - arrow down - pop stack down
+  3 - arrow up - push stack; previous result to X
+  4 - arrow right - moves input cursor to the right
+  5 - enter - push stack
+  8 - backspace - delete character at cursor
+  177 - +/- - sign change
 */
 
 #include "RRPN_Parser.h"
@@ -45,26 +53,37 @@ class RRPN_Calculator
     char input[ LABEL_SIZE];
     int cursorPosition = 0;
     void *init( void *xram, LCD_Console *terminal);
-    void display();
+    inline void display(){
+      _terminal->displayRPN( input, stack, _labels);
+      };
+    inline bool inputEmpty(){
+      return !input[0];
+      };
     void send( char c);
     void changeLabel( byte n, char *lbl);
     void changeLabel_P( byte n, const char *lbl);
     void setLabels( const char *lbl);
     void resetLabels();
-    void pop();
+    bool parseInput();
+    bool unparseInput();
+    void pop( size_t head=0);
     void push();
     void prev();
   private:
     LCD_Console *_terminal;
     volatile char *_labels[3];
     bool _command_expected = false;
-    bool _exponent_mode = false;
-    inline void _clearInput(){
-      *input = '\0';
-      cursorPosition = 0;
-      };
-    void _processCommand( byte c);
-    void _processCharacter( byte c);
+    bool _exponent_allowed();
+    bool _decimal_allowed();
+    bool _greek_allowed();
+    void _clearInput();
+    void _insertCharacter( byte c);
+    void _backspaceCharacter();
+    void _deleteCharacter();
+    void _changeInputSign();
+    bool _processCommand( byte c);
+    bool _processCharacterInput( byte c);
+    bool _processOperator( byte c);
 };
 
 #endif

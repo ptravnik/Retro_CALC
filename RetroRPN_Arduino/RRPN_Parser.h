@@ -38,12 +38,16 @@ class RRPN_Parser{
     bool expression_Error = false;
     char *parser_Position;
     char *DoubleToString( double n, char *buff);
-    double StringToDouble( char *buff);
+    double StringToDouble( char *buff, bool leading_sign=true);
   private:
     double _process_Double( double result, int exponent_value, bool exponent_minus);
     double _process_Multiplier( double result, int exponent_value, bool exponent_minus, int mult);
     inline void _ignore_Blanks(){
       while(*parser_Position == ' ' || *parser_Position == '\t') parser_Position++;
+      };
+    inline double _process_Sign( double result, bool sign){
+      if( sign) return result;
+      return -result;
       };
 };
 

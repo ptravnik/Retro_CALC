@@ -1,6 +1,8 @@
 #include "Arduino.h"
 #include "RRPN_Parser.h"
 
+static const byte RRPN_INFINITY_MSG[]       PROGMEM = "Infinity";
+
 //
 // Converts a double number into a string
 // Note that the buffer length must be sufficient to acommodate at least 
@@ -14,13 +16,20 @@ char *RRPN_Parser::DoubleToString( double n, char *buff){
   // a negative number 
   if( n<0.0){
     *ptr++ = '-';
+    *ptr = '\0';
     n=-n;
   }
 
   // a very small number
   if( n < 1e-30){
     *ptr++ = '0';
-    *ptr = 0;
+    *ptr = '\0';
+    return buff;
+  }
+
+  // a very large number
+  if( n > 1e38){
+    strcpy_P( ptr, RRPN_INFINITY_MSG);
     return buff;
   }
 
@@ -43,13 +52,13 @@ char *RRPN_Parser::DoubleToString( double n, char *buff){
   // normal decimal format
   n *= 2.0;
   n /= 2.0;
-  dtostrf( n, decimal_places+2, decimal_places, buff);
+  dtostrf( n, decimal_places+2, decimal_places, ptr);
 
   // check if the trailing zeros can be discarded
   ptr = buff + strlen(buff)-1;
   while( ptr>buff && *ptr == '0') ptr--;
   if( *ptr == '.') ptr--;
-  ptr[1] = 0;
+  ptr[1] = '\0';
   return buff;
 }
 
@@ -57,8 +66,16 @@ char *RRPN_Parser::DoubleToString( double n, char *buff){
 //
 // Converts a string to a double number
 //
-double RRPN_Parser::StringToDouble( char *buff){
+double RRPN_Parser::StringToDouble( char *buff, bool leading_sign=true){
+  bool sign = true;
   parser_Position = buff;
+  if( leading_sign && *buff == '+'){
+    parser_Position = buff+1;
+  }
+  if( leading_sign && *buff == '-'){
+    sign = false;
+    parser_Position = buff+1;
+  }
 #ifdef RRPN_PARSER_DEBUG_
   Serial.print( "Parser entry: ");
   Serial.println(parser_Position);
@@ -122,7 +139,7 @@ double RRPN_Parser::StringToDouble( char *buff){
       case '+':
       case '-':
         if( entry_logical_position < 3){ // probably next exporession
-          return _process_Double( result, exponent_value, exponent_minus);
+          return _process_Sign(_process_Double( result, exponent_value, exponent_minus), sign);
         }
         if( entry_logical_position == 3){
           entry_logical_position++;
@@ -132,29 +149,29 @@ double RRPN_Parser::StringToDouble( char *buff){
         expression_Error = true;
         return 0.0;
       case 'f':
-        return _process_Multiplier( result, exponent_value, exponent_minus, -15);
+        return _process_Sign( _process_Multiplier( result, exponent_value, exponent_minus, -15), sign);
       case 'p':
-        return _process_Multiplier( result, exponent_value, exponent_minus, -12);
+        return _process_Sign( _process_Multiplier( result, exponent_value, exponent_minus, -12), sign);
       case 'n':
-        return _process_Multiplier( result, exponent_value, exponent_minus, -9);
+        return _process_Sign( _process_Multiplier( result, exponent_value, exponent_minus, -9), sign);
       case 'u':
-        return _process_Multiplier( result, exponent_value, exponent_minus, -6);
+        return _process_Sign( _process_Multiplier( result, exponent_value, exponent_minus, -6), sign);
       case 'm':
-        return _process_Multiplier( result, exponent_value, exponent_minus, -3);
+        return _process_Sign( _process_Multiplier( result, exponent_value, exponent_minus, -3), sign);
       case 'c':
-        return _process_Multiplier( result, exponent_value, exponent_minus, -2);
+        return _process_Sign( _process_Multiplier( result, exponent_value, exponent_minus, -2), sign);
       case 'd':
-        return _process_Multiplier( result, exponent_value, exponent_minus, -2);
+        return _process_Sign( _process_Multiplier( result, exponent_value, exponent_minus, -2), sign);
       case 'k':
-        return _process_Multiplier( result, exponent_value, exponent_minus, 3);
+        return _process_Sign( _process_Multiplier( result, exponent_value, exponent_minus, 3), sign);
       case 'M':
-        return _process_Multiplier( result, exponent_value, exponent_minus, 6);
+        return _process_Sign( _process_Multiplier( result, exponent_value, exponent_minus, 6), sign);
       case 'G':
-        return _process_Multiplier( result, exponent_value, exponent_minus, 9);
+        return _process_Sign( _process_Multiplier( result, exponent_value, exponent_minus, 9), sign);
       case 'T':
-        return _process_Multiplier( result, exponent_value, exponent_minus, 12);
+        return _process_Sign( _process_Multiplier( result, exponent_value, exponent_minus, 12), sign);
       default:
-        return _process_Double( result, exponent_value, exponent_minus);
+        return _process_Sign( _process_Double( result, exponent_value, exponent_minus), sign);
     }
     parser_Position++;
   }

@@ -83,7 +83,7 @@ void LCD_Console::displayStackX( char* stackX, size_t cursor_Position){
   uint8_t tw = u8g2.getBufferTileWidth();
   uint8_t th = u8g2.getBufferTileHeight();
   uint8_t *ptr = u8g2.getBufferPtr() + tw*50;
-  uint16_t clearTiles = tw*13;
+  uint16_t clearTiles = tw*14;
   memset( ptr, 0, clearTiles);
   if( cursorOn){
     if( cursor_Position == strlen( stackX)){
