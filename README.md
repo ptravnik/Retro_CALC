@@ -4,10 +4,13 @@ The ultimate goal is to build a powerful RPN calculator, programmable in BASIC-l
 
 The FIRST mockup version is based upon:
 
-(#) Arduino MEGA 2560
+(1) Arduino MEGA 2560
+
 (2) Arduino MEGA SRAM shield (my PCB is modified for 56k RAM instead of 32 in the original version)
 https://hackaday.io/project/21561-arduino-mega-2560-32kb-ram-shield
+
 (3) Arduino SD card reader; this version is for Uno, but runs on Mega with pins 10-13 using Soft SPI
+
 (4) Piezo speaker on line 9
 
 (5) Hardware keyboard on lines A0-A4
@@ -17,9 +20,16 @@ https://hackaday.io/project/21561-arduino-mega-2560-32kb-ram-shield
 The SECOND mockup version is based upon:
 
 (1) ESP32 Dev Module
+
 (2) Micro SD card reader
+
 (3) Hardware keyboard on lines A0-A4
-(4) LCD screen 128x64 pixels on SPI 
+
+(4) LCD screen 128x64 pixels on SPI
+
+(5) Arduino Micro Pro as a "keyboard/mouse injector"
+
+(6) 3.3V to 5 V level convertor (will be removed later after 3.3 V Micro Pro replaces the 5V version)
 
 The code is partially ported and tested ESP-32 platform. Production PCBs from China are delayed due to Novel Coronavirus outbreak.
 
