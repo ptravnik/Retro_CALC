@@ -1,7 +1,15 @@
+//////////////////////////////////////////////////////////
+//
+//  RetroRPN - "Электроника МК-90" reborn
+//  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+//  See main file for the license
+//
+//////////////////////////////////////////////////////////
+
 #include "IOManager.hpp"
 #include "Utilities.hpp"
 
-//#define __DEBUG
+#define __DEBUG
 
 const char IO_WelcomeMessage1[] PROGMEM = "*** ЭЛЕКТРОНИКА МК-2090 ***";
 const char IO_WelcomeMessage2[] PROGMEM = "***  Retro  Calculator  ***";
@@ -67,17 +75,26 @@ void IOManager::setKBDLEDs( byte val){
 // Inputs CP1251 character from either hardware keyboard or serials
 // The serial is converted from Unicode to CP1251
 //
-char IOManager::input() {
+char IOManager::input(){
+  char c;
   hwKeyboard.input();
   if( hwKeyboard.available()){
+    c = hwKeyboard.read();
     #ifdef __DEBUG
-    Serial.print( "Last scan: ");
-    Serial.println( hwKeyboard.lastScanResult, DEC);
+    Serial.print( "Hardware KBD: scan=");
+    Serial.print( hwKeyboard.lastScanResult, DEC);
+    Serial.print( " code=");
+    Serial.println( c, HEX);
     #endif
-    return hwKeyboard.read();
+    return c;
   }
   if( Serial.available()){
-    return Serial.read();
+    c = Serial.read();
+    #ifdef __DEBUG
+    Serial.print( "VT100 KBD: code=");
+    Serial.println( c, HEX);
+    #endif
+    return c;
   }
   return 0;
 }

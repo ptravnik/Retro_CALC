@@ -1,3 +1,39 @@
+/////////////////////////////////////////////////////
+
+/* RetroRPN - "Электроника МК-90" reborn
+  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+
+  This is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 3 of the License, or (at your option) any later version.
+
+  This software is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+ Inspired by work of: 
+    Gordon Brandly (Tiny Basic for 68000)
+    Mike Field (Arduino Basic)
+    Scott Lawrence (TinyBasic Plus)
+    Brian O'Dell (INPUT)
+    David A. Mellis (SD card utils)
+    Oli Kraus (LCD library)
+    Mike Yakimov (TinyBasic with real numbers)
+    Andrey Skvortsov (Terminal-BASIC and Arduino SRAM)
+    David Boucher (Tiny Keyboard)
+    User "Dita Schop" (Arduino RPN calc)
+*/
+
+/////////////////////////////////////////////////////
+
+//
+// This implementation is for ESP32 Dev Module
 //
 // Pin assignment:
 //

@@ -1,3 +1,11 @@
+//////////////////////////////////////////////////////////
+//
+//  RetroRPN - "Электроника МК-90" reborn
+//  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+//  See main file for the license
+//
+//////////////////////////////////////////////////////////
+
 #include "RPNCalculator.hpp"
 #include "Utilities.hpp"
 
@@ -10,12 +18,14 @@ const char RPN_RegName1[] PROGMEM = "x:";
 const char RPN_RegName2[] PROGMEM = "y:";
 const char RPN_RegName3[] PROGMEM = "z:";
 const char RPN_Prompt[] PROGMEM = "> ";
+const char RPN_Error_DivZero[] PROGMEM = "Error: division by zero";
 const char *const RPN_Message_Table[] PROGMEM = {
   RPN_StatusMessage,
   RPN_RegName1,
   RPN_RegName2,
   RPN_RegName3,
   RPN_Prompt,
+  RPN_Error_DivZero
   };
 
 //
@@ -32,7 +42,7 @@ void RPNCalculator::init( IOManager iom, LCDManager lcd) {
   memset(_input, (byte)0, INPUT_COLS);
   memset(_inputPrevious, (byte)0, INPUT_COLS);
   setStackRedraw();
-  for( byte i=0; i<RPN_STACK; i++) rpnStack[i] = 3.1415 + i;
+  for( byte i=0; i<RPN_STACK; i++) rpnStack[i] = 0.0;
 }
 
 void RPNCalculator::show(){
@@ -41,7 +51,6 @@ void RPNCalculator::show(){
   _lcd.clearScreen( _SP_, false);
   _lcd.invertRow(0, true);
   resetRPNLabels();
-  updateIOM();
 }
 
 //
@@ -78,7 +87,8 @@ void RPNCalculator::redraw() {
 //
 // Draws to the serial ports
 //
-void RPNCalculator::updateIOM() {
+void RPNCalculator::updateIOM( bool refresh) {
+  if( !refresh) return;
   char *buff = _lcd.getUnicodeBuffer();
   byte *ptr = (byte *)buff;
   _iom.sendToSerials( buff, _messages[0]);
@@ -100,6 +110,7 @@ void RPNCalculator::resetRPNLabels() {
     convertToCP1251( _messages[i], RPN_Message_Table[i], HSCROLL_LIMIT);
     _messageRedrawRequired[i] = true;
   }
+  updateIOM();
 }
 
 //
@@ -112,15 +123,24 @@ void RPNCalculator::setRPNLabel( byte label, byte *message) {
   else
     convertToCP1251( _messages[label], RPN_Message_Table[label], HSCROLL_LIMIT);
   _messageRedrawRequired[label] = true;
+  updateIOM();
 }
 
 //
 // Sends one byte
 //
 void RPNCalculator::sendChar( byte c) {
+  if( expectCommand){
+    processCommand(c);
+    expectCommand = false;
+    return;
+  }
   switch(c){
     case _BS_:
       processBS();
+      return;
+    case _RPN_:
+      expectCommand = true;
       return;
     case _CR_:
       processInput();
@@ -162,6 +182,52 @@ void RPNCalculator::sendChar( byte c) {
       processEntry(c);
       break;
   }
+}
+
+//
+// Silent command execution
+//
+void RPNCalculator::processCommand(byte c){
+  if(isInputEmpty()){
+    switch(c){
+      case '+':
+        add();
+        return;
+      case '-':
+        subtract();
+        return;
+      case '*':
+        multiply();
+        return;
+      case '/':
+        divide();
+        return;
+    default:
+      processEntry(c);
+      break;
+    }
+    return;
+  }
+  switch(c){
+    case '+':
+    case '-':
+      if( cursor_column >= 2 && _input[cursor_column-1] == 'e' && IsDigitOrDecimal( _input[cursor_column-2])){
+        processEntry(c);
+        return;
+      }
+      break;
+    default:
+      break;
+  }
+  np.parse(_input);  
+  if( np.result != _NOT_A_NUMBER_){
+    for(byte i=RPN_STACK-1; i>0; i--)
+      rpnStack[i] = rpnStack[i-1];
+    rpnStack[0] = np.realValue();
+  }
+  processESC();
+  expectCommand = false;
+  processCommand( c);
 }
 
 //
@@ -249,9 +315,11 @@ void RPNCalculator::processInput() {
   }
   np.parse(_input);  
   if( np.result != _NOT_A_NUMBER_){
-    //push();
+    for(byte i=RPN_STACK-1; i>0; i--)
+      rpnStack[i] = rpnStack[i-1];
     rpnStack[0] = np.realValue();
-    _stackRedrawRequired[ 0] = true;
+    setStackRedraw();
+    updateIOM();
   }
   processESC();
 }
@@ -259,38 +327,73 @@ void RPNCalculator::processInput() {
 //
 // Stack operations
 // 
-void RPNCalculator::push() {
+void RPNCalculator::push(bool refresh) {
   previous_X = rpnStack[0];
   for(byte i=RPN_STACK-1; i>0; i--)
     rpnStack[i] = rpnStack[i-1];
   setStackRedraw();
-  updateIOM();
+  updateIOM(refresh);
 }
-void RPNCalculator::pop() {
+void RPNCalculator::pop(bool refresh) {
   previous_X = rpnStack[0];
   for(byte i=1; i<RPN_STACK; i++)
     rpnStack[i-1] = rpnStack[i];
   setStackRedraw();
-  updateIOM();
+  updateIOM(refresh);
 }
-void RPNCalculator::swap() {
+void RPNCalculator::_popPartial() {
+  for(byte i=2; i<RPN_STACK; i++)
+    rpnStack[i-1] = rpnStack[i];
+  setStackRedraw();
+}
+void RPNCalculator::swap(bool refresh) {
   previous_X = rpnStack[0];
   rpnStack[0] = rpnStack[1];
   rpnStack[1] = previous_X;
   _stackRedrawRequired[ 0] = true;
   _stackRedrawRequired[ 1] = true;
-  updateIOM();
+  updateIOM(refresh);
 }
-void RPNCalculator::roll() {
+void RPNCalculator::roll(bool refresh) {
   double tmp = rpnStack[RPN_STACK-1];
   push();
   rpnStack[0] = tmp;
-  updateIOM();
+  updateIOM(refresh);
 }
-void RPNCalculator::prev() {
+void RPNCalculator::prev(bool refresh) {
   for(byte i=RPN_STACK-1; i>0; i--)
     rpnStack[i] = rpnStack[i-1];
-  rpnStack[0] = previous_X;  updateIOM();
+  rpnStack[0] = previous_X;
+  updateIOM(refresh);
+}
+void RPNCalculator::add(bool refresh) {
+  previous_X = rpnStack[0];
+  rpnStack[0] += rpnStack[1];
+  _popPartial();
+  updateIOM(refresh);
+}
+void RPNCalculator::subtract(bool refresh) {
+  previous_X = rpnStack[0];
+  rpnStack[0] = rpnStack[1] - rpnStack[0];
+  _popPartial();
+  updateIOM(refresh);
+}
+void RPNCalculator::multiply(bool refresh) {
+  previous_X = rpnStack[0];
+  rpnStack[0] *= rpnStack[1];
+  _popPartial();
+  updateIOM(refresh);
+}
+void RPNCalculator::divide(bool refresh) {
+  if( -1e-300 < rpnStack[0] && rpnStack[0] < 1e-300){
+    setRPNLabel( 1, RPN_Message_Table[5]);
+    updateIOM(refresh);
+    return;    
+  }
+  previous_X = rpnStack[0];
+  rpnStack[0] = rpnStack[1] / rpnStack[0];
+  _popPartial();
+  updateIOM(refresh);
 }
 
 //
@@ -337,7 +440,6 @@ void RPNCalculator::processESC() {
   *_input = 0;
   cursor_column = 0;
   display_starts = 0;
-  updateIOM();
 }
 
 void RPNCalculator::processLEFT() {

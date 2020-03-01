@@ -1,3 +1,11 @@
+//////////////////////////////////////////////////////////
+//
+//  RetroRPN - "Электроника МК-90" reborn
+//  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+//  See main file for the license
+//
+//////////////////////////////////////////////////////////
+
 #ifndef KEYWORDS_HPP
 #define KEYWORDS_HPP
 
@@ -20,6 +28,8 @@ class NumberParser{
   private:
     double _dValue = 0.0;           
     int64_t _iValue = 0L;
+    byte *_processMultiplier(byte *ptr, double v, double mult);
+    byte *_processMultiplier(byte *ptr, int64_t v, double mult);
 };
 
 class Keyword{

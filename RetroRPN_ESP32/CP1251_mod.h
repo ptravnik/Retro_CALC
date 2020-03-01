@@ -1,3 +1,11 @@
+//////////////////////////////////////////////////////////
+//
+//  RetroRPN - "Электроника МК-90" reborn
+//  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+//  See main file for the license
+//
+//////////////////////////////////////////////////////////
+
 //
 // Characters defined as bytes (unsigned 8-bits)
 //
@@ -20,7 +28,9 @@
 #define _PGUP_      23
 #define _PGDN_      24
 #define _ESC_       27
+#define _RPN_       31
 #define _SP_        32
+#define _ZERO_      48
 #define _COLON_     58
 #define _DEL_      127
 

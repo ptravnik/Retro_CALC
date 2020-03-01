@@ -1,3 +1,11 @@
+//////////////////////////////////////////////////////////
+//
+//  RetroRPN - "Электроника МК-90" reborn
+//  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+//  See main file for the license
+//
+//////////////////////////////////////////////////////////
+
 #ifndef UTILITIES_HPP
 #define UTILITIES_HPP
 
@@ -7,11 +15,45 @@
 #define DECIMAL_PLACES  9
 #define MAXIMUM_NUMBER_LENGTH 22
 
+//
+// Returns true if a spacer
+//
 bool IsSpacer(byte b);
 inline bool IsSpacer(char b){
   return IsSpacer((byte)b);
 };
 
+//
+// Returns true if a digit
+//
+inline bool IsDigit(byte b){
+  return 48<=b && b<=57;
+};
+inline bool IsDigit(char b){
+  return '0'<=b && b<='9';
+};
+
+//
+// Returns true if a digit or decimal
+//
+inline bool IsDigitOrDecimal(byte b){
+  return b==46 || (48<=b && b<=57);
+};
+inline bool IsDigitOrDecimal(char b){
+  return b=='.' || ('0'<=b && b<='9');
+};
+
+//
+// Returns true if a valid number terminator
+//
+bool IsNumberTerm(byte b);
+inline bool IsNumberTerm(char b){
+  return IsNumberTerm((byte)b);
+};
+
+//
+// Compares a token
+//
 bool IsToken(char *line, const char *token, bool separator_needed=true);
 inline bool IsToken(byte *line, const char *token, bool separator_needed=true){
   return IsToken( (char *)line, token, separator_needed);

@@ -1,3 +1,11 @@
+//////////////////////////////////////////////////////////
+//
+//  RetroRPN - "Электроника МК-90" reborn
+//  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+//  See main file for the license
+//
+//////////////////////////////////////////////////////////
+
 #include "Utilities.hpp"
 #include "CP1251_mod.h"
 
@@ -7,6 +15,12 @@ bool IsSpacer(byte b){
   if( b == _SP_) return true;
   if( b == _TAB_) return true;
   return false;
+}
+
+bool IsNumberTerm(byte b){
+  const char list[] = ")*+-/<=>]^%";
+  if( IsSpacer(b)) return true;
+  return strchr(list, (char)b) != NULL;
 }
 
 //bool IsToken(char *line, char *token){
