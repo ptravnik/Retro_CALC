@@ -24,7 +24,7 @@
   4. KBD_READ - input (no pullup!), any digital pin
   5. LED_RESET - output, any digital pin
   6. LED_CLOCK - output, any digital pin
-  7. RESET - connect to Arduino RESET (optional)
+  7. RESET(optional) - connect to Arduino/ESP32 RESET or to ESP32 wake-up GPIO. In the latter case, pull the GPIO up to 3.3V using an external 11k resistor - the GPIO is not powered up in the sleep mode. 
   8. GROUND
   To read the keyboard, send a pulse to KBD_RESET and read
   the first button state from KBD_READ (HIGH means "pressed").
