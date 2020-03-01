@@ -65,15 +65,15 @@ class Keyboard():
 keyb = Keyboard()
 
 keyb.buttons += [Button([ "#CODE=27", "\t", "\t", "#CODE=27", "\t", "\t", "#CODE=27", "#CODE=27"], [0,0,2,0,4,4,6,4])] # 01 Esc Tab
-keyb.buttons += [Button([ "+", "+", "+", "+","#CODE=253","#CODE=221", "+", "+"], [0,0,0,0,4,4,4,4])] # 02 э
-keyb.buttons += [Button([ "-", "-", "-", "-","#CODE=254","#CODE=222", "-", "-"], [0,0,0,0,4,4,4,4])] # 03 ю 
-keyb.buttons += [Button([ "*", "*", "*", "*","#CODE=250","#CODE=218", "*", "*"], [0,0,0,0,4,4,4,4])] # 04 ъ
-keyb.buttons += [Button([ "/", "/", "/", "/","#CODE=252","#CODE=220", "/", "/"], [0,0,0,0,4,4,4,4])] # 05 ь
-keyb.buttons += [Button([ "^", "^", "^", "^","#CODE=184","#CODE=168", "^", "^"], [0,0,0,0,4,4,4,4])] # 06 ё
-keyb.buttons += [Button([ "Sig","~","\\","Sig","~","\\","Sig"], [0,0,0,0,4,4,4,4])] # 07
-keyb.buttons += [Button([ "Exp","Exp","Exp","Exp","#CODE=248","#CODE=216","Exp","Exp"], [0,0,0,0,4,4,4,4])] # 08 ш
-keyb.buttons += [Button([ ".", ",", ":", ";","#CODE=249","#CODE=217", ":", ";"], [0,0,0,0,4,4,4,4])] # 09 щ
-keyb.buttons += [Button([ "Run","Halt","Abort","Step","Run","Halt","Abort","Step"], [0,0,0,3,4,4,4,7])] # 10
+keyb.buttons += [Button([ "~+~", "+", "+", "+","#CODE=253","#CODE=221", "+", "+"], [0,0,0,0,4,4,4,4])] # 02 э
+keyb.buttons += [Button([ "~-~", "-", "-", "-","#CODE=254","#CODE=222", "-", "-"], [0,0,0,0,4,4,4,4])] # 03 ю 
+keyb.buttons += [Button([ "~*~", "*", "*", "*","#CODE=250","#CODE=218", "*", "*"], [0,0,0,0,4,4,4,4])] # 04 ъ
+keyb.buttons += [Button([ "~/~", "/", "/", "/","#CODE=252","#CODE=220", "/", "/"], [0,0,0,0,4,4,4,4])] # 05 ь
+keyb.buttons += [Button([ "~^~", "^", "^", "^","#CODE=184","#CODE=168", "^", "^"], [0,0,0,0,4,4,4,4])] # 06 ё
+keyb.buttons += [Button([ "~~~","~","\\","#CODE=177","~","\\","#CODE=177","#CODE=177"], [0,0,0,0,4,4,4,4])] # 07
+keyb.buttons += [Button([ "e","e","e","e","#CODE=248","#CODE=216","e","e"], [0,0,0,0,4,4,4,4])] # 08 ш
+keyb.buttons += [Button([ ".", ",", ":", ";","#CODE=249","#CODE=217", "#CODE=176", ";"], [0,0,0,0,4,4,4,4])] # 09 щ
+keyb.buttons += [Button([ "~Run~","~Halt~","~Abort~","~Step~","~Run~","~Halt~","~Abort~","~Step~"], [0,0,0,3,4,4,4,7])] # 10
 
 keyb.buttons += [Button(["1","!","","","1","!","",""], [0,0,0,0,4,4,4,4])] # 11
 keyb.buttons += [Button(["2","@","","","2","@","",""], [0,0,0,0,4,4,4,4])] # 12
