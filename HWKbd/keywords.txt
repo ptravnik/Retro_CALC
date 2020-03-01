@@ -6,6 +6,8 @@ HWKBD_Codepage_Cyrillic_UTF8	KEYWORD1
 HWKBD_Macropage_Cyrillic_UTF8	KEYWORD1
 HWKBD_Codepage_Cyrillic_Phonetic_UTF8	KEYWORD1
 HWKBD_Macropage_Cyrillic_Phonetic_UTF8	KEYWORD1
+HWKBD_Codepage_Cyrillic_Phonetic_CP1251	KEYWORD1
+HWKBD_Macropage_Cyrillic_Phonetic_CP1251	KEYWORD1
 HWKBD_Codepage_IMC	KEYWORD1
 HWKBD_Macropage_IMC	KEYWORD1
 isConnected	KEYWORD2
