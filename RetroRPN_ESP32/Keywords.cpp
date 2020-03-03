@@ -9,7 +9,7 @@
 #include "Keywords.hpp"
 #include "CP1251_mod.h"
 
-//#define __DEBUG
+#define __DEBUG
 
 //
 // Number parser components
@@ -45,6 +45,9 @@ int64_t NumberParser::integerValue(){
 // or at the origin if not parsed correctly
 //
 byte *NumberParser::parse( byte *str){
+  Serial.print("Parsing: [");
+  Serial.print((char*)str);
+  Serial.println("]");  
   byte logical_position = 0; // 0-whole, 1-decmal, 2-exponent, 3-exp number
   result = _NOT_A_NUMBER_;
   byte *ptr = str;
@@ -187,11 +190,17 @@ byte *NumberParser::parse( byte *str){
       _dValue = 0.0;
       return ptr;
   }
+  #ifdef __DEBUG
+  Serial.println("Exponents:");
+  #endif
   uint16_t exponent_value = 0;
   while( isDigit(*ptr)){
     if( exponent_value <= 300){
       exponent_value *= 10;
-      exponent_value += (*ptr++)-_ZERO_;
+      exponent_value += (*ptr)-_ZERO_;
+      #ifdef __DEBUG
+      Serial.println(exponent_value);
+      #endif
     }
     ptr++;
   }

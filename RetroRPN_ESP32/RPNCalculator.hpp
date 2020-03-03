@@ -24,8 +24,9 @@
 #define RPNCALCULATOR_HPP
 
 #include <Arduino.h>
-#include "LCDManager.hpp"
 #include "IOManager.hpp"
+#include "LCDManager.hpp"
+#include "SDManager.hpp"
 #include "Keywords.hpp"
 
 #define INPUT_COLS    256
@@ -40,7 +41,8 @@ class RPNCalculator{
     bool expectCommand = false;
     double rpnStack[RPN_STACK];
     double previous_X = 0.0;
-    void init( IOManager iom, LCDManager lcd);
+    unsigned long init(IOManager *iom, LCDManager *lcd, SDManager *sd);
+    unsigned long tick();
     void show();
     void redraw();
     void sendChar( byte c);
@@ -54,9 +56,12 @@ class RPNCalculator{
     void subtract( bool refresh=true);
     void multiply( bool refresh=true);
     void divide( bool refresh=true);
+    void loadState();
+    void saveState();
   private:
-    IOManager _iom;
-    LCDManager _lcd;
+    IOManager *_iom;
+    LCDManager *_lcd;
+    SDManager *_sd;
     byte _input[INPUT_COLS];
     byte _inputPrevious[INPUT_COLS];
     uint16_t cursor_column = 0;
@@ -96,6 +101,7 @@ class RPNCalculator{
     void copyFromPrevious();
     void updateIOM(bool refresh=true);
     void _popPartial();
+    void _clearInput();
 };
 
 #endif //RPNCALCULATOR_HPP

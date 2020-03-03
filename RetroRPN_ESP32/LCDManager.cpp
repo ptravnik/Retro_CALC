@@ -21,7 +21,7 @@ static U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, LCD_CLOCK, LCD_DATA, LCD_CS, LC
 //
 // Inits LCD display
 //
-void LCDManager::init( bool cls) {
+unsigned long LCDManager::init() {
 
   // Set timer and attach to the led
   pinMode( LCD_LED_PIN, OUTPUT);
@@ -41,9 +41,9 @@ void LCDManager::init( bool cls) {
   writeStringUTF8( 17, 27, LCD_Message_Table[1]);
   u8g2.updateDisplay();
   dimLED( 0, ledBrightness, 60); // lit slowly
-  delay(SCR_SPLASH);  
 
   #ifdef __DEBUG
+  delay(SCR_SPLASH);  
   memset(_graphics, 0, SCR_BUFFER_SIZE);
   writeString(  0, 0, "123456789012345678901234567890");
   writeString(  0, 8, "123456789012345678901234567890");
@@ -54,9 +54,13 @@ void LCDManager::init( bool cls) {
   writeString(  0, 48, "123456789012345678901234567890");
   writeString(  0, 56, "123456789012345678901234567890");
   u8g2.updateDisplay();
-  delay(SCR_SPLASH);
   #endif
-  
+
+  return millis();
+}
+
+void LCDManager::waitForEndSplash( unsigned long start, bool cls) {
+  while( millis()-start < SCR_SPLASH) delay(50);
   memset( _buffer, _SP_, SCR_SIZE);
   memset( lineInversed, false, SCR_ROWS);
   if( cls) {
@@ -125,6 +129,7 @@ void LCDManager::sleepOn(){
   dimLED( ledBrightness, 0, 10);
   digitalWrite( LCD_POWER_PIN, LOW);
   isAsleep = true;
+  isLEDoff = true;
   #ifdef __DEBUG
   Serial.print("Gone to sleep: [");
   Serial.print( cursor_column);
@@ -148,11 +153,38 @@ void LCDManager::sleepOff(){
   #endif  
   digitalWrite( LCD_POWER_PIN, HIGH);
   u8g2.begin();
-  u8g2.enableUTF8Print();
+  //u8g2.enableUTF8Print();
   setRedrawAll(true);
   redraw();
   dimLED( 0, ledBrightness, 10);
   isAsleep = false;
+  isLEDoff = false;
+}
+
+//
+// Brings the screen to low power mode
+//
+void LCDManager::LEDOff(){
+  if( isAsleep) return;
+  if( isLEDoff) return;
+  #ifdef __DEBUG
+  Serial.println("LED off");
+  #endif
+  dimLED( ledBrightness, 0, 10);
+  isLEDoff = true;
+}
+
+//
+// Wakes the screen up
+//
+void LCDManager::LEDOn(){
+  if( isAsleep) return;
+  if( !isLEDoff) return;
+  #ifdef __DEBUG
+  Serial.println("LED on");
+  #endif
+  dimLED( 0, ledBrightness, 10);
+  isLEDoff = false;
 }
 
 //

@@ -63,11 +63,12 @@
 #define BLINKER_RATE 500
 
 // show splashscreen in ms
-#define SCR_SPLASH  5000 
+#define SCR_SPLASH  1000 
 
 class LCDManager{
   public:
     bool isAsleep = false;
+    bool isLEDoff = false;
     bool cursorShown = true;
     bool wordWrap = false;
     bool scrollLock = false;
@@ -76,9 +77,12 @@ class LCDManager{
     bool forceRedraw = false;
     byte ledBrightness = 200;
 
-    void init( bool cls = false);
+    unsigned long init();
+    void waitForEndSplash( unsigned long start, bool cls = false);
     void sleepOn();
     void sleepOff();
+    void LEDOn();
+    void LEDOff();
     inline void setRedrawAll(bool r){
       memset( lineRedrawRequired, r, SCR_ROWS);
     }

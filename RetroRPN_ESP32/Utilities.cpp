@@ -225,7 +225,7 @@ byte *convertDouble( double n, byte *buff, byte precision, bool force_sci){
     }
     dtostrf( n, precision+2, precision, (char *)buff);
     i = strlen( buff);
-    snprintf( (char *)(buff+i), MAXIMUM_NUMBER_LENGTH-i, "e%+03d", exponent);
+    snprintf( (char *)(buff+i), MAXIMUM_NUMBER_LENGTH-i, "e%+04d", exponent);
     return buff + strlen( buff);
   }
 
@@ -240,3 +240,69 @@ byte *convertDouble( double n, byte *buff, byte precision, bool force_sci){
   *buff = _NUL_;
   return buff;
 }
+
+//#define MAX_COMMAND 256
+//static char Command[MAX_COMMAND];
+//static char Command2[MAX_COMMAND];
+//static size_t Command_Position = 0;
+//  c = host.iom.input();
+//  if( !c){
+//    delay(5);
+//    return;
+//  }
+//  if(c>=32) Serial.write(c);
+//  if(c==_CR_ || c==_LF_) Serial.println();
+//  host.rpn.sendChar((byte)c);
+
+//  if( Command_Position < MAX_COMMAND-1){
+//    Command[ Command_Position++] = c;    
+//    Command[ Command_Position] = 0;    
+//  }
+//  if( c == 0x0D || c == 0x0A){
+//    Serial.println(Command);
+//    //lcd.sendStringUTF8( Command);
+//    convertToCP1251( (byte *)Command2, Command, MAX_COMMAND);
+//    ExecuteCommand( Command2);
+//    Command_Position = 0;
+//    Command[0] = 0;
+//  }
+//void ExecuteCommand( const char *comm){
+//  if( IsToken( (char *)comm, "$b", false)){
+//    Serial.println("To bottom line");
+//    lcd.cursorBottom();
+//    return;
+//  }
+
+//  if( IsToken( (char *)comm, "$su", false)){
+//    Serial.println("Scroll up");
+//    lcd.scrollUp(1);
+//    return;
+//  }
+
+//  if( IsToken( (char *)comm, "$sd", false)){
+//    Serial.println("Scroll down");
+//    lcd.scrollDown(1);
+//    return;
+//  }
+//  if( IsToken( (char *)comm, "help")){
+//    lcd.sendString( comm);
+//    lcd.sendString("\rcls - clear screen\r");
+//    lcd.sendString("wrap=on/off\r");
+//    lcd.sendString("scroll=on/off\r");
+//    lcd.sendString("$h or $b\r");
+//    lcd.sendString("$u/d/l/r - move cursor\r");
+//    lcd.sendString("$su/d - scroll up/down\r");
+//    Serial.println("cls - clear screen");
+//    Serial.println("wrap=on/off");
+//    Serial.println("scroll=on/off");
+//    Serial.println("$h - home");
+//    Serial.println("$b - bottom line");
+//    Serial.println("$u/d - cursor up/down");
+//    Serial.println("$l/r - cursor left/right");
+//    Serial.println("$su/d - scroll up/down");
+//    return;
+//  }
+//  for( size_t i=0; i<strlen(comm); i++){
+//    host.rpn.sendChar( (byte)comm[i]);
+//  }
+//}

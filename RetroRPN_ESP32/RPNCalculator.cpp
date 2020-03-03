@@ -8,6 +8,10 @@
 
 #include "RPNCalculator.hpp"
 #include "Utilities.hpp"
+#include "IOManager.hpp"
+#include "LCDManager.hpp"
+#include "SDManager.hpp"
+#include "Keywords.hpp"
 
 //#define __DEBUG
 
@@ -18,7 +22,7 @@ const char RPN_RegName1[] PROGMEM = "x:";
 const char RPN_RegName2[] PROGMEM = "y:";
 const char RPN_RegName3[] PROGMEM = "z:";
 const char RPN_Prompt[] PROGMEM = "> ";
-const char RPN_Error_DivZero[] PROGMEM = "Error: division by zero";
+const char RPN_Error_DivZero[] PROGMEM = "Error: div 0";
 const char *const RPN_Message_Table[] PROGMEM = {
   RPN_StatusMessage,
   RPN_RegName1,
@@ -31,9 +35,10 @@ const char *const RPN_Message_Table[] PROGMEM = {
 //
 // Inits calculator
 //
-void RPNCalculator::init( IOManager iom, LCDManager lcd) {
+unsigned long RPNCalculator::init(IOManager *iom, LCDManager *lcd, SDManager *sd){
   _iom = iom;
   _lcd = lcd;
+  _sd = sd;
   _messages[0] = _messageBuffer;
   _messages[1] = _messages[0] + SCR_COLS;
   _messages[2] = _messages[1] + SCR_COLS;
@@ -43,14 +48,28 @@ void RPNCalculator::init( IOManager iom, LCDManager lcd) {
   memset(_inputPrevious, (byte)0, INPUT_COLS);
   setStackRedraw();
   for( byte i=0; i<RPN_STACK; i++) rpnStack[i] = 0.0;
+  _iom->keepAwake();
+  return _iom->lastInput;
+}
+
+unsigned long RPNCalculator::tick(){
+  char c = _iom->input();
+  if(c == _NUL_){
+    delay(50);
+    return millis();
+  }
+  sendChar((byte)c);
+  _iom->keepAwake();
+  return _iom->lastInput;
 }
 
 void RPNCalculator::show(){
-  _lcd.wordWrap = false;
-  _lcd.scrollLock = true;
-  _lcd.clearScreen( _SP_, false);
-  _lcd.invertRow(0, true);
+  _lcd->wordWrap = false;
+  _lcd->scrollLock = true;
+  _lcd->clearScreen( _SP_, false);
+  _lcd->invertRow(0, true);
   resetRPNLabels();
+  setStackRedraw();
 }
 
 //
@@ -61,27 +80,27 @@ void RPNCalculator::redraw() {
   for(byte i=0; i<4; i++){
     if( !_messageRedrawRequired[i]) continue;
     _messageRedrawRequired[i] = false;
-    _lcd.cursorTo( 1, lineNums[i]);
-    _lcd.sendString( _messages[i]);
-    _lcd.clearToEOL();
+    _lcd->cursorTo( 1, lineNums[i]);
+    _lcd->sendString( _messages[i]);
+    _lcd->clearToEOL();
   }
   for(byte i=0, j=6; i<3; i++, j-=2){
     if( !_stackRedrawRequired[i]) continue;
     _stackRedrawRequired[i] = false;
-    _lcd.clearLine( j);
-    byte *ptr = (byte *)_lcd.getUnicodeBuffer();
+    _lcd->clearLine( j);
+    byte *ptr = (byte *)_lcd->getUnicodeBuffer();
     size_t len = convertDouble( rpnStack[i], ptr, _precision, _force_scientific) - ptr;
     if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
-    _lcd.cursorTo( SCR_RIGHT-len, j);
-    _lcd.sendString( ptr);
+    _lcd->cursorTo( SCR_RIGHT-len, j);
+    _lcd->sendString( ptr);
   }
   byte *ptr = _input + display_starts;
-  _lcd.cursorToBottom();
-  _lcd.clearLine( SCR_BOTTOM);
-  _lcd.sendStringUTF8( RPN_Message_Table[4]);
-  _lcd.sendString( ptr, HSCROLL_LIMIT);
-  _lcd.cursorTo( cursor_column - display_starts + 2, SCR_BOTTOM);
-  _lcd.redraw();
+  _lcd->cursorToBottom();
+  _lcd->clearLine( SCR_BOTTOM);
+  _lcd->sendStringUTF8( RPN_Message_Table[4]);
+  _lcd->sendString( ptr, HSCROLL_LIMIT);
+  _lcd->cursorTo( cursor_column - display_starts + 2, SCR_BOTTOM);
+  _lcd->redraw();
 }
 
 //
@@ -89,17 +108,17 @@ void RPNCalculator::redraw() {
 //
 void RPNCalculator::updateIOM( bool refresh) {
   if( !refresh) return;
-  char *buff = _lcd.getUnicodeBuffer();
+  char *buff = _lcd->getUnicodeBuffer();
   byte *ptr = (byte *)buff;
-  _iom.sendToSerials( buff, _messages[0]);
+  _iom->sendToSerials( buff, _messages[0]);
   for( byte i=3; i>0; i--){
-    _iom.sendToSerials( buff, _messages[i]);
+    _iom->sendToSerials( buff, _messages[i]);
     size_t len = convertDouble( rpnStack[i-1], ptr, _precision, _force_scientific) - ptr;
     if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
-    for( byte j=0; j<SCR_RIGHT-len; j++) _iom.sendToSerials( " ");
-    _iom.sendToSerials( buff, NULL, true);
+    for( byte j=0; j<SCR_RIGHT-len; j++) _iom->sendToSerials( " ");
+    _iom->sendToSerials( buff, NULL, true);
   }
-  _iom.sendToSerials( (char *)RPN_Message_Table[4]);
+  _iom->sendToSerials( (char *)RPN_Message_Table[4]);
 }
 
 //
@@ -225,7 +244,7 @@ void RPNCalculator::processCommand(byte c){
       rpnStack[i] = rpnStack[i-1];
     rpnStack[0] = np.realValue();
   }
-  processESC();
+  _clearInput();
   expectCommand = false;
   processCommand( c);
 }
@@ -243,74 +262,74 @@ void RPNCalculator::processInput() {
   if( IsToken( _input, "#scr status ", false)){
     copyToPrevious();
     setRPNLabel( 0, _input+12);
-    processESC();
+    _clearInput();
     return;
   }
   if( IsToken( _input, "#scr labelx ", false)){
     copyToPrevious();
     setRPNLabel( 1, _input+12);
-    processESC();
+    _clearInput();
     return;
   }
   if( IsToken( _input, "#scr labely ", false)){
     copyToPrevious();
     setRPNLabel( 2, _input+12);
-    processESC();
+    _clearInput();
     return;
   }
   if( IsToken( _input, "#scr labelz ", false)){
     copyToPrevious();
     setRPNLabel( 3, _input+12);
-    processESC();
+    _clearInput();
     return;
   }
   if( IsToken( _input, "push", false)){
     push();
-    processESC();
+    _clearInput();
     return;
   }
   if( IsToken( _input, "pop", false)){
     pop();
-    processESC();
+    _clearInput();
     return;
   }
   if( IsToken( _input, "swap", false)){
     swap();
-    processESC();
+    _clearInput();
     return;
   }
   if( IsToken( _input, "roll", false)){
     roll();
-    processESC();
+    _clearInput();
     return;
   }
   if( IsToken( _input, "prev", false)){
     prev();
-    processESC();
+    _clearInput();
     return;
   }
   if( IsToken( _input, "#scr off", false)){
     Serial.println("LCD off");
-    _lcd.sleepOn();
-    processESC();
+    _lcd->sleepOn();
+    _clearInput();
     return;
   }
   if( IsToken( _input, "#scr on", false)){
     Serial.println("LCD on");
-    _lcd.sleepOff();
-    processESC();
+    _lcd->sleepOff();
+    _clearInput();
     return;
   }
   if( IsToken( _input, "#scr+", false)){
     Serial.println("LCD up");
-    _lcd.changeLED( 16);
-    processESC();
+    _lcd->changeLED( 16);
+    _clearInput();
     return;
   }
   if( IsToken( _input, "#scr-", false)){
     Serial.println("LCD down");
-    _lcd.changeLED( -16);
-    processESC();
+    _lcd->changeLED( -16);
+    _clearInput();
     return;
   }
   np.parse(_input);  
@@ -321,7 +340,7 @@ void RPNCalculator::processInput() {
     setStackRedraw();
     updateIOM();
   }
-  processESC();
+  _clearInput();
 }
 
 //
@@ -437,9 +456,8 @@ void RPNCalculator::processBS() {
 // process other buttons 
 //
 void RPNCalculator::processESC() {
-  *_input = 0;
-  cursor_column = 0;
-  display_starts = 0;
+  setRPNLabel( 1, "");
+  _clearInput();
 }
 
 void RPNCalculator::processLEFT() {
@@ -472,4 +490,19 @@ void RPNCalculator::copyFromPrevious(){
   strcpy( (char *)_input, (char *)_inputPrevious);
   processEND();
   updateIOM();
+}
+
+void RPNCalculator::loadState(){
+}
+
+void RPNCalculator::saveState(){
+}
+
+//
+// process input after entry 
+//
+void RPNCalculator::_clearInput() {
+  *_input = 0;
+  cursor_column = 0;
+  display_starts = 0;
 }

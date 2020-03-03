@@ -21,4 +21,29 @@
 
 #include <Arduino.h>
 
+// or use LED_BUILTIN=2 constant for built-in LED
+#define SD_DETECT_PIN      4
+#define SD_CSO             13
+#define SD_CLOCK           18
+#define SD_MISO            19
+#define SD_MOSI            23
+#define BOARD_LED_PIN      2
+
+#define SD_CARD_OUT          255
+#define SD_CARD_NOT_MOUNTED  254
+
+class SDManager{
+  public:
+    volatile bool SDInserted = false;
+    volatile bool SDMounted = false;
+    volatile uint64_t cardSize = 0;
+    volatile unsigned long lastInput = 0;
+    unsigned long init();
+    unsigned long tick( unsigned long lastActivity);
+    uint8_t cardType();
+  private:
+    void checkSDPin();
+    bool detectSDCard();
+};
+
 #endif // SDMANAGER_HPP
