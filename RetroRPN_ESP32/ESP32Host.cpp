@@ -41,10 +41,14 @@ unsigned long ESP32Host::init() {
   unsigned long initStarted = myIO.init();
   myLCD.init();
   // Captain Obvious reports the serial ports into the serial ports!
-  for(byte i=0; i<3; i++)
+  for(byte i=0; i<3; i++){
     Serial.println(IO_Message_Table[i]);
-  if(myIO.HWKeyboardConnected)
+    Serial2.println(IO_Message_Table[i]);
+  }
+  if(myIO.HWKeyboardConnected){
     Serial.println(IO_Message_Table[3]);
+    Serial2.println(IO_Message_Table[3]);
+  }
   mySD.init();
   myIO.flashKBDLEDs();
   pinMode(POWER_DETECT_PIN, INPUT);    // sets the digital pin for power check

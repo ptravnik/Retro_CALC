@@ -11,17 +11,23 @@
 //
 // 01 - TX0
 // 03 - RX0
+// 16 - RX2 (serial to Pro Micro 8) Note Pro Micro 14, 15, 16 are SPI/burn
+// 17 - TX2 (serial to Pro Micro 9)
 // 25 - KBD CLK
 // 26 - KBD RST
-// 27 - LED CLK
-// 32 - LED RST
+// 27 - KBD_LED CLK
+// 32 - KBD_LED RST
 // 33 - KBD DATA
-// 34 - POWER ON/OFF
+// 35 - (input only) Pro Micro active
 //
 
 #ifndef IOMANAGER_HPP
 #define IOMANAGER_HPP
 
+#define IO_RXD2 16
+#define IO_TXD2 17
+#define IO_PM_ACTIVE 35
+#define HWKBD_CLK 25
 #define HWKBD_RST 26
 #define HWKBD_CLK 25
 #define HWKBD_DATA 33
@@ -29,9 +35,11 @@
 #define HWKBDLED_CLK 27
 
 #define SERIAL_HARD_BAUD_RATE 115200
+#define SERIAL2_BAUD_RATE 19200
 
 class IOManager{
   public:
+    bool isAsleep = false;
     volatile bool HWKeyboardConnected = false;
     volatile unsigned long lastInput = 0;
     unsigned long init();
@@ -47,6 +55,8 @@ class IOManager{
     inline void keepAwake(){
       lastInput = millis();
     };
+    void sleepOn();
+    void sleepOff();
 };
 
 #endif // IOMANAGER_HPP

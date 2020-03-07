@@ -19,6 +19,18 @@
 #define _HUGE_POS_INTEGER_  8000000000000000000
 #define _HUGE_NEG_INTEGER_  -8000000000000000000
 
+//#define _NOT_AN_ID_ 0
+//#define _UNKNOWN_ID_ 1
+//#define _CONSTANT_ 2
+//#define _VARIABLE_ 3
+//#define _KEYWORD_ 4
+
+//
+// Encapsulates number parsing
+// An integer starts with a digit and contains only digits
+// A hexadecimal starts with 0x and contains only hexadecimal digits 0-E
+// A real starts with a digit or . and contains digits, e+/-
+//
 class NumberParser{
   public:
     byte result = _NOT_A_NUMBER_;
@@ -28,8 +40,17 @@ class NumberParser{
   private:
     double _dValue = 0.0;           
     int64_t _iValue = 0L;
-    byte *_processMultiplier(byte *ptr, double v, double mult);
-    byte *_processMultiplier(byte *ptr, int64_t v, double mult);
+    byte *_processMultiplier(byte *ptr, double v, int8_t mult);
+    byte *_processMultiplier(byte *ptr, int64_t v, int8_t mult);
+    int8_t _locateMultiplier(byte b);
+    byte *_parseHex( byte *ptr);
+};
+
+class NameParser{
+  public:
+    bool result = false;
+    byte *parse( byte *str);
+  private:
 };
 
 class Keyword{

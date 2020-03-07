@@ -31,7 +31,6 @@
 */
 
 /////////////////////////////////////////////////////
-
 //
 // This implementation is for ESP32 Dev Module
 //
@@ -42,21 +41,44 @@
 // 03 - RX0
 // 04 - SD insert sensor (DET_A)
 // 05 - VSPI CSO - SD Select (DAT3)
+//
+// 06 - NA (Dev module not exposing)
+// 07 - NA (Dev module not exposing)
+// 08 - NA (Dev module not exposing)
+// 09 - NA (Dev module not exposing)
+// 10 - NA (Dev module not exposing)
+// 11 - NA (Dev module not exposing)
+//
 // 12 - HSPI MISO LCD Data (R/W)
 // 13 - HSPI MOSI LCD Reset (RESET)
 // 14 - HSPI CLK LCD Clock (E)
 // 15 - HSPI CSO LCD Select (RS)
-// 16 - LCD POWER (this model does not have sleep)
-// 17 - LCD LED PWM
+// 16 - RX2 (serial to Pro Micro 8) Note Pro Micro 14, 15, 16 are SPI/burn
+// 17 - TX2 (serial to Pro Micro 9)
 // 18 - VSPI CLK - SD Clock (CLK)
 // 19 - VSPI MISO - SD out (DAT0)
+//
+// 20 - NA (Dev module not exposing)
+//
+// 21 - LCD LED PWM
+// 22 - LCD POWER (this model does not have sleep)
 // 23 - VSPI MOSI - SD command (CMD)
+//
+// 24 - NA (Dev module not exposing)
+//
 // 25 - KBD CLK
 // 26 - KBD RST
 // 27 - KBD_LED CLK
+
+// 28 - NA (Dev module not exposing)
+// 29 - NA (Dev module not exposing)
+// 30 - NA (Dev module not exposing)
+// 31 - NA (Dev module not exposing)
+
 // 32 - KBD_LED RST
 // 33 - KBD DATA
 // 34 - POWER ON/OFF
+// 35 - (input only) Pro Micro active
 //
 
 #define __DEBUG

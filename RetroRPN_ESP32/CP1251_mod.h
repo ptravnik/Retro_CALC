@@ -33,5 +33,6 @@
 #define _ZERO_      48
 #define _COLON_     58
 #define _DEL_      127
+#define _PLSMNS_   177
 
 #endif

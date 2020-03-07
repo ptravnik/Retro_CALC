@@ -30,7 +30,10 @@ unsigned long IOManager::init() {
                      HWKBDLED_RST, HWKBDLED_CLK, &hwEncoder);
   Serial.begin(SERIAL_HARD_BAUD_RATE);
   #endif
+  Serial2.begin(SERIAL2_BAUD_RATE, SERIAL_8N1, IO_RXD2, IO_TXD2);
+  while( Serial2.available()) Serial2.read();
   HWKeyboardConnected = hwKeyboard.isConnected;
+  pinMode(IO_PM_ACTIVE, INPUT); 
   keepAwake();
   return lastInput;
 }
@@ -93,6 +96,15 @@ char IOManager::input(){
     keepAwake();
     return c;
   }
+  if( digitalRead(IO_PM_ACTIVE) && Serial2.available()){
+    c = Serial2.read();
+    #ifdef __DEBUG
+    Serial.print( "VT100 Serial 2: code=");
+    Serial.println( c, HEX);
+    #endif
+    keepAwake();
+    return c;
+  }
   return 0;
 }
 
@@ -101,6 +113,32 @@ void IOManager::sendToSerials( char *unicodeBuff, byte *message, bool cr){
     convertToUTF8( unicodeBuff, message);
   if( cr) Serial.println(unicodeBuff);
   else Serial.print(unicodeBuff);
+  if( digitalRead(IO_PM_ACTIVE)){
+    if( cr) Serial2.println(unicodeBuff);
+    else Serial2.print(unicodeBuff);    
+  }
   keepAwake();
   return;
+}
+
+//
+// Brings io devices to low power mode
+//
+void IOManager::sleepOn(){
+  if( isAsleep) return;
+  Serial.end();
+  Serial2.end();
+  isAsleep = true;
+}
+
+//
+// Wakes io devices up
+//
+void IOManager::sleepOff(){
+  if( !isAsleep) return;
+  Serial.begin(SERIAL_HARD_BAUD_RATE);
+  while( Serial.available()) Serial.read();
+  Serial2.begin(SERIAL2_BAUD_RATE, SERIAL_8N1, IO_RXD2, IO_TXD2);
+  while( Serial2.available()) Serial2.read();
+  isAsleep = false;
 }

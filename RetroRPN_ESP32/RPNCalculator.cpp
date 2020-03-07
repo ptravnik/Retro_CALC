@@ -17,19 +17,21 @@
 
 static NumberParser np;
 
-const char RPN_StatusMessage[] PROGMEM = "    ~ RPN Mode ~";
+const char RPN_StatusMessage[] PROGMEM = "RPN Ready";
 const char RPN_RegName1[] PROGMEM = "x:";
 const char RPN_RegName2[] PROGMEM = "y:";
 const char RPN_RegName3[] PROGMEM = "z:";
 const char RPN_Prompt[] PROGMEM = "> ";
 const char RPN_Error_DivZero[] PROGMEM = "Error: div 0";
+const char RPN_Error_Complex[] PROGMEM = "Complex: \xb1i";
 const char *const RPN_Message_Table[] PROGMEM = {
   RPN_StatusMessage,
   RPN_RegName1,
   RPN_RegName2,
   RPN_RegName3,
   RPN_Prompt,
-  RPN_Error_DivZero
+  RPN_Error_DivZero,
+  RPN_Error_Complex,
   };
 
 //
@@ -67,7 +69,7 @@ void RPNCalculator::show(){
   _lcd->wordWrap = false;
   _lcd->scrollLock = true;
   _lcd->clearScreen( _SP_, false);
-  _lcd->invertRow(0, true);
+  _lcd->invertRow(6, true);
   resetRPNLabels();
   setStackRedraw();
 }
@@ -76,7 +78,7 @@ void RPNCalculator::show(){
 // Redraws the number area
 //
 void RPNCalculator::redraw() {
-  byte lineNums[] = {0, 5, 3, 1}; 
+  byte lineNums[] = {6, 4, 2, 0}; 
   for(byte i=0; i<4; i++){
     if( !_messageRedrawRequired[i]) continue;
     _messageRedrawRequired[i] = false;
@@ -84,7 +86,7 @@ void RPNCalculator::redraw() {
     _lcd->sendString( _messages[i]);
     _lcd->clearToEOL();
   }
-  for(byte i=0, j=6; i<3; i++, j-=2){
+  for(byte i=0, j=5; i<3; i++, j-=2){
     if( !_stackRedrawRequired[i]) continue;
     _stackRedrawRequired[i] = false;
     _lcd->clearLine( j);
@@ -110,7 +112,6 @@ void RPNCalculator::updateIOM( bool refresh) {
   if( !refresh) return;
   char *buff = _lcd->getUnicodeBuffer();
   byte *ptr = (byte *)buff;
-  _iom->sendToSerials( buff, _messages[0]);
   for( byte i=3; i>0; i--){
     _iom->sendToSerials( buff, _messages[i]);
     size_t len = convertDouble( rpnStack[i-1], ptr, _precision, _force_scientific) - ptr;
@@ -118,6 +119,7 @@ void RPNCalculator::updateIOM( bool refresh) {
     for( byte j=0; j<SCR_RIGHT-len; j++) _iom->sendToSerials( " ");
     _iom->sendToSerials( buff, NULL, true);
   }
+  _iom->sendToSerials( buff, _messages[0]);
   _iom->sendToSerials( (char *)RPN_Message_Table[4]);
 }
 
@@ -220,6 +222,12 @@ void RPNCalculator::processCommand(byte c){
         return;
       case '/':
         divide();
+        return;
+      case '^':
+        power();
+        return;
+      case _PLSMNS_:
+        signchange();
         return;
     default:
       processEntry(c);
@@ -332,6 +340,88 @@ void RPNCalculator::processInput() {
     _clearInput();
     return;
   }
+  if( IsToken( _input, "hex", false)){
+    convert0xH( rpnStack[0], _input);
+    cursor_column = strlen(_input);
+    display_starts = 0;
+    _iom->sendToSerials( _lcd->getUnicodeBuffer(), _input);
+    return;
+  }
+  if( IsToken( _input, "sin", false)){
+    previous_X = rpnStack[0];
+    rpnStack[0] = sin( rpnStack[0]);
+    _stackRedrawRequired[ 0] = true;
+    _clearInput();
+    updateIOM(true);
+    return;
+  }
+  if( IsToken( _input, "cos", false)){
+    previous_X = rpnStack[0];
+    rpnStack[0] = cos( rpnStack[0]);
+    _stackRedrawRequired[ 0] = true;
+    _clearInput();
+    updateIOM(true);
+    return;
+  }
+  if( IsToken( _input, "tan", false)){
+    previous_X = rpnStack[0];
+    rpnStack[0] = tan( rpnStack[0]);
+    _stackRedrawRequired[ 0] = true;
+    _clearInput();
+    updateIOM(true);
+    return;
+  }
+  if( IsToken( _input, "exp", false)){
+    previous_X = rpnStack[0];
+    rpnStack[0] = exp( rpnStack[0]);
+    _stackRedrawRequired[ 0] = true;
+    _clearInput();
+    updateIOM(true);
+    return;
+  }
+  if( IsToken( _input, "sqrt", false)){
+    previous_X = rpnStack[0];
+    if(rpnStack[0] < 0.0){
+      setRPNLabel( 0, RPN_Message_Table[6]);
+      rpnStack[0] = -rpnStack[0]; 
+    }
+    rpnStack[0] = sqrt( rpnStack[0]);
+    _stackRedrawRequired[ 0] = true;
+    _clearInput();
+    updateIOM(true);
+    return;
+  }
+  if( IsToken( _input, "sq", false)){
+    previous_X = rpnStack[0];
+    rpnStack[0] *= rpnStack[0];
+    _stackRedrawRequired[ 0] = true;
+    _clearInput();
+    updateIOM(true);
+    return;
+  }
+  if( IsToken( _input, "sign", false)){
+    previous_X = rpnStack[0];
+    if( rpnStack[0]==0) rpnStack[0]=0;
+    else
+      rpnStack[0] = (rpnStack[0]<0)? -1: 1;
+    _stackRedrawRequired[ 0] = true;
+    _clearInput();
+    updateIOM(true);
+    return;
+  }
+  if( IsToken( _input, "inv", false)){
+    _clearInput();
+    if( -1e-300 < rpnStack[0] && rpnStack[0] < 1e-300){
+      setRPNLabel( 0, RPN_Message_Table[5]);
+      setStackRedraw();
+      updateIOM(true);
+      return;    
+    }
+    previous_X = rpnStack[0];
+    rpnStack[0] = 1.0 / rpnStack[0];
+    _popPartial();
+    updateIOM(true);
+  }
   np.parse(_input);  
   if( np.result != _NOT_A_NUMBER_){
     for(byte i=RPN_STACK-1; i>0; i--)
@@ -375,7 +465,7 @@ void RPNCalculator::swap(bool refresh) {
 }
 void RPNCalculator::roll(bool refresh) {
   double tmp = rpnStack[RPN_STACK-1];
-  push();
+  push(true);
   rpnStack[0] = tmp;
   updateIOM(refresh);
 }
@@ -383,6 +473,7 @@ void RPNCalculator::prev(bool refresh) {
   for(byte i=RPN_STACK-1; i>0; i--)
     rpnStack[i] = rpnStack[i-1];
   rpnStack[0] = previous_X;
+  setStackRedraw();
   updateIOM(refresh);
 }
 void RPNCalculator::add(bool refresh) {
@@ -405,12 +496,60 @@ void RPNCalculator::multiply(bool refresh) {
 }
 void RPNCalculator::divide(bool refresh) {
   if( -1e-300 < rpnStack[0] && rpnStack[0] < 1e-300){
-    setRPNLabel( 1, RPN_Message_Table[5]);
+    setRPNLabel( 0, RPN_Message_Table[5]);
+    setStackRedraw();
     updateIOM(refresh);
     return;    
   }
   previous_X = rpnStack[0];
   rpnStack[0] = rpnStack[1] / rpnStack[0];
+  _popPartial();
+  updateIOM(refresh);
+}
+void RPNCalculator::signchange(bool refresh) {
+  previous_X = rpnStack[0];
+  rpnStack[0] = -rpnStack[0];
+  _stackRedrawRequired[ 0] = true;
+  updateIOM(refresh);
+}
+void RPNCalculator::power(bool refresh) {
+  previous_X = rpnStack[1];
+  //_messages
+  // power zero: using "1 convention"
+  if( rpnStack[0] == 0.0){
+    rpnStack[0] == 1.0;
+    _popPartial();
+    updateIOM(refresh);
+    return;
+  }
+  // positive power of zero: zero
+  if( rpnStack[0] > 0.0 && rpnStack[1] > 0.0){
+    rpnStack[0] == 0.0;
+    _popPartial();
+    updateIOM(refresh);
+    return;
+  }
+  // negative power of zero: div by zero
+  if( rpnStack[0] > 0.0 && rpnStack[1] > 0.0){
+    setRPNLabel( 0, RPN_Message_Table[5]);
+    setStackRedraw();
+    updateIOM(refresh);
+    return;
+  }
+  rpnStack[0] = pow( rpnStack[1], rpnStack[0]);
+//  // whole power
+//  byte *ptr = _lcd->getUnicodeBuffer();
+//  convertDouble( rpnStack[0], ptr, 3, false);
+//  np.parse(ptr);
+//  if(np.result == _INTEGER_ && np.integerValue()<64 && np.integerValue()>-64){
+//    int
+//  }
+  
+//  if( -1e-300 < rpnStack[0] && rpnStack[0] < 1e-300){
+//    setRPNLabel( 0, RPN_Message_Table[5]);
+//    updateIOM(refresh);
+//    return;    
+//  }
   _popPartial();
   updateIOM(refresh);
 }
@@ -456,7 +595,7 @@ void RPNCalculator::processBS() {
 // process other buttons 
 //
 void RPNCalculator::processESC() {
-  setRPNLabel( 1, "");
+  setRPNLabel( 0, "");
   _clearInput();
 }
 

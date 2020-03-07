@@ -11,6 +11,11 @@
 
 #define __DEBUG
 
+const byte _multiplier_Prefixes[] PROGMEM = 
+   { 'f', 'p', 'n', 'u', 'm', 'c', 'd', 'k', 'M', 'G', 'T', 'P'};
+const int8_t _multiplier_Values[] PROGMEM = 
+   { -15, -12,  -9,  -6,  -3,  -2,  -1,   3,   6,   9,  12,  15};
+
 //
 // Number parser components
 //
@@ -45,72 +50,72 @@ int64_t NumberParser::integerValue(){
 // or at the origin if not parsed correctly
 //
 byte *NumberParser::parse( byte *str){
+  #ifdef __DEBUG
   Serial.print("Parsing: [");
   Serial.print((char*)str);
-  Serial.println("]");  
+  Serial.println("]");
+  #endif  
   byte logical_position = 0; // 0-whole, 1-decmal, 2-exponent, 3-exp number
   result = _NOT_A_NUMBER_;
   byte *ptr = str;
   _dValue = 0.0;           
   _iValue = 0L;
+  int8_t nExp = 0;
+  
+  // skip empty space
   while( IsSpacer(*ptr)) ptr++;
-  if( !isDigit(*ptr) && *ptr != '.')
+  if( !IsDigitOrDecimal(*ptr))
     return ptr;
+  str = ptr;
+
+  // check if hexadecimal
+  if( *str == _ZERO_ && str[1] == 'x' && convertHex(str[2])<16)
+    return _parseHex( str);
+
+  // parse the integer part  
   while( isDigit(*ptr)){
     _iValue *= 10;
     _iValue += (*ptr++)-_ZERO_;
   }
+
+  // a number may end on a decimal point, E,
+  // an engineering mulitiplier, or number end
   switch(*ptr){
     case _NUL_:
       result = _INTEGER_;
       return ptr;
     case '.':
-      _processMultiplier( ++ptr, _iValue, 1.0);
+      _processMultiplier( ++ptr, _iValue, 0);
       logical_position = 1;
       break;
     case 'e':
     case 'E':
-      _processMultiplier( ++ptr, _iValue, 1.0);
+      _processMultiplier( ++ptr, _iValue, 0);
       logical_position = 2;
       break;
-    case 'f':
-      return _processMultiplier( ++ptr, _iValue, 1e-15);
-    case 'p':
-      return _processMultiplier( ++ptr, _iValue, 1e-12);
-    case 'n':
-      return _processMultiplier( ++ptr, _iValue, 1e-9);
-    case 'u':
-      return _processMultiplier( ++ptr, _iValue, 1e-6);
-    case 'm':
-      return _processMultiplier( ++ptr, _iValue, 1e-3);
-    case 'c':
-      return _processMultiplier( ++ptr, _iValue, 1e-2);
-    case 'd':
-      return _processMultiplier( ++ptr, _iValue, 0.1);
-    case 'k':
-      return _processMultiplier( ++ptr, _iValue, 1e3);
-    case 'M':
-      return _processMultiplier( ++ptr, _iValue, 1e6);
-    case 'G':
-      return _processMultiplier( ++ptr, _iValue, 1e9);
-    case 'T':
-      return _processMultiplier( ++ptr, _iValue, 1e12);
-    case 'P':
-      return _processMultiplier( ++ptr, _iValue, 1e15);
     default:
-      if( IsNumberTerm(*ptr)) result = _INTEGER_;
+      nExp = _locateMultiplier(*ptr);
+      if( nExp != 0)
+        return _processMultiplier( ++ptr, _iValue, nExp);
+      if( !IsNumberTerm(*ptr)) return str; // parsing failed!
+      result = _INTEGER_;
       return ptr;   
   }
+
+  // process decimals;
+  // the allowed are digits, E,
+  // an engineering mulitiplier, or number end
+  // the second decimal point causes an error
   double mult = 0.1;
   while( logical_position == 1){
     switch(*ptr){
       case _NUL_:
         result = _REAL_;
         return ptr;
-      case '.': // second decimal not allowed
+      case '.': // second decimal point is not allowed
         result = _NOT_A_NUMBER_;
         _dValue = 0.0;           
-        return ptr;
+        return str;
       case '0':
       case '1':
       case '2':
@@ -129,38 +134,19 @@ byte *NumberParser::parse( byte *str){
         logical_position = 2;
         ptr++;
         break;
-      case 'f':
-        return _processMultiplier( ++ptr, _dValue, 1e-15);
-      case 'p':
-        return _processMultiplier( ++ptr, _dValue, 1e-12);
-      case 'n':
-        return _processMultiplier( ++ptr, _dValue, 1e-9);
-      case 'u':
-        return _processMultiplier( ++ptr, _dValue, 1e-6);
-      case 'm':
-        return _processMultiplier( ++ptr, _dValue, 1e-3);
-      case 'c':
-        return _processMultiplier( ++ptr, _dValue, 1e-2);
-      case 'd':
-        return _processMultiplier( ++ptr, _dValue, 0.1);
-      case 'k':
-        return _processMultiplier( ++ptr, _dValue, 1e3);
-      case 'M':
-        return _processMultiplier( ++ptr, _dValue, 1e6);
-      case 'G':
-        return _processMultiplier( ++ptr, _dValue, 1e9);
-      case 'T':
-        return _processMultiplier( ++ptr, _dValue, 1e12);
-      case 'P':
-        return _processMultiplier( ++ptr, _dValue, 1e15);
       default:
+        nExp = _locateMultiplier(*ptr);
+        if( nExp != 0)
+          return _processMultiplier( ++ptr, _dValue, nExp);
         if( !IsNumberTerm(*ptr)){
           result = _NOT_A_NUMBER_;
           _dValue = 0.0;
+          return str; // parsing failed!
         }           
         return ptr;   
     }      
   }
+  
   // after E, must be only +, -, or digit
   bool exponent_negative = false;
   switch(*ptr){
@@ -182,14 +168,16 @@ byte *NumberParser::parse( byte *str){
       if( !IsDigit(*ptr)){
         result = _NOT_A_NUMBER_;
         _dValue = 0.0;
-        return ptr;        
+        return str; // parsing failed!      
       }
       break;
     default:
       result = _NOT_A_NUMBER_;
       _dValue = 0.0;
-      return ptr;
+      return str; // parsing failed!
   }
+
+  // finally, the exponent digits
   #ifdef __DEBUG
   Serial.println("Exponents:");
   #endif
@@ -210,17 +198,41 @@ byte *NumberParser::parse( byte *str){
     _dValue /= pow( 10.0, exponent_value);
   else
     _dValue *= pow( 10.0, exponent_value);
-  return ptr;
+  return ptr; // parsing success
 }
 
-byte *NumberParser::_processMultiplier(byte *ptr, double v, double mult){
+byte *NumberParser::_processMultiplier(byte *ptr, double v, int8_t mult){
   result = _REAL_;
-  _dValue = mult * v;
+  _dValue = pow( 10, mult) * v;
   return ptr;  
 }
-byte *NumberParser::_processMultiplier(byte *ptr, int64_t v, double mult){
+byte *NumberParser::_processMultiplier(byte *ptr, int64_t v, int8_t mult){
   result = _REAL_;
-  _dValue = mult * v;
+  _dValue = pow( 10, mult) * v;
   _iValue = 0;
   return ptr;  
+}
+int8_t NumberParser::_locateMultiplier(byte b){
+  for( byte i=0; i<12; i++){
+    if( _multiplier_Prefixes[i] == b)
+        return _multiplier_Values[i];
+  }
+  return 0; 
+}
+byte *NumberParser::_parseHex( byte *str){
+  // skip first two digits
+  byte *ptr = str+2;
+  byte tmp = convertHex(*ptr); 
+  while( tmp < 16){
+    _iValue <<= 4;
+    _iValue += tmp;
+    ptr++;
+    tmp = convertHex(*ptr);
+  }
+  if( !IsNumberTerm(*ptr)){
+    _iValue = 0;
+    return str;
+  }
+  result = _INTEGER_;
+  return ptr;
 }

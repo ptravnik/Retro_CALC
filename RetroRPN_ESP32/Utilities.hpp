@@ -34,6 +34,19 @@ inline bool IsDigit(char b){
 };
 
 //
+// Returns true if a hexadecimal digit
+//
+inline byte convertHex(byte b){
+  if(48<=b && b<=57) return b-48;  // 0-9
+  if(97<=b && b<=102) return b-87; // a-e converts to 10-15
+  if(65<=b && b<=70) return b-55;  // A-E converts to 10-15
+  return 16; // impossible  
+};
+inline byte convertHex(char b){
+  convertHex((byte)b);
+};
+
+//
 // Returns true if a digit or decimal
 //
 inline bool IsDigitOrDecimal(byte b){
@@ -92,5 +105,12 @@ inline size_t strlen( byte *t){
 // Returns a ponter to the end of converted string.
 //
 byte *convertDouble( double n, byte *buff, byte precision=8, bool force_sci=true);
+
+//
+// Converts a hexadecimal
+// Note that the buffer length must be sufficient to acommodate the digits
+// Returns a ponter to the end of converted string
+//
+byte *convert0xH( double n, byte *buff);
 
 #endif // UTILITIES_HPP

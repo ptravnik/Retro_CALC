@@ -56,6 +56,8 @@ class RPNCalculator{
     void subtract( bool refresh=true);
     void multiply( bool refresh=true);
     void divide( bool refresh=true);
+    void power( bool refresh=true);
+    void signchange( bool refresh=true);
     void loadState();
     void saveState();
   private:

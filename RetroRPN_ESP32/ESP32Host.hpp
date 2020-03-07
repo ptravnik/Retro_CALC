@@ -11,13 +11,15 @@
 //
 // 01 - TX0
 // 03 - RX0
+// 16 - RX2 (serial to Pro Micro 8) Note Pro Micro 14, 15, 16 are SPI/burn
+// 17 - TX2 (serial to Pro Micro 9)
 // 25 - KBD CLK
 // 26 - KBD RST
-// 27 - LED CLK
-// 32 - LED RST
+// 27 - KBD_LED CLK
+// 32 - KBD_LED RST
 // 33 - KBD DATA
 // 34 - POWER ON/OFF
-//
+// 35 - (input only) Pro Micro active
 
 #ifndef ESP32HOST_HPP
 #define ESP32HOST_HPP
@@ -26,8 +28,6 @@
 #define SCREEN_LED_PERIOD  60000
 #define SCREEN_OFF_PERIOD 180000
 #define POWER_OFF_PERIOD  720000
-
-#define SERIAL_HARD_BAUD_RATE 115200
 
 #include <Arduino.h>
 #include "Utilities.hpp"

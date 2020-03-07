@@ -11,6 +11,9 @@
 
 //#define __DEBUG
 
+const byte _hexadigits[] PROGMEM = 
+   { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'x'};
+
 bool IsSpacer(byte b){
   if( b == _SP_) return true;
   if( b == _TAB_) return true;
@@ -77,6 +80,8 @@ char *convertToUTF8( char *buff, byte *message){
 }
 char *convertToUTF8( char *buff, byte c){
   if( c < 128) return _setDuplet(buff, c);
+  if( c == _PLSMNS_)
+    return _setDuplet( _setTriplet(buff, '+', '/'), '-');
   if( c == 0xB8) return _setTriplet(buff, 0xD1, 0x91);
   if( c == 0xA8) return _setTriplet(buff, 0xD0, 0x81);
   if( c >= 0xF0) return _setTriplet(buff, 0xD1, c - 0x70);
@@ -238,6 +243,43 @@ byte *convertDouble( double n, byte *buff, byte precision, bool force_sci){
   if( buff[i] == '.') i--;
   buff += i+1;
   *buff = _NUL_;
+  return buff;
+}
+
+byte *convert0xH( double n, byte *buff){
+  *buff++ = _ZERO_;
+  *buff++ = _hexadigits[16];
+  if(n>9.223372036e18){
+    *buff++ = _hexadigits[7];
+    for(byte i=0; i<15; i++) *buff++ = _hexadigits[15];
+    *buff = _NUL_;
+    return buff;  
+  }
+  if(n<-9.223372036e18){
+    for(byte i=0; i<16; i++) *buff++ = _hexadigits[15];
+    *buff = _NUL_;
+    return buff;  
+  }
+  uint64_t tmp = (uint64_t)((n<0)? pow(2,64)-n-1: n);
+  if( tmp == 0){ // show at least a zero!
+    *buff++ = _hexadigits[0];
+    *buff++ = _hexadigits[0];
+    *buff = _NUL_;
+    return buff;      
+  }
+  // a 64-bit integer may contain 16 hex numbers plus the trailing zero
+  int8_t i = 16;
+  buff[i--] = _NUL_;
+  while(tmp > 0 && i>=0){
+    buff[i--] = _hexadigits[ tmp & 0x0f];
+    tmp >>= 4; 
+  }
+  i++;
+  while(1){ // shift to shorten the number
+    *buff = buff[i];
+    if(*buff == _NUL_) break;  
+    buff++;
+  }
   return buff;
 }
 

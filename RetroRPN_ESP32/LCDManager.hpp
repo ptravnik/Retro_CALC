@@ -17,6 +17,13 @@
 // 17 - LCD LED PWM
 //
 
+// 12 - HSPI MISO LCD Data (R/W)
+// 13 - HSPI MOSI LCD Reset (RESET)
+// 14 - HSPI CLK LCD Clock (E)
+// 15 - HSPI CSO LCD Select (RS)
+// 21 - LCD LED PWM
+// 22 - LCD POWER (this model does not have sleep)
+
 #ifndef LCDMANAGER_HPP
 #define LCDMANAGER_HPP
 
@@ -30,8 +37,8 @@
 #define LCD_RESET          13
 #define LCD_CLOCK          14
 #define LCD_CS             15
-#define LCD_POWER_PIN      16
-#define LCD_LED_PIN        17
+#define LCD_POWER_PIN      22
+#define LCD_LED_PIN        21
 
 // use first channel of 16 channels (started from zero)
 // use 13 bit precission for LEDC timer
