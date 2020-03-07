@@ -1,0 +1,35 @@
+ESP32 Dev module pins:
+
+// 01 - TX0
+// 02 - In-built LED (SD activity)
+// 03 - RX0
+// 04 - SD insert sensor (DET_A)
+// 05 - VSPI CSO - SD Select (DAT3)
+// 06 to 11 - NA (Dev module not exposing)
+// 12 - HSPI MISO LCD Data (R/W)
+// 13 - HSPI MOSI LCD Reset (RESET)
+// 14 - HSPI CLK LCD Clock (E)
+// 15 - HSPI CSO LCD Select (RS)
+// 16 - RX2 (serial to Pro Micro PIN 8)
+// 17 - TX2 (serial to Pro Micro PIN 9)
+// 18 - VSPI CLK - SD Clock (CLK)
+// 19 - VSPI MISO - SD out (DAT0)
+// 20 - NA
+// 21 - LCD LED PWM
+// 22 - LCD POWER (this model does not have sleep)
+// 23 - VSPI MOSI - SD command (CMD)
+// 24 - NA
+// 25 - KBD CLK
+// 26 - KBD RST
+// 27 - KBD_LED CLK
+// 28 to 31 - NA
+// 32 - KBD_LED RST
+// 33 - KBD DATA
+// 34 - POWER ON/OFF
+// 35 - (input only) Pro Micro Alive pin 7
+
+Pro Micro pins:
+
+// 07 - Pro Micro is alive
+// 08, 09 - TX, RX for software serial
+// 10 - optional status pin

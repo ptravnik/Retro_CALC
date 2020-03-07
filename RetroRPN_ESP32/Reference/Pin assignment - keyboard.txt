@@ -1,0 +1,18 @@
+Hardware keyboard interfaces:
+
+Primary J1:
+1 VDD (3 to 15 Volts are OK, the logic level will change correspondingly)
+2 KBD RESET
+3 KBD CLOCK
+4 KBD READ
+5 LED RESET
+6 LED CLOCK
+7 Host RESET
+8 GROUND
+
+J2 is for connecting additional buttons or other devices:
+1 VDD (pass-through from J1)
+2-11 COLUMNS 0-9
+12 ROW 7
+13 ROW 8
+14 GROUND
