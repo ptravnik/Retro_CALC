@@ -38,14 +38,14 @@ The code is partially ported and tested ESP-32 platform. Production PCBs from Ch
 ## To build for Arduino Mega 2560
 1. Tested on Arduino IDE 1.18.10.
 1. Install 3 libraries: [U8g2](https://github.com/ptravnik/Retro_CALC/tree/master/U8g2) for the LCD, [SD2](https://github.com/ptravnik/Retro_CALC/tree/master/SD2), and [HWKbd](https://github.com/ptravnik/Retro_CALC/tree/master/HWKbd) for the keyboard. Alternatively just copy the same into the Arduino libraries folder (will not install the examples).
-1. Make sure the the HWKbd.h has #define HWKBD_FAST_PORTS uncommented.
+1. Make sure the the HWKbd.h has **#define HWKBD_FAST_PORTS** uncommented.
 1. Copy the source, [RetroRPN_Arduino](https://github.com/ptravnik/Retro_CALC/tree/master/RetroRPN_Arduino), to any convenient folder and open with Arduino IDE.
-1. Select the board as **Arduino Mega 2560**, compile and upload as usual.
+1. Select the board as **Arduino Mega or Mega 2560**, processor **ATMega 2560**, compile and upload as usual.
 
 ## To build for ESP32 Dev Board
 1. Tested on Arduino IDE 1.18.10.
 1. Install 2 libraries: [U8g2](https://github.com/ptravnik/Retro_CALC/tree/master/U8g2) for the LCD and [HWKbd](https://github.com/ptravnik/Retro_CALC/tree/master/HWKbd) for the keyboard. Alternatively just copy the same into the Arduino libraries folder (will not install the examples).
-1. Make sure the the HWKbd.h has //#define HWKBD_FAST_PORTS commented out.
+1. Make sure the the HWKbd.h has **//#define HWKBD_FAST_PORTS** commented out.
 1. Copy the source, [RetroRPN_ESP32](https://github.com/ptravnik/Retro_CALC/tree/master/RetroRPN_ESP32), to any convenient folder and open with Arduino IDE.
 1. Select the board as **ESP32 Dev Module**, compile and upload as usual. Dev modile requires you to hold **BOOT** down for security reasons; on my module (v 1) this pin is not exposed, so must be done with the button on the module itself. Your board may have this on GPIO 00 pin - wiring to an external button is recommended.
 
