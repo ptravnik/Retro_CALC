@@ -35,7 +35,7 @@
   
   To set the LEDs, send a pulse to **LED_RESET** and cycle
   **LED_CLOCK** from 0 to 15 times, which corresponds to 16 binary states.
-  Note that the software presimes that no PWM is sent to the keyboard ports!
+  Note that the software presumes that no PWM is sent to the keyboard ports!
 
   ## Software Notes.
   
