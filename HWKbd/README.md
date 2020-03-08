@@ -27,10 +27,12 @@
   1. LED_CLOCK - output, any digital pin
   1. RESET(optional) - connect to Arduino/ESP32 RESET or to ESP32 wake-up GPIO. In the latter case, pull the GPIO up to 3.3V using an external 11k resistor - the GPIO is not powered up in the sleep mode. 
   1. GROUND
+  
   To read the keyboard, send a pulse to KBD_RESET and read
   the first button state from KBD_READ (HIGH means "pressed").
   Then, continue sending pulses on KBD_CLOCK to read buttons
   2, 3, 4, etc.
+  
   To set the LEDs, send a pulse to LED_RESET and cycle
   LED_CLOCK from 0 to 15 times, which corresponds to 16 binary states.
   Note that the software presimes that no PWM is sent to the keyboard ports!
@@ -50,9 +52,13 @@
   
   The key codes are composed of 16-bit integers, 8 numbers per button
   (by the number of modes). The bit pattern is as following:
-  0MMM0000 cccccccc
+  
+  0MMM0000 cccccccc or
+  
   1MMMaaaa aaaaaaaa
-  MMM - the next mode (from 0 to 7)
+  
+  MMM - the next mode (from 000 to 111)
+  
   cccccccc - a single-byte Unicode character (if >128, it is a control character, such as an arrow)
-  aaaaa aaaaaaaaa - a 12-bit shift in the macros table;
-  the latter is composed of null-terminated strings, up to 4k in length.
+  
+  aaaaa aaaaaaaaa - a 12-bit shift in the macros table; the latter is composed of null-terminated strings, up to 4k in length.
