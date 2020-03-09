@@ -1,6 +1,7 @@
 #include <SoftwareSerial.h>
 #include "Keyboard.h"
 #include "Mouse.h"
+#include "CircularBuffer.hpp"
 #include "CP1251_mod.h" 
 
 // Uncomment for debugging
@@ -8,26 +9,20 @@
 //#define __DEBUG_CODES
 
 #define PC_BAUD 115200
-#define SERIAL_BAUD 19200
+#define SERIAL_BAUD 38400
 #define ACTIVITY_TO_ESP32 7
 #define SERIAL_RX 9
 #define SERIAL_TX 8
 #define ACTIVITY_LED 10
-#define INACTIVITY_INTERVAL 2000
+#define INACTIVITY_INTERVAL 1000
 #define BLINK_INTERVAL 100
-#define BLINK_DELAY 30
 
+//#define _SS_MAX_RX_BUFF 256
 SoftwareSerial mySerial(SERIAL_RX, SERIAL_TX);
-
-static volatile bool KeyboardWrite = false;
-static volatile bool KeyboardPress = false;
-static volatile bool KeyboardRelease = false;
-static volatile bool MouseInject = false;
-static volatile char MouseCommands[4]; // buttons, x, y, scroll
-static volatile byte MouseCommandPosition = 0;
 
 static volatile long lastActive = 0;
 static volatile long lastBlinked = 0;
+static volatile bool lit = false;
 
 #define UTF8_BUFFER_LENGTH 64
 static byte UTF8_buffer[UTF8_BUFFER_LENGTH];
@@ -49,31 +44,32 @@ const byte *const _CP1251_substitutes[] PROGMEM = {
   _YO_CAP_SUB, 
   };
 
+static CircularBuffer cb;
+
 //
 // Runs once, upon the power-up
 //
 void setup() {
-  memset( UTF8_buffer, 0, UTF8_BUFFER_LENGTH);
-  Serial.begin(PC_BAUD);
-  while(Serial.available()) Serial.read();
-  mySerial.begin(SERIAL_BAUD);
-  while(mySerial.available()) mySerial.read();
   pinMode( ACTIVITY_TO_ESP32, OUTPUT);
   digitalWrite( ACTIVITY_TO_ESP32, LOW);
   pinMode( ACTIVITY_LED, OUTPUT);
   digitalWrite( ACTIVITY_LED, LOW);
+  Serial.begin(PC_BAUD);
+  mySerial.begin(SERIAL_BAUD);
+  while(Serial.available()) Serial.read();
+  while(mySerial.available()) mySerial.read();
   Mouse.begin();
   Keyboard.begin();
   delay(100);
-  blink_Activity();
-  delay(300);
-  blink_Activity();
-  delay(300);
-  blink_Activity();
+  for( byte i=0; i<3; i++){
+    digitalWrite( ACTIVITY_LED, HIGH);
+    delay(30);
+    digitalWrite( ACTIVITY_LED, LOW);
+    delay(50); 
+  }
   lastActive = millis();
   // permission to communicate granted to ESP32
   digitalWrite( ACTIVITY_TO_ESP32, HIGH);
-  return;
 }
 
 //
@@ -81,92 +77,49 @@ void setup() {
 //
 void loop() {
   char c = 0;
+  long t = millis();
   blink_Activity();
   if( Serial.available()){
-    lastActive = millis();
+    lastActive = t;
     c = Serial.read();
     if( c != 0)
       sendToESP32Serial(c);
   }
-  if( mySerial.available()){
-    lastActive = millis();
+  while( mySerial.available()){
     c = mySerial.read();
-    if( !sendToPCKeyboard(c))
-      sendToPCSerial(c);
+    if( !sendToPCKeyboard(c) && c!=0)
+      cb.push(c);
+  }
+  while( cb.available()){
+    lastActive = t;
+    Serial.write(cb.pop());
   }
 
   // Eliminate unwanted Tx, Rx lights
   //RXLED1;
   //TXLED1;
-  return;
 }
 
 //
-// blinks external LED briefly
-// only if the serial ports show any activity
+// blinks external LED only if the serial ports
+// show any activity
 //
 void blink_Activity(){
   long t = millis();
   if( t - lastActive > INACTIVITY_INTERVAL){
-    lastBlinked = t;
+    if(lit){
+      lit = false;
+      digitalWrite( ACTIVITY_LED, lit);
+      lastBlinked = t;
+    }  
     return;
   }
-  if( t - lastBlinked < BLINK_INTERVAL) return; 
-  digitalWrite( ACTIVITY_LED, HIGH);  
-  delay( BLINK_DELAY);
-  digitalWrite( ACTIVITY_LED, LOW);
-  lastBlinked = millis();
+  if( t - lastBlinked < BLINK_INTERVAL) return;
+  lit = !lit;
+  digitalWrite( ACTIVITY_LED, lit);  
+  lastBlinked = t;
 }
 
-//
-// Converts a character from CP1251 into Unicode
-// (e.g. for printing via UTF8 console)
-//
-char *_setDuplet( byte *buff, byte c){
-  *buff++ = c;
-  *buff = _NUL_;
-  return (char *)buff;  
-}
-char *_setTriplet( byte *buff, byte prefix, byte c){
-  *buff++ = prefix;
-  *buff++ = c;
-  *buff = _NUL_;
-  return buff;  
-}
-char *_setMacro( byte *buff, const char *macro){
-  for( byte i=0; i<UTF8_BUFFER_LENGTH-1; i++){
-    char c = pgm_read_byte_near(macro + i);
-    if( c == 0) break;
-    *buff++ = c;
-  }
-  *buff = _NUL_;
-  return (char *)buff; 
-}
-char *convertToUTF8( byte *buff, byte c){
-  if( c < 128) return _setDuplet(buff, c);
-  for( byte i=0; i<N_SUBS; i++){
-    if( c == pgm_read_byte_near(_CP1251_bytes + i))
-      return _setMacro( buff, _CP1251_substitutes[i]);
-    }
-  if( c >= 0xF0) return _setTriplet(buff, 0xD1, c - 0x70); // small alpha
-  if( c >= 0xC0) return _setTriplet(buff, 0xD0, c - 0x30); // large alpha
-  return _setTriplet(buff, 0xD1, c);
-}
-
-//
-// Sends characters to PC serial port
-// Returns the number of chars sent
-//
-byte sendToPCSerial(char c){
-  *UTF8_buffer = _NUL_; 
-  convertToUTF8(UTF8_buffer, (byte)c);
-  char *ptr = (char *)UTF8_buffer;
-  for( byte i=0; i<UTF8_BUFFER_LENGTH; i++){
-    if( *ptr == _NUL_) return i;
-    Serial.write( *ptr++);
-  }
-  return UTF8_BUFFER_LENGTH-1;
-}
 
 //
 // Converts the keyboard injection command
@@ -178,9 +131,9 @@ bool sendToPCKeyboard( char c){
   return processMouseInject();
 }
 bool processKbdInject(){
-  for( byte i=0; i<10; i++){
+  for( byte i=0; i<100; i++){
     if( !mySerial.available()){
-      delay(10);
+      delay(2);
       continue;
     }
     byte c = (byte)mySerial.read();
@@ -192,9 +145,9 @@ bool processKbdInject(){
   return false;
 }
 bool processMouseInject(){
-  for( byte i=0; i<10; i++){
+  for( byte i=0; i<100; i++){
     if( !mySerial.available()){
-      delay(10);
+      delay(2);
       continue;
     }
     byte c = (byte)mySerial.read();
@@ -374,9 +327,9 @@ byte sendToESP32Serial(char cc){
   return 0;
 }
 bool readNonlocking(byte *ptr){
-  for( byte i=0; i<10; i++){
+  for( byte i=0; i<100; i++){
     if( !Serial.available()){
-      delay(10);
+      delayMicroseconds(100);
       continue;
     }
     *ptr++ = (byte)Serial.read();
