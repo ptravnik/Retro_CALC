@@ -30,9 +30,9 @@
     User "Dita Schop" (Arduino RPN calc)
 */
 
-/////////////////////////////////////////////////////
+////////////////////////////////////////////////////////
 //
-// This implementation is for ESP32 Dev Module
+// This implementation is for ESP32 Dev Module version 1
 //
 // Pin assignment:
 //
@@ -80,14 +80,18 @@
 // 34 - POWER ON/OFF
 // 35 - (input only) Pro Micro active
 //
+////////////////////////////////////////////////////////
 
-#define __DEBUG
+//#define __DEBUG
 
 #include "ESP32Host.hpp"
 
 static ESP32Host host;
 
 void setup(void) {
+  Serial.begin(SERIAL_HARD_BAUD_RATE); // this is to prevent garbage at start-up
+  delay(120);
+  while( Serial.available()) Serial.read();
   #ifdef __DEBUG
   unsigned long dt = millis();  
   dt = host.init() - dt;
@@ -100,5 +104,5 @@ void setup(void) {
 }
 
 void loop(void) {
-  host.tick();  
+  host.tick();
 }

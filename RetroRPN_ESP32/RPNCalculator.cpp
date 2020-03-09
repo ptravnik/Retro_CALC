@@ -50,19 +50,16 @@ unsigned long RPNCalculator::init(IOManager *iom, LCDManager *lcd, SDManager *sd
   memset(_inputPrevious, (byte)0, INPUT_COLS);
   setStackRedraw();
   for( byte i=0; i<RPN_STACK; i++) rpnStack[i] = 0.0;
-  _iom->keepAwake();
-  return _iom->lastInput;
+  return _iom->keepAwake();
 }
 
 unsigned long RPNCalculator::tick(){
   char c = _iom->input();
   if(c == _NUL_){
-    delay(50);
     return millis();
   }
   sendChar((byte)c);
-  _iom->keepAwake();
-  return _iom->lastInput;
+  return _iom->keepAwake();
 }
 
 void RPNCalculator::show(){
@@ -70,12 +67,13 @@ void RPNCalculator::show(){
   _lcd->scrollLock = true;
   _lcd->clearScreen( _SP_, false);
   _lcd->invertRow(6, true);
-  resetRPNLabels();
   setStackRedraw();
+  resetRPNLabels( false);
+  _iom->sendLn();
 }
 
 //
-// Redraws the number area
+// Redraws the number area on LCD
 //
 void RPNCalculator::redraw() {
   byte lineNums[] = {6, 4, 2, 0}; 
@@ -90,11 +88,11 @@ void RPNCalculator::redraw() {
     if( !_stackRedrawRequired[i]) continue;
     _stackRedrawRequired[i] = false;
     _lcd->clearLine( j);
-    byte *ptr = (byte *)_lcd->getUnicodeBuffer();
-    size_t len = convertDouble( rpnStack[i], ptr, _precision, _force_scientific) - ptr;
+    byte *buff = _iom->getIOBuffer();
+    size_t len = convertDouble( rpnStack[i], buff, _precision, _force_scientific) - buff;
     if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
     _lcd->cursorTo( SCR_RIGHT-len, j);
-    _lcd->sendString( ptr);
+    _lcd->sendString( buff);
   }
   byte *ptr = _input + display_starts;
   _lcd->cursorToBottom();
@@ -106,32 +104,32 @@ void RPNCalculator::redraw() {
 }
 
 //
-// Draws to the serial ports
+// Draws the stack to the serial ports
 //
 void RPNCalculator::updateIOM( bool refresh) {
   if( !refresh) return;
-  char *buff = _lcd->getUnicodeBuffer();
-  byte *ptr = (byte *)buff;
+  byte *buff = _iom->getIOBuffer(); // make sure it is not reused for conversion
+  _iom->sendLn();
   for( byte i=3; i>0; i--){
-    _iom->sendToSerials( buff, _messages[i]);
-    size_t len = convertDouble( rpnStack[i-1], ptr, _precision, _force_scientific) - ptr;
+    _iom->sendStringLn( _messages[i]);
+    size_t len = convertDouble( rpnStack[i-1], buff, _precision, _force_scientific) - buff;
     if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
-    for( byte j=0; j<SCR_RIGHT-len; j++) _iom->sendToSerials( " ");
-    _iom->sendToSerials( buff, NULL, true);
+    for( byte j=0; j<SCR_RIGHT-len; j++) _iom->sendChar( ' ');
+    _iom->sendStringUTF8Ln( buff);
   }
-  _iom->sendToSerials( buff, _messages[0]);
-  _iom->sendToSerials( (char *)RPN_Message_Table[4]);
+  _iom->sendStringLn( _messages[0]);
+  _iom->sendStringUTF8( RPN_Message_Table[4]);
 }
 
 //
 // Resets all calculator labels
 //
-void RPNCalculator::resetRPNLabels() {
+void RPNCalculator::resetRPNLabels( bool refresh) {
   for( byte i=0; i<4; i++){
     convertToCP1251( _messages[i], RPN_Message_Table[i], HSCROLL_LIMIT);
     _messageRedrawRequired[i] = true;
   }
-  updateIOM();
+  updateIOM(refresh);
 }
 
 //
@@ -265,6 +263,8 @@ void RPNCalculator::processInput() {
   Serial.print("Processing Input: [");
   Serial.print( (char *)_input);
   Serial.println("]");
+  #else
+  _iom->sendLn();
   #endif
   copyToPrevious();
   if( IsToken( _input, "#scr status ", false)){
@@ -344,7 +344,7 @@ void RPNCalculator::processInput() {
     convert0xH( rpnStack[0], _input);
     cursor_column = strlen(_input);
     display_starts = 0;
-    _iom->sendToSerials( _lcd->getUnicodeBuffer(), _input);
+    _iom->sendStringLn( _input);
     return;
   }
   if( IsToken( _input, "sin", false)){
@@ -409,6 +409,14 @@ void RPNCalculator::processInput() {
     updateIOM(true);
     return;
   }
+  if( IsToken( _input, "abs", false)){
+    previous_X = rpnStack[0];
+    if( rpnStack[0] < 0.0) rpnStack[0] = - rpnStack[0];
+    _stackRedrawRequired[ 0] = true;
+    _clearInput();
+    updateIOM(true);
+    return;
+  }
   if( IsToken( _input, "inv", false)){
     _clearInput();
     if( -1e-300 < rpnStack[0] && rpnStack[0] < 1e-300){
@@ -465,7 +473,7 @@ void RPNCalculator::swap(bool refresh) {
 }
 void RPNCalculator::roll(bool refresh) {
   double tmp = rpnStack[RPN_STACK-1];
-  push(true);
+  push(false);
   rpnStack[0] = tmp;
   updateIOM(refresh);
 }
@@ -571,6 +579,7 @@ void RPNCalculator::processEntry(byte c) {
     *ptr = 0;
     }
   processRIGHT(); // move the cursor
+  _iom->sendChar(c);
 }
 
 //

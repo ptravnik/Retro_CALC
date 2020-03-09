@@ -96,6 +96,9 @@ byte *convertToCP1251( byte *buff, const char *message, size_t limit);
 inline size_t strlen( byte *t){
   return strlen((char *)t);
 }
+inline size_t strlen( const byte *t){
+  return strlen((char *)t);
+}
 
 //
 // Converts double properly

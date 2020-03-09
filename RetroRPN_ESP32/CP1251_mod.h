@@ -35,4 +35,11 @@
 #define _DEL_      127
 #define _PLSMNS_   177
 
+// Keyboard and mouse 
+#define _KBD_INJ_    1
+#define _MOUSE_INJ_  2
+
+// Unknown UTF is a star!
+#define UNKNOWN_UTF8 '*'
+
 #endif

@@ -83,7 +83,7 @@ class RPNCalculator{
     void processRIGHT();
     void processHOME();
     void processEND();
-    void resetRPNLabels();
+    void resetRPNLabels(bool refresh=true);
     void setRPNLabel( byte label, byte *message);
     inline void setRPNLabel( byte label, char *message){
       setRPNLabel( label, (byte *)message);

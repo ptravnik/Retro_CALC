@@ -9,7 +9,7 @@
 #include "Keywords.hpp"
 #include "CP1251_mod.h"
 
-#define __DEBUG
+//#define __DEBUG
 
 const byte _multiplier_Prefixes[] PROGMEM = 
    { 'f', 'p', 'n', 'u', 'm', 'c', 'd', 'k', 'M', 'G', 'T', 'P'};

@@ -66,6 +66,12 @@ inline char *_setTriplet( char *buff, byte prefix, byte c){
   *buff = 0;
   return buff;  
 }
+char *_setMacro( char *buff, const char *macro){
+  for( byte i=0; macro[i] != _NUL_; i++)
+    *buff++ = macro[i];
+  *buff = _NUL_;
+  return buff; 
+}
 char *convertToUTF8( char *buff, byte *message, size_t nchar){
   byte c;
   for (size_t i=0; i<nchar; i++) {
@@ -81,7 +87,7 @@ char *convertToUTF8( char *buff, byte *message){
 char *convertToUTF8( char *buff, byte c){
   if( c < 128) return _setDuplet(buff, c);
   if( c == _PLSMNS_)
-    return _setDuplet( _setTriplet(buff, '+', '/'), '-');
+    return _setMacro(buff, "+/-");
   if( c == 0xB8) return _setTriplet(buff, 0xD1, 0x91);
   if( c == 0xA8) return _setTriplet(buff, 0xD0, 0x81);
   if( c >= 0xF0) return _setTriplet(buff, 0xD1, c - 0x70);

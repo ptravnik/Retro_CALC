@@ -20,6 +20,8 @@
 #define SDMANAGER_HPP
 
 #include <Arduino.h>
+#include "IOManager.hpp"
+//#include "LCDManager.hpp"
 
 // or use LED_BUILTIN=2 constant for built-in LED
 #define SD_DETECT_PIN      4
@@ -38,12 +40,22 @@ class SDManager{
     volatile bool SDMounted = false;
     volatile uint64_t cardSize = 0;
     volatile unsigned long lastInput = 0;
-    unsigned long init();
-    unsigned long tick( unsigned long lastActivity);
+
+    unsigned long init(IOManager *iom);
+    unsigned long tick();
     uint8_t cardType();
+    inline unsigned long keepAwake(){
+      lastInput = millis();
+      return lastInput;
+    };
+    void sleepOn();
+    void sleepOff();
   private:
-    void checkSDPin();
-    bool detectSDCard();
+    byte *_io_buffer;
+    IOManager *_iom;
+    //LCDManager *_lcd;
+    void _checkSDPin();
+    bool _detectSDCard();
 };
 
 #endif // SDMANAGER_HPP

@@ -8,6 +8,7 @@
 
 #include <Arduino.h>
 #include "HWKbd.h"
+#include "CP1251_mod.h"
 #include "Cyrillic_Phonetic_CP1251.h"
 #include "Utilities.hpp"
 #include "IOManager.hpp"
@@ -19,30 +20,49 @@ static HWKbd_Encoder hwEncoder(
   HWKBD_Codepage_Cyrillic_Phonetic_CP1251,
   HWKBD_Macropage_Cyrillic_Phonetic_CP1251);
 
-unsigned long IOManager::init() {
-  #ifdef HWKBD_FAST_PORTS
-  Serial.begin(SERIAL_HARD_BAUD_RATE);
-  Serial.println("Achtung! HWKBD fast ports don't work on ESP32!");
-  hwKeyboard.connect(HWKBD_RST, HWKBD_CLK, HWKBD_DATA,
-                     HWKBDLED_RST, HWKBDLED_CLK, &hwEncoder);
-  #else // prevents extra LED activity
-  hwKeyboard.connect(HWKBD_RST, HWKBD_CLK, HWKBD_DATA,
-                     HWKBDLED_RST, HWKBDLED_CLK, &hwEncoder);
-  Serial.begin(SERIAL_HARD_BAUD_RATE);
-  #endif
-  Serial2.begin(SERIAL2_BAUD_RATE, SERIAL_8N1, IO_RXD2, IO_TXD2);
-  while( Serial2.available()) Serial2.read();
-  HWKeyboardConnected = hwKeyboard.isConnected;
-  pinMode(IO_PM_ACTIVE, INPUT); 
-  keepAwake();
-  return lastInput;
+//
+// Helper object for handling multiple keyboards
+//
+void CircularBuffer::push( byte c){
+  _buffer[_in++] = (char)c;
+  if( _in >= CIRCULAR_BUFFER_LENGTH) _in = 0;
+  if( _in == _out){ // cought up with the out pointer
+    _out++;
+    if( _out >= CIRCULAR_BUFFER_LENGTH) _out = 0;
+  }
+}
+char CircularBuffer::pop(){
+  if(_in == _out) return _NUL_;
+  char c = _buffer[_out++];
+  if( _out >= CIRCULAR_BUFFER_LENGTH) _out = 0;
+  return c;
 }
 
+//
+// Main IO object
+//
+unsigned long IOManager::init( byte *io_buffer) {
+  _io_buffer = io_buffer;
+  hwKeyboard.connect(HWKBD_RST, HWKBD_CLK, HWKBD_DATA,
+                     HWKBDLED_RST, HWKBDLED_CLK, &hwEncoder);
+  HWKeyboardConnected = hwKeyboard.isConnected;
+  pinMode( IO_PM_ACTIVE, INPUT);
+  isAsleep = true;
+  sleepOff();
+  return keepAwake();
+}
+
+//
+// Makes routine checks
+//
 unsigned long IOManager::tick() {
   hwKeyboard.input();
   return lastInput;
 }
 
+//
+// Operates keyboard LEDs
+//
 void IOManager::setKBDLEDs( bool L0, bool L1, bool L2, bool L3){
   byte tmp = L0 & (L1<<1) & (L2<<2) & (L3<<3);
   hwKeyboard.setLEDs( tmp);
@@ -72,10 +92,23 @@ void IOManager::flashKBDLEDs(){
 
 //
 // Inputs CP1251 character from either hardware keyboard or serials
-// The serial is converted from Unicode to CP1251
+// NB:
+// The ESP32 Serial is supposed to operate in UTF8 mode
+// The ESP32 Serial2 is connected to Pro Micro and sends keys in CP1251 mode
+// This is because the hardware keyboard may be moved in the future to Pro Micro
+// Both Serial and Serial2 receive in UTF8 mode TODO: check user preferences
 //
 char IOManager::input(){
   char c;
+  if( _input_buffer.available()){
+    c = _input_buffer.pop();
+    #ifdef __DEBUG
+    Serial.print( "Popped deferred code=");
+    Serial.println( c, HEX);
+    #endif
+    keepAwake();
+    return c;
+  }
   if( hwKeyboard.available()){
     c = hwKeyboard.read();
     #ifdef __DEBUG
@@ -87,16 +120,7 @@ char IOManager::input(){
     keepAwake();
     return c;
   }
-  if( Serial.available()){
-    c = Serial.read();
-    #ifdef __DEBUG
-    Serial.print( "VT100 KBD: code=");
-    Serial.println( c, HEX);
-    #endif
-    keepAwake();
-    return c;
-  }
-  if( digitalRead(IO_PM_ACTIVE) && Serial2.available()){
+  if( PM_active() && Serial2.available()){
     c = Serial2.read();
     #ifdef __DEBUG
     Serial.print( "VT100 Serial 2: code=");
@@ -105,29 +129,176 @@ char IOManager::input(){
     keepAwake();
     return c;
   }
-  return 0;
-}
-
-void IOManager::sendToSerials( char *unicodeBuff, byte *message, bool cr){
-  if( message != NULL)
-    convertToUTF8( unicodeBuff, message);
-  if( cr) Serial.println(unicodeBuff);
-  else Serial.print(unicodeBuff);
-  if( digitalRead(IO_PM_ACTIVE)){
-    if( cr) Serial2.println(unicodeBuff);
-    else Serial2.print(unicodeBuff);    
+  if( Serial.available()){
+    c = _receiveFromSerial();
+    #ifdef __DEBUG
+    Serial.print( "VT100 KBD: code=");
+    Serial.println( c, HEX);
+    #endif
+    keepAwake();
+    return c;
   }
-  keepAwake();
-  return;
+  return _NUL_;
 }
 
 //
-// Brings io devices to low power mode
+// Converts characters from the serial port
+// from UTF8 to CP1251.
+//
+char IOManager::_receiveFromSerial(){  
+  byte c = (byte)Serial.read();
+  if( 0 < c && c < 128){
+    #ifdef __DEBUG
+    // loopback
+    Serial.write((char)c);
+    #endif
+    return c;
+  }
+  char *ptr = (char *)_io_buffer;
+  *ptr++ = (char)c;
+  *ptr = _NUL_;
+  switch( c){
+    case _NUL_:
+      return _NUL_;
+    case 0xD0: // double character (Russian letters)
+    case 0xD1: // double character (Russian letters)
+    case 0xC2: // double character (quotations)
+      if( !_readNonlocking(ptr)) return _NUL_;
+      return _sendToHost();
+    case 0xE2: // triple character (Ellipsis and EM-dash)
+      if( !_readNonlocking(ptr++)) return _NUL_;
+      if( !_readNonlocking(ptr)) return _NUL_;
+      return _sendToHost();
+    default: // unknown or misplaced Unicode is a star!
+      #ifdef __DEBUG
+      // loopback
+      Serial.write(UNKNOWN_UTF8);
+      #endif
+      return UNKNOWN_UTF8;
+  }
+  return _NUL_;
+}
+bool IOManager::_readNonlocking(char *ptr){
+  for( byte i=0; i<50; i++){
+    if( !Serial.available()){
+      delayMicroseconds(200);
+      continue;
+    }
+    *ptr++ = Serial.read();
+    *ptr = _NUL_;
+    return true;
+  }
+  return false;
+}
+char IOManager::_sendToHost(){
+  #ifdef __DEBUG
+  // loopback
+  Serial.println( (char *)_io_buffer);
+  #endif
+  #ifdef __DEBUG_CODES
+  Serial.print( "From [");
+  for( byte i=0; i<5; i++){
+    byte c = _UTF8_buffer[i];
+    if( c == _NUL_) break;
+    Serial.print( c, HEX);    
+  }
+  Serial.println( "]");
+  #endif
+  convertToCP1251( _CP1251_buffer, (char *)_io_buffer, 7);
+  #ifdef __DEBUG_CODES
+  Serial.print( "To [");
+  for( byte i=0; i<7; i++){
+    byte c = _CP1251_buffer[i];
+    if( c == _NUL_) break;
+    Serial.print( c, HEX);    
+  }
+  Serial.println( "]");
+  #endif
+  // push all the characters, except the first
+  char *ptr = (char *)_CP1251_buffer;
+  if(*ptr == _NUL_) return _NUL_;
+  ptr++;
+  for( byte i=0; i<7; i++){
+    if(*ptr == _NUL_) break;
+    _input_buffer.push( *ptr++);        
+  }
+  return (char)(*_CP1251_buffer);
+}
+
+//
+// Serial communication: provides the console input-output
+// It is presumed that consoles operate UTF8 sets
+//
+void IOManager::sendChar( byte c, byte dest){
+  // TODO: temporary backslash printing instead of backspace
+  if( c==8){
+    if( _sendToSerial(dest)) Serial.write('\\'); 
+    if( _sendToSerial2(dest)) Serial2.write('\\');
+    _wait_for_transmission(1);
+    keepAwake();
+    return;
+  }  
+  // speed up processing
+  if( 0<c && c<127){
+    if( _sendToSerial(dest)) Serial.write(c); 
+    if( _sendToSerial2(dest)) Serial2.write(c);
+    _wait_for_transmission(1);
+    keepAwake();
+    return;
+  }
+  // full conversion to UTF8
+  _CP1251_buffer[0] = c;
+  _CP1251_buffer[1] = _NUL_;
+  convertToUTF8( (char *)_io_buffer, _CP1251_buffer, 15);
+  sendStringUTF8( (const char *)_io_buffer, dest);
+}
+void IOManager::sendString( const char *str, size_t limit, byte dest){
+  if(limit == 0) limit = strlen(str);
+  if(limit == 0) return;
+  if(limit > 255) limit = 255;
+  convertToUTF8( (char *)_io_buffer, (byte *)str, limit);
+  sendStringUTF8( (const char *)_io_buffer, dest);
+}
+void IOManager::sendStringLn( const char *str, size_t limit, byte dest){
+  if(limit == 0) limit = strlen(str);
+  if(limit == 0) return;
+  if(limit > 255) limit = 255;
+  convertToUTF8( (char *)_io_buffer, (byte *)str, limit);
+  sendStringUTF8Ln( (const char *)_io_buffer, dest);
+}
+void IOManager::sendStringUTF8( const char *str, byte dest){
+  if( _sendToSerial(dest)) Serial.print( str); 
+  if( _sendToSerial2(dest)) Serial2.print( str);
+  _wait_for_transmission( strlen(str));
+  keepAwake();
+}
+void IOManager::sendStringUTF8Ln( const char *str, byte dest){
+  if( _sendToSerial(dest)) Serial.println( str); 
+  if( _sendToSerial2(dest)) Serial2.println( str);
+  _wait_for_transmission( strlen(str));
+  keepAwake();
+}
+void IOManager::sendLn( byte dest){
+  if( _sendToSerial(dest)) Serial.println(); 
+  if( _sendToSerial2(dest)) Serial2.println();
+  _wait_for_transmission( 2);
+}
+
+//
+// Brings io devices to low power mode;
+// Don't forget to power the indicators off
 //
 void IOManager::sleepOn(){
   if( isAsleep) return;
-  Serial.end();
-  Serial2.end();
+  hwKeyboard.setLEDs( 0);
+  if( serial_Active){
+    Serial.end();
+    serial_Active = false;
+  }
+  if( serial2_Active){
+    Serial2.end();
+    serial2_Active = false;
+  }
   isAsleep = true;
 }
 
@@ -136,9 +307,30 @@ void IOManager::sleepOn(){
 //
 void IOManager::sleepOff(){
   if( !isAsleep) return;
-  Serial.begin(SERIAL_HARD_BAUD_RATE);
-  while( Serial.available()) Serial.read();
-  Serial2.begin(SERIAL2_BAUD_RATE, SERIAL_8N1, IO_RXD2, IO_TXD2);
-  while( Serial2.available()) Serial2.read();
+  if( !serial_Active){
+    Serial.begin(SERIAL_HARD_BAUD_RATE);
+    delay(300);
+    while( Serial.available()) Serial.read();
+    serial_Active = true;
+  }
+  if( !serial2_Active){
+    if( _wait_PM_active()){
+      Serial2.begin(SERIAL2_BAUD_RATE, SERIAL_8N1, IO_RXD2, IO_TXD2);
+      delay(300);
+      while( Serial2.available()) Serial2.read();
+      serial2_Active = true;
+    }
+  }
   isAsleep = false;
+}
+
+//
+// Waits for Pro Micro to wake up
+//
+bool IOManager::_wait_PM_active( byte waits){
+  for( byte i=0; i<waits; i++){
+    if(digitalRead(IO_PM_ACTIVE)) return true;
+    delay(10);
+  }
+  return false;
 }

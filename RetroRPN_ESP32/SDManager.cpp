@@ -14,6 +14,19 @@
 
 //#define __DEBUG
 
+const char SD_Message0[] PROGMEM = "+ SD inserted";
+const char SD_Message1[] PROGMEM = "+ SD removed";
+const char SD_Message2[] PROGMEM = "+ SD mounted";
+const char SD_Message3[] PROGMEM = "+ SD mount failed";
+const char SD_Message4[] PROGMEM = "+ SD size: %llu MB";
+const char *const SD_Message_Table[] PROGMEM = {
+  SD_Message0,
+  SD_Message1,
+  SD_Message2,
+  SD_Message3,
+  SD_Message4
+  };
+
 //
 // Timer to check the SD status
 //
@@ -22,53 +35,74 @@ static void IRAM_ATTR isrSD() {
   SDCheckRequested = true;
 }
 
-void SDManager::checkSDPin(){
+void SDManager::_checkSDPin(){
   if( !SDCheckRequested) return;
-  Serial.println( "SD pin change detected");
   SDCheckRequested = false;
-  detectSDCard();
+  _detectSDCard();
 }
 
-bool SDManager::detectSDCard(){
+bool SDManager::_detectSDCard(){
   bool inserted = !digitalRead(SD_DETECT_PIN);
   delay(30);
   inserted = inserted && (!digitalRead(SD_DETECT_PIN));
   if( SDInserted == inserted) return inserted;
   SDInserted = inserted;
-  Serial.print( "SD ");
-  Serial.println( SDInserted? "inserted": "removed");
-  SDMounted = false;
+  _iom->sendStringUTF8Ln( SD_Message_Table[ SDInserted? 0: 1]);
   cardSize = 0;
   if( !inserted){
+    if( SDMounted){
+      SD.end();
+      SDMounted = false;
+    }
     return false;
   }
   SDMounted = SD.begin();
-  Serial.print( "SD mount");
-  Serial.println( SDMounted? "ed": " failed");
+  _iom->sendStringUTF8Ln( SD_Message_Table[ SDMounted? 2: 3]);
+  cardSize = 0;
+  if( !SDMounted) return inserted;
   cardSize = SD.cardSize() >> 20;
-  Serial.printf("SD Card Size: %llu MB\n", cardSize);
-  lastInput = millis();
+  sprintf( (char *)_io_buffer, SD_Message_Table[4], cardSize);
+  _iom->sendStringUTF8Ln( (char *)_io_buffer);  
+  //Serial.printf("SD Card Size: %llu MB\n", cardSize);
+  keepAwake();
   return inserted;  
 }
 
-unsigned long SDManager::init(){
+//
+// Init and status update
+//
+unsigned long SDManager::init( IOManager *iom){
+  _io_buffer = iom->getIOBuffer();
+  _iom = iom;
+  //_lcd = lcd;
   pinMode(SD_DETECT_PIN, INPUT_PULLUP);   // sets the digital pin for SD check
-  detectSDCard();
+  _detectSDCard();
   SDCheckRequested = false;
   attachInterrupt( SD_DETECT_PIN, isrSD, CHANGE);
-  lastInput = millis();
-  return lastInput; 
+  return keepAwake(); 
 }
 
-unsigned long SDManager::tick( unsigned long lastActivity){
-  checkSDPin();
-  return (lastActivity > lastInput)? lastActivity: lastInput;
+unsigned long SDManager::tick(){
+  _checkSDPin();
+  return lastInput;
 }
 
 uint8_t SDManager::cardType(){
   if(!SDInserted) return SD_CARD_OUT;
   if(!SDMounted) return SD_CARD_NOT_MOUNTED;
   return SD.cardType();
+}
+
+void SDManager::sleepOn(){
+  if( !SDMounted) return;
+  SD.end();
+  SDMounted = false;
+}
+
+void SDManager::sleepOff(){
+  SDInserted = false;
+  SDMounted = false;
+  _detectSDCard();
 }
 
 void listDir(fs::FS &fs, const char * dirname, uint8_t levels){

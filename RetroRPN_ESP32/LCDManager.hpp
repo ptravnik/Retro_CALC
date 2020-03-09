@@ -63,6 +63,8 @@
 #define ROW_OFFSET    0
 #define COL_OFFSET    0
 #define SCR_SIZE (SCR_COLS * SCR_ROWS)
+
+// must be less than IO_BUFFER_LENGTH (256)
 #define SCR_MAX_UTF (SCR_COLS + SCR_COLS + 1)
 #define SCR_BUFFER_SIZE 1024
 
@@ -83,22 +85,23 @@ class LCDManager{
     bool lineInversed[ SCR_ROWS];
     bool forceRedraw = false;
     byte ledBrightness = 200;
+    volatile unsigned long lastInput = 0;
 
-    unsigned long init();
+    unsigned long init( byte *io_buffer);
     void waitForEndSplash( unsigned long start, bool cls = false);
-    void sleepOn();
-    void sleepOff();
-    void LEDOn();
-    void LEDOff();
+    unsigned long tick();
+
     inline void setRedrawAll(bool r){
       memset( lineRedrawRequired, r, SCR_ROWS);
     }
     void redraw();
+    
     void clearScreen( byte ch=_SP_, bool clear_inversed=false);
     void clearLine( byte row, byte ch=_SP_);
     void clearToEOL(byte ch=_SP_);
     void scrollUp( byte rows);
     void scrollDown( byte rows);
+    
     void sendChar( byte c);
     void sendString( const byte *c, size_t limit=0);
     inline void sendString( const char *c, size_t limit=0){
@@ -124,32 +127,41 @@ class LCDManager{
     inline byte *getTextBuffer(){
       return _buffer;
       };  
-    inline char *getUnicodeBuffer(){
-      return _buffer_Unicode;
-      };  
+    
     void setLED( byte v);
     void changeLED( int16_t v);
-    uint8_t writeCharacter( uint8_t left, uint8_t top, uint8_t ch);
-    uint8_t writeString( uint8_t left, uint8_t top, byte *str, byte limit=SCR_COLS);
-    inline uint8_t writeString( uint8_t left, uint8_t top, char *str, byte limit=SCR_COLS){
-      writeString( left, top, (byte *)str, limit);
+    
+    uint8_t plotCharacter( uint8_t left, uint8_t top, uint8_t ch);
+    uint8_t plotString( uint8_t left, uint8_t top, byte *str, byte limit=SCR_COLS);
+    inline uint8_t plotString( uint8_t left, uint8_t top, char *str, byte limit=SCR_COLS){
+      plotString( left, top, (byte *)str, limit);
     };
-    uint8_t writeStringUTF8( uint8_t left, uint8_t top, const char *str);
+    uint8_t plotStringUTF8( uint8_t left, uint8_t top, const char *str);
+
+    void sleepOn();
+    void sleepOff();
+    void LEDOn();
+    void LEDOff();
+    inline unsigned long keepAwake(){
+      lastInput = millis();
+      return lastInput;
+    };
+
   private:
-    bool blinked = false;
-    uint32_t last_blinked = 0;
+    bool _blinked = false;
+    uint32_t _last_blinked = 0;
+    uint16_t _cursor_column = 0;
+    uint16_t _cursor_row = 0;
+    inline size_t _cursor_position(){
+      return _cursor_row * SCR_COLS + _cursor_column;
+      };
+    byte *_io_buffer;
     byte _buffer[SCR_SIZE];
-    char _buffer_Unicode[SCR_MAX_UTF];
     uint8_t _tileHeight = 0;
     uint8_t _tileWidth = 0;
     uint8_t *_graphics;
-    uint16_t cursor_column = 0;
-    uint16_t cursor_row = 0;
-    inline size_t cursor_position(){
-      return cursor_row * SCR_COLS + cursor_column;
-      };
-    void dimLED( byte start_duty, byte stop_duty, byte step=30);
-    void ledcAnalogWrite(uint8_t channel, uint8_t value);
+    void _dimLED( byte start_duty, byte stop_duty, byte step=30);
+    void _ledcAnalogWrite(uint8_t channel, uint8_t value);
 };
 
 #endif // LCDMANAGER_HPP

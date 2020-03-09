@@ -25,29 +25,32 @@
 #define ESP32HOST_HPP
 
 #define POWER_DETECT_PIN 34
-#define SCREEN_LED_PERIOD  60000
-#define SCREEN_OFF_PERIOD 180000
+#define SCREEN_LED_PERIOD 120000
+#define SCREEN_OFF_PERIOD 240000
 #define POWER_OFF_PERIOD  720000
 
 #include <Arduino.h>
-#include "Utilities.hpp"
 #include "IOManager.hpp"
-#include "LCDManager.hpp"
 #include "SDManager.hpp"
+#include "LCDManager.hpp"
 #include "RPNCalculator.hpp"
 
-#define IO_MSG_POWER_BUTTON 4
-#define IO_MSG_INACTIVE 5
-#define IO_MSG_SHUTDOWN 6
+#define IO_MSG_POWER_BUTTON 0
+#define IO_MSG_INACTIVE 1
+#define IO_MSG_SHUTDOWN 2
+
+#define IO_BUFFER_LENGTH 256
 
 class ESP32Host{
   public:
+    unsigned long lastInput = 0;  
     unsigned long init();
     unsigned long tick();
-    void deepSleep( byte msg = IO_MSG_SHUTDOWN);  
+    void deepSleep( byte msg = IO_MSG_SHUTDOWN);   
   private:
-    void checkSleepPin();
-    inline void waitUntilSleepPinHigh(){
+    byte _io_buffer[IO_BUFFER_LENGTH];
+    void _checkSleepPin();
+    inline void _waitUntilSleepPinHigh(){
       while( !digitalRead(POWER_DETECT_PIN))
         delay(5);
     };

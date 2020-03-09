@@ -13,7 +13,10 @@
 
 const char LCD_WelcomeMessage1[] PROGMEM = "ЭЛЕКТРОНИКА МК-2090";
 const char LCD_WelcomeMessage2[] PROGMEM = "Retro Calculator";
-const char *const LCD_Message_Table[] PROGMEM = {LCD_WelcomeMessage1, LCD_WelcomeMessage2};
+const char *const LCD_Message_Table[] PROGMEM = {
+  LCD_WelcomeMessage1, 
+  LCD_WelcomeMessage2
+  };
 
 #include "CP1251_font.h"
 static U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, LCD_CLOCK, LCD_DATA, LCD_CS, LCD_RESET);
@@ -21,13 +24,14 @@ static U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, LCD_CLOCK, LCD_DATA, LCD_CS, LC
 //
 // Inits LCD display
 //
-unsigned long LCDManager::init() {
+unsigned long LCDManager::init( byte *io_buffer) {
+  _io_buffer = io_buffer;
 
   // Set timer and attach to the led
   pinMode( LCD_LED_PIN, OUTPUT);
   ledcSetup(LCD_LEDC_CHANNEL_0, LCD_LEDC_BASE_FREQ, LCD_LEDC_TIMER_13_BIT);
   ledcAttachPin(LCD_LED_PIN, LCD_LEDC_CHANNEL_0);
-  ledcAnalogWrite(LCD_LEDC_CHANNEL_0, 0); // keep backlit off for now
+  _ledcAnalogWrite(LCD_LEDC_CHANNEL_0, 0); // keep backlit off for now
   pinMode( LCD_POWER_PIN, OUTPUT);
   digitalWrite( LCD_POWER_PIN, HIGH); // display power on
 
@@ -37,45 +41,56 @@ unsigned long LCDManager::init() {
   _tileHeight = u8g2.getBufferTileHeight();
   _tileWidth = u8g2.getBufferTileWidth();
   memset(_graphics, 0, SCR_BUFFER_SIZE);
-  writeStringUTF8(  7, 14, LCD_Message_Table[0]);
-  writeStringUTF8( 17, 27, LCD_Message_Table[1]);
+  plotStringUTF8(  7, 14, LCD_Message_Table[0]);
+  plotStringUTF8( 17, 27, LCD_Message_Table[1]);
   u8g2.updateDisplay();
-  dimLED( 0, ledBrightness, 60); // lit slowly
+  _dimLED( 0, ledBrightness, 60); // lit slowly
 
   #ifdef __DEBUG
   delay(SCR_SPLASH);  
   memset(_graphics, 0, SCR_BUFFER_SIZE);
-  writeString(  0, 0, "123456789012345678901234567890");
-  writeString(  0, 8, "123456789012345678901234567890");
-  writeString(  0, 16, "123456789012345678901234567890");
-  writeString(  0, 24, "123456789012345678901234567890");
-  writeString(  0, 32, "123456789012345678901234567890");
-  writeString(  0, 40, "123456789012345678901234567890");
-  writeString(  0, 48, "123456789012345678901234567890");
-  writeString(  0, 56, "123456789012345678901234567890");
+  plotString(  0, 0, "123456789012345678901234567890");
+  plotString(  0, 8, "123456789012345678901234567890");
+  plotString(  0, 16, "123456789012345678901234567890");
+  plotString(  0, 24, "123456789012345678901234567890");
+  plotString(  0, 32, "123456789012345678901234567890");
+  plotString(  0, 40, "123456789012345678901234567890");
+  plotString(  0, 48, "123456789012345678901234567890");
+  plotString(  0, 56, "123456789012345678901234567890");
   u8g2.updateDisplay();
   #endif
 
-  return millis();
+  return  keepAwake();
 }
 
+//
+// Other inits are hidden behind the splash screen
+//
 void LCDManager::waitForEndSplash( unsigned long start, bool cls) {
   while( millis()-start < SCR_SPLASH) delay(50);
   memset( _buffer, _SP_, SCR_SIZE);
   memset( lineInversed, false, SCR_ROWS);
   if( cls) {
-    dimLED( ledBrightness, 0, 5); // dim before cleaning
+    _dimLED( ledBrightness, 0, 5); // dim before cleaning
     clearScreen( _SP_, true);
     redraw();
-    dimLED( 0, ledBrightness, 5);
+    _dimLED( 0, ledBrightness, 5);
   }
+  keepAwake();
+}
+
+//
+// Makes routine checks
+//
+unsigned long LCDManager::tick() {
+  return lastInput;
 }
 
 //
 // Writes a CP1251 character to screen
 // Coordinates are in pixels, (0,0) - left top corner
 //
-uint8_t LCDManager::writeCharacter( uint8_t left, uint8_t top, uint8_t ch){
+uint8_t LCDManager::plotCharacter( uint8_t left, uint8_t top, uint8_t ch){
   if( left >= 128 || top >= 64) return left; // outside screen area
   uint8_t shift0 = left & 0x07;
   uint8_t shift1 = 8 - shift0;
@@ -102,12 +117,12 @@ uint8_t LCDManager::writeCharacter( uint8_t left, uint8_t top, uint8_t ch){
 // Writes a CP1251 string character to screen
 // Coordinates are in pixels, (0,0) - left top corner
 //
-uint8_t LCDManager::writeString( uint8_t left, uint8_t top, byte *str, byte limit){
+uint8_t LCDManager::plotString( uint8_t left, uint8_t top, byte *str, byte limit){
   if( top >= 64) return left;
   for( byte i=0; i<limit; i++){
     if( left >= 127) break;
     if( !(*str)) break;
-    left = writeCharacter( left, top, *str++);
+    left = plotCharacter( left, top, *str++);
   }
   return left;
 }
@@ -116,9 +131,9 @@ uint8_t LCDManager::writeString( uint8_t left, uint8_t top, byte *str, byte limi
 // Performs on-the-fly conversion to CP1251
 // Coordinates are in pixels, (0,0) - left top corner
 //
-uint8_t LCDManager::writeStringUTF8( uint8_t left, uint8_t top, const char *str){
-  convertToCP1251( (byte *)_buffer_Unicode, str, SCR_MAX_UTF);
-  writeString(left, top, _buffer_Unicode);  
+uint8_t LCDManager::plotStringUTF8( uint8_t left, uint8_t top, const char *str){
+  convertToCP1251( _io_buffer, str, SCR_MAX_UTF);
+  plotString(left, top, _io_buffer);  
 }
 
 //
@@ -126,15 +141,14 @@ uint8_t LCDManager::writeStringUTF8( uint8_t left, uint8_t top, const char *str)
 //
 void LCDManager::sleepOn(){
   if( isAsleep) return;
-  dimLED( ledBrightness, 0, 10);
+  LEDOff();
   digitalWrite( LCD_POWER_PIN, LOW);
   isAsleep = true;
-  isLEDoff = true;
   #ifdef __DEBUG
   Serial.print("Gone to sleep: [");
-  Serial.print( cursor_column);
+  Serial.print( _cursor_column);
   Serial.print(", ");
-  Serial.print( cursor_row);
+  Serial.print( _cursor_row);
   Serial.println( "]");
   #endif  
 }
@@ -146,19 +160,18 @@ void LCDManager::sleepOff(){
   if( !isAsleep) return;
   #ifdef __DEBUG
   Serial.print("Waking up: [");
-  Serial.print( cursor_column);
+  Serial.print( _cursor_column);
   Serial.print(", ");
-  Serial.print( cursor_row);
+  Serial.print( _cursor_row);
   Serial.println( "]");  
   #endif  
   digitalWrite( LCD_POWER_PIN, HIGH);
   u8g2.begin();
   //u8g2.enableUTF8Print();
+  isAsleep = false;
   setRedrawAll(true);
   redraw();
-  dimLED( 0, ledBrightness, 10);
-  isAsleep = false;
-  isLEDoff = false;
+  LEDOn();
 }
 
 //
@@ -170,7 +183,9 @@ void LCDManager::LEDOff(){
   #ifdef __DEBUG
   Serial.println("LED off");
   #endif
-  dimLED( ledBrightness, 0, 10);
+  _dimLED( ledBrightness, 0, 10);
+  ledcDetachPin(LCD_LED_PIN);
+  digitalWrite(LCD_LED_PIN, LOW);
   isLEDoff = true;
 }
 
@@ -183,7 +198,8 @@ void LCDManager::LEDOn(){
   #ifdef __DEBUG
   Serial.println("LED on");
   #endif
-  dimLED( 0, ledBrightness, 10);
+  ledcAttachPin(LCD_LED_PIN, LCD_LEDC_CHANNEL_0);
+  _dimLED( 0, ledBrightness, 10);
   isLEDoff = false;
 }
 
@@ -192,7 +208,7 @@ void LCDManager::LEDOn(){
 //
 void LCDManager::setLED( byte v){
   if( v == ledBrightness) return;
-  if( !isAsleep) dimLED( ledBrightness, v);
+  if( !isAsleep) _dimLED( ledBrightness, v);
   #ifdef __DEBUG
   Serial.print("Brightness changed to: ");
   Serial.println(v, HEX);
@@ -214,7 +230,7 @@ void LCDManager::changeLED( int16_t v){
 // Lights or dims LED slowly in steps of 16/256 to the preset level.
 // The larger the step in ms, the slower the dim.
 //
-void LCDManager::dimLED( byte start_duty, byte stop_duty, byte step){
+void LCDManager::_dimLED( byte start_duty, byte stop_duty, byte step){
   int16_t duty = start_duty;
   while( true){
     if( duty == stop_duty) return;
@@ -226,7 +242,7 @@ void LCDManager::dimLED( byte start_duty, byte stop_duty, byte step){
       duty -= 16;
       if( duty < stop_duty) duty = stop_duty;       
     }
-    ledcAnalogWrite( LCD_LEDC_CHANNEL_0, (byte)duty);
+    _ledcAnalogWrite( LCD_LEDC_CHANNEL_0, (byte)duty);
     if( duty != stop_duty) delay(step);      
     }
 }
@@ -234,7 +250,7 @@ void LCDManager::dimLED( byte start_duty, byte stop_duty, byte step){
 //
 // Normalizes LED PWM to 256 levels.
 //
-void LCDManager::ledcAnalogWrite(uint8_t channel, uint8_t value) {
+void LCDManager::_ledcAnalogWrite(uint8_t channel, uint8_t value) {
   uint32_t duty = (LCD_LEDC_MAX_DUTY * value) >> 8;
   ledcWrite(channel, duty);
 }
@@ -247,11 +263,11 @@ void LCDManager::redraw() {
   int16_t x0, cp;
   byte c, tmp;
   uint8_t *ptr;
-  cp = cursor_position();
+  cp = _cursor_position();
   tmp = _buffer[ cp];
   if( cursorShown){
-    if( blinked) _buffer[ cp] = '_';
-    lineRedrawRequired[cursor_row] = true;
+    if( _blinked) _buffer[ cp] = '_';
+    lineRedrawRequired[_cursor_row] = true;
   }
   #ifdef __DEBUG
   Serial.print( "Row redraws: [");  
@@ -264,7 +280,7 @@ void LCDManager::redraw() {
     lineRedrawRequired[ln] = false;
     ptr = _graphics+(ln<<7);
     memset( ptr, 0, 128);
-    writeString( COL_OFFSET, y, _buffer + ln*SCR_COLS, SCR_COLS);
+    plotString( COL_OFFSET, y, _buffer + ln*SCR_COLS, SCR_COLS);
     if( lineInversed[ ln]){
       for( size_t i=0; i<128; i++)
       ptr[i] = ~ptr[i];
@@ -273,9 +289,9 @@ void LCDManager::redraw() {
   }
   _buffer[ cp] = tmp;
   uint32_t t = millis();
-  if( t-last_blinked < BLINKER_RATE) return;
-  last_blinked = t;
-  blinked = !blinked;
+  if( t-_last_blinked < BLINKER_RATE) return;
+  _last_blinked = t;
+  _blinked = !_blinked;
 }
 
 //
@@ -304,8 +320,8 @@ void LCDManager::clearLine(byte row, byte ch) {
 // Clears to the end of line
 //
 void LCDManager::clearToEOL(byte ch) {
-  memset( _buffer + cursor_position(), ch, SCR_COLS-cursor_column);
-  lineRedrawRequired[ cursor_row] = true;
+  memset( _buffer + _cursor_position(), ch, SCR_COLS-_cursor_column);
+  lineRedrawRequired[ _cursor_row] = true;
   if( forceRedraw) redraw();
 }
 
@@ -358,9 +374,9 @@ void LCDManager::sendChar( byte c) {
     return;
   }
   if( c < _SP_) return; // service characters;
-  if( !wordWrap && cursor_column >= SCR_COLS-1) return;
-  _buffer[cursor_position()] = c;
-  lineRedrawRequired[cursor_row] = true;
+  if( !wordWrap && _cursor_column >= SCR_COLS-1) return;
+  _buffer[_cursor_position()] = c;
+  lineRedrawRequired[_cursor_row] = true;
   cursorRight();
   if( forceRedraw) redraw();
 }
@@ -383,86 +399,86 @@ void LCDManager::sendString( const byte *str, size_t limit) {
 // Sends a null-terminated string (buffer and cursor are not updated)
 //
 void LCDManager::sendStringUTF8( const char *str) {
-  convertToCP1251( (byte *)_buffer_Unicode, str, SCR_MAX_UTF);
-  sendString( (const byte *)_buffer_Unicode);
+  convertToCP1251( _io_buffer, str, SCR_MAX_UTF);
+  sendString( _io_buffer);
 }
 
 void LCDManager::cursorRight(){
-  cursor_column++;
-  if( cursor_column < SCR_COLS) return;
-  if( !wordWrap || (scrollLock && cursor_row >= SCR_ROWS-1)){
-    cursor_column--;
+  _cursor_column++;
+  if( _cursor_column < SCR_COLS) return;
+  if( !wordWrap || (scrollLock && _cursor_row >= SCR_ROWS-1)){
+    _cursor_column--;
     return;
   }
-  lineRedrawRequired[cursor_row] = true;
-  cursor_row++;
-  cursor_column = 0;
-  if( cursor_position() >= SCR_SIZE){
+  lineRedrawRequired[_cursor_row] = true;
+  _cursor_row++;
+  _cursor_column = 0;
+  if( _cursor_position() >= SCR_SIZE){
     scrollUp(1);
-    cursor_row = SCR_ROWS-1;
+    _cursor_row = SCR_ROWS-1;
   }
 }
 
 void LCDManager::cursorLeft(){
-  if( !cursor_position()) return;
-  if( !cursor_column){
+  if( !_cursor_position()) return;
+  if( !_cursor_column){
     if( !wordWrap) return;
-    lineRedrawRequired[cursor_row] = true;
-    cursor_row--;
-    cursor_column = SCR_COLS-1;
+    lineRedrawRequired[_cursor_row] = true;
+    _cursor_row--;
+    _cursor_column = SCR_COLS-1;
     return;
   }
-  cursor_column--;
+  _cursor_column--;
 }
 
 void LCDManager::cursorUp(){
-  lineRedrawRequired[cursor_row] = true;
-  if( !cursor_row) return;
-  cursor_row--;
+  lineRedrawRequired[_cursor_row] = true;
+  if( !_cursor_row) return;
+  _cursor_row--;
 }
 
 void LCDManager::cursorDown(){
-  cursorTo( cursor_column, cursor_row++);
+  cursorTo( _cursor_column, _cursor_row++);
 }
 
 void LCDManager::cursorTo( byte column, byte row){
   if( column >= SCR_COLS) column = SCR_COLS-1;
   if( row >= SCR_ROWS) row = SCR_ROWS-1;
-  lineRedrawRequired[cursor_row] = (row != cursor_row);
-  cursor_column = column;
-  cursor_row = row;
+  lineRedrawRequired[_cursor_row] = (row != _cursor_row);
+  _cursor_column = column;
+  _cursor_row = row;
 }
 
 void LCDManager::sendDelete(){
-  if( cursor_column == SCR_COLS-1) return;
-  byte *ptr = _buffer + cursor_position();
-  memmove( ptr, ptr+1, SCR_COLS-cursor_column-1);
-  _buffer[(cursor_row+1)*SCR_COLS-1] = _SP_;
+  if( _cursor_column == SCR_COLS-1) return;
+  byte *ptr = _buffer + _cursor_position();
+  memmove( ptr, ptr+1, SCR_COLS-_cursor_column-1);
+  _buffer[(_cursor_row+1)*SCR_COLS-1] = _SP_;
   if( forceRedraw) redraw();
 }
 
 void LCDManager::sendBackspace(){
-  lineRedrawRequired[cursor_row] = true;
+  lineRedrawRequired[_cursor_row] = true;
   cursorLeft();
   sendDelete();
 }
 
 void LCDManager::sendCarriageReturn(){
-  lineRedrawRequired[cursor_row] = true;
-  memset( _buffer + cursor_position(), _SP_, SCR_COLS-cursor_column);
-  cursor_column = 0;
-  cursor_row++;
-  if( cursor_row >= SCR_ROWS){
-    cursor_row--;
+  lineRedrawRequired[_cursor_row] = true;
+  memset( _buffer + _cursor_position(), _SP_, SCR_COLS-_cursor_column);
+  _cursor_column = 0;
+  _cursor_row++;
+  if( _cursor_row >= SCR_ROWS){
+    _cursor_row--;
     scrollUp(1);
   }
   if( forceRedraw) redraw();
 }
 
 void LCDManager::sendTab(){
-  lineRedrawRequired[cursor_row] = true;
+  lineRedrawRequired[_cursor_row] = true;
   do sendChar( _SP_);
-  while( (cursor_column % SCR_TABSTOP) > 0);
+  while( (_cursor_column % SCR_TABSTOP) > 0);
   if( forceRedraw) redraw();
 }
 
