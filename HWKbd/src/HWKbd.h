@@ -67,11 +67,6 @@
 #define HWKBD_TYPEMATIC_DELAY 200
 #define HWKBD_BUTTON_REPEAT 50
 
-// comment out for standard Arduino library writing
-// (including timer disable on PWM)
-// will slow down everything by a factor of 20
-#define HWKBD_FAST_PORTS
-
 // pulse width in microseconds
 #define HWKBD_PULSE_LEN 1
 
@@ -87,8 +82,14 @@
 #include <Arduino.h>
 #ifdef __AVR__
 #include <avr/pgmspace.h>
+// comment out for standard Arduino library writing
+// (including timer disable on PWM)
+// will slow down everything by a factor of 20
+#define HWKBD_FAST_PORTS
 #else
 #include <pgmspace.h>
+// ESP32 does not support fast ports
+#undef HWKBD_FAST_PORTS
 #endif
 
 
