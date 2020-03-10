@@ -266,34 +266,10 @@ kbd.addButton([("#CODE=018", 0), ("S-right",1), ("#CODE=022",0), ("S-end",3),
                ("#CODE=018", 4), ("S-right",5), ("#CODE=022",4), ("S-end",7)])   # 57 arrow right
 kbd.addButtonNoSwitch(["#CODE=013","#CODE=013","SC-end","SC-home",
                        "#CODE=013","#CODE=013","SC-end","SC-home"])              # 58 ENTER
-kbd.addButton([("", 1), ("",1), ("",1), ("",1),
-               ("", 5), ("",5), ("",5), ("",5)])   # 59 SHIFT
+kbd.addButton([("", 1), ("",0), ("",2), ("",3),
+               ("", 5), ("",4), ("",6), ("",7)])   # 59 SHIFT
 
 
 f = open("Cyrillic_Phonetic_CP1251_RPN.h", "w")
 kbd.generateHFile("HWKBD_Codepage_Cyrillic_Phonetic_CP1251", f)
 f.close()
-
-
-##addressSequence, macroSequence = keyb.makeArrays()
-##
-##print("const static uint16_t HWKBD_Codepage_Cyrillic_Phonetic_CP1251[] PROGMEM = {")
-##for i in range( 0, len( addressSequence), 8):
-##    s = ""
-##    for seq in addressSequence[i:i+8]: s += "{:s},".format(seq)
-##    if i//8 == 58: s = s[:-1] + " "
-##    s += " // Button {:02d}".format(  i // 8+1) 
-##    print(s)
-##print("};")
-##print()
-##print("const static byte HWKBD_Macropage_Cyrillic_Phonetic_CP1251[] PROGMEM = {")
-##for i in range( 0, len( macroSequence), 16):
-##    s = ""
-##    for j in range( i, i+16):
-##        if j==len( macroSequence)-1:
-##            s += "{:s}".format(macroSequence[j])
-##            break;
-##        s += "{:s},".format(macroSequence[j])
-##    print(s)
-##print("};")
-##print()
