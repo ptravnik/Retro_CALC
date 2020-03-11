@@ -133,7 +133,7 @@ bool sendToPCKeyboard( char c){
 bool processKbdInject(){
   for( byte i=0; i<100; i++){
     if( !mySerial.available()){
-      delay(2);
+      delayMicroseconds(200);
       continue;
     }
     byte c = (byte)mySerial.read();
@@ -147,7 +147,7 @@ bool processKbdInject(){
 bool processMouseInject(){
   for( byte i=0; i<100; i++){
     if( !mySerial.available()){
-      delay(2);
+      delayMicroseconds(200);
       continue;
     }
     byte c = (byte)mySerial.read();
@@ -158,7 +158,7 @@ bool processMouseInject(){
       case 0: // buttons click
         if( c & 0x1) Mouse.click(MOUSE_LEFT);
         if( c & 0x2) Mouse.click(MOUSE_RIGHT);
-        if( c & 0x3) Mouse.click(MOUSE_MIDDLE);
+        if( c & 0x4) Mouse.click(MOUSE_MIDDLE);
         return true;
       case 1: // movement x
         Mouse.move( delta, 0, 0);
