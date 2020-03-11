@@ -229,12 +229,12 @@ char IOManager::_sendToHost(){
 // Serial communication: provides the console input-output
 // It is presumed that consoles operate UTF8 sets
 //
-void IOManager::sendChar( byte c, byte dest){
+void IOManager::sendChar( byte c, byte dest, bool wait_for_host){
   // TODO: temporary backslash printing instead of backspace
   if( c==8){
     if( _sendToSerial(dest)) Serial.write('\\'); 
     if( _sendToSerial2(dest)) Serial2.write('\\');
-    _wait_for_transmission(1);
+    if( wait_for_host) _wait_for_transmission(1);
     keepAwake();
     return;
   }  
@@ -242,7 +242,7 @@ void IOManager::sendChar( byte c, byte dest){
   if( 0<c && c<127){
     if( _sendToSerial(dest)) Serial.write(c); 
     if( _sendToSerial2(dest)) Serial2.write(c);
-    _wait_for_transmission(1);
+    if( wait_for_host) _wait_for_transmission(1);
     keepAwake();
     return;
   }
@@ -250,7 +250,7 @@ void IOManager::sendChar( byte c, byte dest){
   _CP1251_buffer[0] = c;
   _CP1251_buffer[1] = _NUL_;
   convertToUTF8( (char *)_io_buffer, _CP1251_buffer, 15);
-  sendStringUTF8( (const char *)_io_buffer, dest);
+  sendStringUTF8( (const char *)_io_buffer, dest, wait_for_host);
 }
 void IOManager::sendString( const char *str, size_t limit, byte dest){
   if(limit == 0) limit = strlen(str);
@@ -266,10 +266,10 @@ void IOManager::sendStringLn( const char *str, size_t limit, byte dest){
   convertToUTF8( (char *)_io_buffer, (byte *)str, limit);
   sendStringUTF8Ln( (const char *)_io_buffer, dest);
 }
-void IOManager::sendStringUTF8( const char *str, byte dest){
+void IOManager::sendStringUTF8( const char *str, byte dest, bool wait_for_host){
   if( _sendToSerial(dest)) Serial.print( str); 
   if( _sendToSerial2(dest)) Serial2.print( str);
-  _wait_for_transmission( strlen(str));
+  if( wait_for_host) _wait_for_transmission( strlen(str));
   keepAwake();
 }
 void IOManager::sendStringUTF8Ln( const char *str, byte dest){
@@ -282,6 +282,35 @@ void IOManager::sendLn( byte dest){
   if( _sendToSerial(dest)) Serial.println(); 
   if( _sendToSerial2(dest)) Serial2.println();
   _wait_for_transmission( 2);
+}
+
+//
+// Keyboard and mouse injection
+//
+void IOManager::injectKeyboard( byte c){
+  byte Code[] = { _KBD_INJ_, _NUL_, _NUL_};
+  Code[1] = c;
+  sendStringUTF8( Code, SERIAL2_ONLY);
+}
+void IOManager::injectKeyboard( byte *str){
+  for( byte i=0; i<255 && (*str)!=_NUL_; i++)
+    injectKeyboard( *str++);
+}
+void IOManager::injectMouseClick( bool left, bool right, bool middle){
+  byte Code[] = { _MOUSE_INJ_, _NUL_, _NUL_};
+  if( left) Code[1] += 4;
+  if( right) Code[1] += 8;
+  if( middle) Code[1] += 16;
+  sendStringUTF8( Code, SERIAL2_ONLY);
+}
+void IOManager::injectMouseMove( byte direction, int8_t amount){
+  byte Code[] = { _MOUSE_INJ_, _NUL_, _NUL_};
+  if( amount < -31) amount = -31;
+  if( amount > +31) amount = +31;
+  Code[1] = direction & 0x3;
+  if(!Code[1]) return; // wrong code!
+  Code[1] |= (amount+31)<<2;
+  sendStringUTF8( Code, SERIAL2_ONLY);
 }
 
 //

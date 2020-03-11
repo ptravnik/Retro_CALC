@@ -24,8 +24,9 @@ static U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, LCD_CLOCK, LCD_DATA, LCD_CS, LC
 //
 // Inits LCD display
 //
-unsigned long LCDManager::init( byte *io_buffer) {
-  _io_buffer = io_buffer;
+unsigned long LCDManager::init( IOManager *iom) {
+  _io_buffer = iom->getIOBuffer();
+  _iom = iom;
 
   // Set timer and attach to the led
   pinMode( LCD_LED_PIN, OUTPUT);
@@ -83,7 +84,7 @@ void LCDManager::waitForEndSplash( unsigned long start, bool cls) {
 // Makes routine checks
 //
 unsigned long LCDManager::tick() {
-  return lastInput;
+  return _iom->lastInput;
 }
 
 //

@@ -30,6 +30,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include "CP1251_mod.h"
+#include "IOManager.hpp"
 
 // fade LED PIN (replace with LED_BUILTIN=2 constant for built-in LED)
 // LCD PIN controls power for LCD
@@ -85,9 +86,8 @@ class LCDManager{
     bool lineInversed[ SCR_ROWS];
     bool forceRedraw = false;
     byte ledBrightness = 200;
-    volatile unsigned long lastInput = 0;
 
-    unsigned long init( byte *io_buffer);
+    unsigned long init( IOManager *iom);
     void waitForEndSplash( unsigned long start, bool cls = false);
     unsigned long tick();
 
@@ -143,11 +143,12 @@ class LCDManager{
     void LEDOn();
     void LEDOff();
     inline unsigned long keepAwake(){
-      lastInput = millis();
-      return lastInput;
+      return _iom->keepAwake();
     };
 
   private:
+    byte *_io_buffer;
+    IOManager *_iom;
     bool _blinked = false;
     uint32_t _last_blinked = 0;
     uint16_t _cursor_column = 0;
@@ -155,7 +156,6 @@ class LCDManager{
     inline size_t _cursor_position(){
       return _cursor_row * SCR_COLS + _cursor_column;
       };
-    byte *_io_buffer;
     byte _buffer[SCR_SIZE];
     uint8_t _tileHeight = 0;
     uint8_t _tileWidth = 0;

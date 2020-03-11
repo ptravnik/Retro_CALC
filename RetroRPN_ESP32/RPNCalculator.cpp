@@ -38,6 +38,7 @@ const char *const RPN_Message_Table[] PROGMEM = {
 // Inits calculator
 //
 unsigned long RPNCalculator::init(IOManager *iom, LCDManager *lcd, SDManager *sd){
+  _io_buffer = iom->getIOBuffer();
   _iom = iom;
   _lcd = lcd;
   _sd = sd;
@@ -55,11 +56,9 @@ unsigned long RPNCalculator::init(IOManager *iom, LCDManager *lcd, SDManager *sd
 
 unsigned long RPNCalculator::tick(){
   char c = _iom->input();
-  if(c == _NUL_){
-    return millis();
-  }
-  sendChar((byte)c);
-  return _iom->keepAwake();
+  if(c != _NUL_)
+    sendChar((byte)c);
+  return _iom->lastInput;
 }
 
 void RPNCalculator::show(){
@@ -88,11 +87,11 @@ void RPNCalculator::redraw() {
     if( !_stackRedrawRequired[i]) continue;
     _stackRedrawRequired[i] = false;
     _lcd->clearLine( j);
-    byte *buff = _iom->getIOBuffer();
-    size_t len = convertDouble( rpnStack[i], buff, _precision, _force_scientific) - buff;
+    size_t len = convertDouble( rpnStack[i],
+      _io_buffer, _precision, _force_scientific) - _io_buffer;
     if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
     _lcd->cursorTo( SCR_RIGHT-len, j);
-    _lcd->sendString( buff);
+    _lcd->sendString( _io_buffer);
   }
   byte *ptr = _input + display_starts;
   _lcd->cursorToBottom();
@@ -108,14 +107,14 @@ void RPNCalculator::redraw() {
 //
 void RPNCalculator::updateIOM( bool refresh) {
   if( !refresh) return;
-  byte *buff = _iom->getIOBuffer(); // make sure it is not reused for conversion
   _iom->sendLn();
   for( byte i=3; i>0; i--){
     _iom->sendStringLn( _messages[i]);
-    size_t len = convertDouble( rpnStack[i-1], buff, _precision, _force_scientific) - buff;
+    size_t len = convertDouble( rpnStack[i-1],
+      _io_buffer, _precision, _force_scientific) - _io_buffer;
     if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
     for( byte j=0; j<SCR_RIGHT-len; j++) _iom->sendChar( ' ');
-    _iom->sendStringUTF8Ln( buff);
+    _iom->sendStringUTF8Ln();
   }
   _iom->sendStringLn( _messages[0]);
   _iom->sendStringUTF8( RPN_Message_Table[4]);
@@ -429,6 +428,10 @@ void RPNCalculator::processInput() {
     rpnStack[0] = 1.0 / rpnStack[0];
     _popPartial();
     updateIOM(true);
+  }
+  if( IsToken( _input, "inj", false)){
+    convertDouble( rpnStack[0], _io_buffer, _precision, _force_scientific);
+    _iom->injectKeyboard();
   }
   np.parse(_input);  
   if( np.result != _NOT_A_NUMBER_){

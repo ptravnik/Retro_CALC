@@ -42,6 +42,10 @@
 #define SERIAL2_ONLY 2
 #define SERIAL_DUMMY 0
 
+#define MOUSE_MOVE_HORIZONTAL 1
+#define MOUSE_MOVE_VERTICAL   2
+#define MOUSE_MOVE_WHEEL      3
+
 class CircularBuffer{
   public:
     inline bool available(){
@@ -71,15 +75,21 @@ class IOManager{
     void setKBDLEDs( byte val);
     void flashKBDLEDs();
     
-    void sendChar( byte c, byte dest = SERIALS_BOTH);
+    void sendChar( byte c, byte dest = SERIALS_BOTH, bool wait_for_host=true);
     void sendString( const char *str, size_t limit=0, byte dest = SERIALS_BOTH);
     void sendStringLn( const char *str, size_t limit=0, byte dest = SERIALS_BOTH);
-    void sendStringUTF8( const char *str, byte dest = SERIALS_BOTH);
+    void sendStringUTF8( const char *str, byte dest = SERIALS_BOTH, bool wait_for_host=true);
     void sendStringUTF8Ln( const char *str, byte dest = SERIALS_BOTH);
     void sendLn( byte dest = SERIALS_BOTH);
-    
+
+    inline void sendStringUTF8(){
+      sendStringUTF8( (const char *)_io_buffer);
+      };    
+    inline void sendStringUTF8Ln(){
+      sendStringUTF8Ln( (const char *)_io_buffer);
+      };    
     inline void sendString( const byte *str, size_t limit=0, byte dest = SERIALS_BOTH){
-      sendString( (const byte *)str, limit, dest);
+      sendString( (const char *)str, limit, dest);
     };
     inline void sendStringLn( const byte *str, size_t limit=0, byte dest = SERIALS_BOTH){
       sendStringLn( (const char *)str, limit, dest);
@@ -94,6 +104,15 @@ class IOManager{
       lastInput = millis();
       return lastInput;
     };
+
+    void injectKeyboard( byte c);
+    void injectKeyboard( byte *str);
+    inline void injectKeyboard(){
+      injectKeyboard(_io_buffer);
+    };
+    void injectMouseClick( bool left, bool right, bool middle);
+    void injectMouseMove( byte direction, int8_t amount);
+    
     void sleepOn();
     void sleepOff();
     inline bool PM_active(){

@@ -48,7 +48,7 @@ void IRAM_ATTR isrPower() {
 
 unsigned long ESP32Host::init() {
   unsigned long initStarted = myIO.init( _io_buffer);
-  myLCD.init( _io_buffer);
+  myLCD.init( &myIO);
   
   // show ASCII graphics
   for(byte i=0; i<3; i++) myIO.sendLn();
@@ -82,38 +82,37 @@ unsigned long ESP32Host::init() {
   // TODO: interface selector here
   myRPN.show();
   myRPN.redraw();
-  lastInput = myIO.keepAwake(); 
-  return lastInput;
+  return myIO.keepAwake(); 
 }
 
 unsigned long ESP32Host::tick() {
   _checkSleepPin();
-  lastInput = mySD.tick();
-  lastInput = myIO.tick();
-  lastInput = myLCD.tick();
-  lastInput = myRPN.tick();
-  unsigned long dt = millis() - lastInput;
+  mySD.tick();
+  myIO.tick();
+  myLCD.tick();
+  myRPN.tick();  
+  unsigned long dt = millis() - myIO.lastInput;
   if(dt > POWER_OFF_PERIOD){
     deepSleep( IO_MSG_INACTIVE);
-    return lastInput;
+    return myIO.lastInput;
   }
   if(dt > SCREEN_OFF_PERIOD){
     myLCD.sleepOn();
-    return lastInput;
+    return myIO.lastInput;
   }
   if(dt > SCREEN_LED_PERIOD){
     myLCD.LEDOff();
-    return lastInput;
+    return myIO.lastInput;
   }
   if( myLCD.isAsleep){
     myLCD.sleepOff();
     myRPN.show();
     myRPN.redraw();
-    return lastInput;
+    return myIO.lastInput;
   }
   myLCD.LEDOn();
   myRPN.redraw();
-  return lastInput;
+  return myIO.lastInput;
 }
 
 void ESP32Host::_checkSleepPin(){

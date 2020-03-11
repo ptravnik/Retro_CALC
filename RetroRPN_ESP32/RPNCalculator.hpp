@@ -61,6 +61,7 @@ class RPNCalculator{
     void loadState();
     void saveState();
   private:
+    byte *_io_buffer;
     IOManager *_iom;
     LCDManager *_lcd;
     SDManager *_sd;

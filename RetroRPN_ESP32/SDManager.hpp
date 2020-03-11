@@ -39,14 +39,12 @@ class SDManager{
     volatile bool SDInserted = false;
     volatile bool SDMounted = false;
     volatile uint64_t cardSize = 0;
-    volatile unsigned long lastInput = 0;
 
     unsigned long init(IOManager *iom);
     unsigned long tick();
     uint8_t cardType();
     inline unsigned long keepAwake(){
-      lastInput = millis();
-      return lastInput;
+      return _iom->keepAwake();
     };
     void sleepOn();
     void sleepOff();

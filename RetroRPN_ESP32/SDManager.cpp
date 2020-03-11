@@ -84,7 +84,7 @@ unsigned long SDManager::init( IOManager *iom){
 
 unsigned long SDManager::tick(){
   _checkSDPin();
-  return lastInput;
+  return _iom->lastInput;
 }
 
 uint8_t SDManager::cardType(){

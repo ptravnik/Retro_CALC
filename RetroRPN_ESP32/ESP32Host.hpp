@@ -43,7 +43,6 @@
 
 class ESP32Host{
   public:
-    unsigned long lastInput = 0;  
     unsigned long init();
     unsigned long tick();
     void deepSleep( byte msg = IO_MSG_SHUTDOWN);   
