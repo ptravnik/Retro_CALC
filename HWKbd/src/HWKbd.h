@@ -64,20 +64,29 @@
 //#define HWKBD_DEBUG_
 
 // delay before the repeat starts and the repeat rate in ms
-#define HWKBD_TYPEMATIC_DELAY 200
-#define HWKBD_BUTTON_REPEAT 50
+#ifndef HWKBD_TYPEMATIC_DELAY
+#define HWKBD_TYPEMATIC_DELAY 300
+#endif
+#ifndef HWKBD_BUTTON_REPEAT
+#define HWKBD_BUTTON_REPEAT 100
+#endif
 
 // pulse width in microseconds
+#ifndef HWKBD_PULSE_LEN
 #define HWKBD_PULSE_LEN 1
+#endif
 
 // keyboard circular buffer;
-// must be a power of 2 and less than 256
+// must be: 16,32,64, or 128
+#ifndef HWKBD_BUFFER_SIZE
 #define HWKBD_BUFFER_SIZE 32
+#endif
 
 // number of buttons (maximum is 80)
+#ifndef HWKBD_LAST_BUTTON
 #define HWKBD_LAST_BUTTON 59
 #define HWKBD_LAST_CODEPAGE 59
-
+#endif
 
 #include <Arduino.h>
 #ifdef __AVR__
