@@ -10,6 +10,7 @@
 #define UTILITIES_HPP
 
 #include <Arduino.h>
+#include "CP1251_mod.h"
 
 #define UNKNOWN_UTF8 (byte)'*'
 #define DECIMAL_PLACES  9
@@ -24,10 +25,18 @@ inline bool IsSpacer(char b){
 };
 
 //
+// Skips any blanks in the input
+//
+static byte *ignore_Blanks( byte * ptr){
+  while( IsSpacer(*ptr)) ptr++;
+  return ptr;
+}
+
+//
 // Returns true if a digit
 //
 inline bool IsDigit(byte b){
-  return 48<=b && b<=57;
+  return _ZERO_<=b && b<=_NINER_;
 };
 inline bool IsDigit(char b){
   return '0'<=b && b<='9';
@@ -37,23 +46,46 @@ inline bool IsDigit(char b){
 // Returns true if a hexadecimal digit
 //
 inline byte convertHex(byte b){
-  if(48<=b && b<=57) return b-48;  // 0-9
-  if(97<=b && b<=102) return b-87; // a-e converts to 10-15
-  if(65<=b && b<=70) return b-55;  // A-E converts to 10-15
-  return 16; // impossible  
+  if(_ZERO_<=b && b<=_NINER_) return b-_ZERO_;  // 0-9
+  if(_ALPHA_<=b && b<=_FOXTROT_) return b-87; // a-e converts to 10-15
+  if(_ALPHA_C_<=b && b<=_FOXTROT_C_) return b-55;  // A-E converts to 10-15
+  return 16; // impossible
 };
 inline byte convertHex(char b){
   convertHex((byte)b);
 };
 
 //
-// Returns true if a digit or decimal
+// Returns true if a digit or a decimal point
 //
 inline bool IsDigitOrDecimal(byte b){
-  return b==46 || (48<=b && b<=57);
+  return b==_DECIMAL_ || (_ZERO_<=b && b<=_NINER_);
 };
 inline bool IsDigitOrDecimal(char b){
   return b=='.' || ('0'<=b && b<='9');
+};
+
+//
+// Returns true if a valid name starter
+//
+bool IsNameStarter(byte b);
+inline bool IsNameStarter(char b){
+  return IsNameStarter((byte)b);
+};
+
+//
+// A valid name can contain an underscore,
+// Latin or Russian letter,
+// a dollar sign $ (for strings)
+// and a percent sign % (for integers)
+//
+inline bool IsNameCharacter(byte b){
+  if(IsNameStarter( b)) return true;
+  return (b == _PERCENT_) || (b ==_DOLLAR_);
+}
+inline bool IsNameCharacter(char b){
+  if(IsNameStarter( (byte)b)) return true;
+  return (b == '%') || (b=='$');
 };
 
 //
@@ -62,6 +94,14 @@ inline bool IsDigitOrDecimal(char b){
 bool IsNumberTerm(byte b);
 inline bool IsNumberTerm(char b){
   return IsNumberTerm((byte)b);
+};
+
+//
+// Returns true if a valid name terminator
+//
+bool IsNameTerm(byte b);
+inline bool IsNameTerm(char b){
+  return IsNameTerm((byte)b);
 };
 
 //

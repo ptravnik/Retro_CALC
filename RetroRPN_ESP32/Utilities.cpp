@@ -11,9 +11,6 @@
 
 //#define __DEBUG
 
-const byte _hexadigits[] PROGMEM = 
-   { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'x'};
-
 bool IsSpacer(byte b){
   if( b == _SP_) return true;
   if( b == _TAB_) return true;
@@ -21,9 +18,27 @@ bool IsSpacer(byte b){
 }
 
 bool IsNumberTerm(byte b){
-  const char list[] = ")*+-/<=>]^%";
+  const char list[] = ")*+-/<=>]^";
   if( IsSpacer(b)) return true;
   return strchr(list, (char)b) != NULL;
+}
+
+bool IsNameTerm(byte b){
+  const char list[] = ")*+-/<=>]^";
+  if( IsSpacer(b)) return true;
+  return strchr(list, (char)b) != NULL;
+}
+
+//
+// A name can start with an undescore,
+// Latin or Russian letter
+//
+bool IsNameStarter(byte b){
+  if( _ALPHA_ <= b && b <= _ZULU_) return true; // a-z
+  if( _ALPHA_C_ <= b && b <= _ZULU_C_) return true; // A-Z
+  if( b == _UNDSCR_) return true; // underscore
+  if(  _ANNA_C_ <= b) return true; // Russian CP1251
+  return (b == _YO_) || (b == _YO_C_); // Yo
 }
 
 //bool IsToken(char *line, char *token){
@@ -203,91 +218,6 @@ byte *convertToCP1251( byte *buff, const char *message, size_t limit){
   return _addCh(ptr1, ++ptr_limit, (byte)0);
 }
 
-//
-// Converts double properly
-// Note that the buffer length must be sufficient to acommodate at least 
-// the sign, 9 characters of the number, 6 characters of the exponent and 
-// the final zero. That is 17 characters.
-// Returns a ponter to the end of converted string.
-//
-byte *convertDouble( double n, byte *buff, byte precision, bool force_sci){
-  size_t i;
-  if( n<0.0){
-    *buff++ = '-';
-    n=-n;
-  }
-  if( n < 1e-300){
-    *buff++ = '0';
-    *buff = _NUL_;
-    return buff;
-  }
-  *buff = _NUL_;
-
-  // scientific format
-  if( force_sci || n>9999999.0 || n<0.1){
-    int exponent = 0;
-    while( n>=10.0){
-      n *= 0.1;
-      exponent++;
-    }
-    while( n<1.0){
-      n *= 10;
-      exponent--;
-    }
-    dtostrf( n, precision+2, precision, (char *)buff);
-    i = strlen( buff);
-    snprintf( (char *)(buff+i), MAXIMUM_NUMBER_LENGTH-i, "e%+04d", exponent);
-    return buff + strlen( buff);
-  }
-
-  // normal decimal format
-  dtostrf( n, precision+2, precision, (char *)buff);
-
-  // check if the trailing zeros can be discarded
-  i = strlen(buff)-1;
-  while( i>0 && buff[i] == '0') i--;
-  if( buff[i] == '.') i--;
-  buff += i+1;
-  *buff = _NUL_;
-  return buff;
-}
-
-byte *convert0xH( double n, byte *buff){
-  *buff++ = _ZERO_;
-  *buff++ = _hexadigits[16];
-  if(n>9.223372036e18){
-    *buff++ = _hexadigits[7];
-    for(byte i=0; i<15; i++) *buff++ = _hexadigits[15];
-    *buff = _NUL_;
-    return buff;  
-  }
-  if(n<-9.223372036e18){
-    for(byte i=0; i<16; i++) *buff++ = _hexadigits[15];
-    *buff = _NUL_;
-    return buff;  
-  }
-  uint64_t tmp = (uint64_t)((n<0)? pow(2,64)-n-1: n);
-  if( tmp == 0){ // show at least a zero!
-    *buff++ = _hexadigits[0];
-    *buff++ = _hexadigits[0];
-    *buff = _NUL_;
-    return buff;      
-  }
-  // a 64-bit integer may contain 16 hex numbers plus the trailing zero
-  int8_t i = 16;
-  buff[i--] = _NUL_;
-  while(tmp > 0 && i>=0){
-    buff[i--] = _hexadigits[ tmp & 0x0f];
-    tmp >>= 4; 
-  }
-  i++;
-  while(1){ // shift to shorten the number
-    *buff = buff[i];
-    if(*buff == _NUL_) break;  
-    buff++;
-  }
-  return buff;
-}
 
 //#define MAX_COMMAND 256
 //static char Command[MAX_COMMAND];

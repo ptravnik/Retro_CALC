@@ -27,6 +27,7 @@
 #include "IOManager.hpp"
 #include "LCDManager.hpp"
 #include "SDManager.hpp"
+#include "Parser.hpp"
 #include "Keywords.hpp"
 
 #define INPUT_COLS    256
@@ -35,6 +36,7 @@
 #define RPN_STACK      20
 // Move must be one less than RPN_STACK times sizeof( double)
 #define RPN_MOVE   (RPN_STACK-1)*sizeof( double)
+#define RPN_PI        3.14159265359
 
 class RPNCalculator{
   public:
@@ -58,6 +60,7 @@ class RPNCalculator{
     void divide( bool refresh=true);
     void power( bool refresh=true);
     void signchange( bool refresh=true);
+    void quad( bool refresh=true);
     void loadState();
     void saveState();
   private:
@@ -73,8 +76,6 @@ class RPNCalculator{
     bool _messageRedrawRequired[ 4];
     bool _stackRedrawRequired[ 3];
     byte *_messages[4];
-    bool _force_scientific = false;
-    byte _precision = 8;
     void processCommand(byte c);
     void processEntry(byte c);
     void processDEL();

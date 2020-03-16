@@ -24,6 +24,11 @@ const char RPN_RegName3[] PROGMEM = "z:";
 const char RPN_Prompt[] PROGMEM = "> ";
 const char RPN_Error_DivZero[] PROGMEM = "Error: div 0";
 const char RPN_Error_Complex[] PROGMEM = "Complex: \xb1i";
+const char RPN_Error_Trivial[] PROGMEM = "Trivial";
+const char RPN_Error_NoRoots[] PROGMEM = "No roots";
+const char RPN_Error_OneRoot[] PROGMEM = "Single root";
+const char RPN_Error_TwoRoots[] PROGMEM = "Two roots";
+const char RPN_Error_ComplexRoots[] PROGMEM = "Complex: X\xb1iY";
 const char *const RPN_Message_Table[] PROGMEM = {
   RPN_StatusMessage,
   RPN_RegName1,
@@ -32,6 +37,11 @@ const char *const RPN_Message_Table[] PROGMEM = {
   RPN_Prompt,
   RPN_Error_DivZero,
   RPN_Error_Complex,
+  RPN_Error_Trivial,
+  RPN_Error_NoRoots,
+  RPN_Error_OneRoot,
+  RPN_Error_TwoRoots,
+  RPN_Error_ComplexRoots
   };
 
 //
@@ -87,8 +97,7 @@ void RPNCalculator::redraw() {
     if( !_stackRedrawRequired[i]) continue;
     _stackRedrawRequired[i] = false;
     _lcd->clearLine( j);
-    size_t len = convertDouble( rpnStack[i],
-      _io_buffer, _precision, _force_scientific) - _io_buffer;
+    size_t len = np.stringValue(rpnStack[i], _io_buffer)-_io_buffer;
     if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
     _lcd->cursorTo( SCR_RIGHT-len, j);
     _lcd->sendString( _io_buffer);
@@ -110,8 +119,7 @@ void RPNCalculator::updateIOM( bool refresh) {
   _iom->sendLn();
   for( byte i=3; i>0; i--){
     _iom->sendStringLn( _messages[i]);
-    size_t len = convertDouble( rpnStack[i-1],
-      _io_buffer, _precision, _force_scientific) - _io_buffer;
+    size_t len = np.stringValue(rpnStack[i-1], _io_buffer)-_io_buffer;
     if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
     for( byte j=0; j<SCR_RIGHT-len; j++) _iom->sendChar( ' ');
     _iom->sendStringUTF8Ln();
@@ -340,7 +348,7 @@ void RPNCalculator::processInput() {
     return;
   }
   if( IsToken( _input, "hex", false)){
-    convert0xH( rpnStack[0], _input);
+    np.stringHex( rpnStack[0], _input);
     cursor_column = strlen(_input);
     display_starts = 0;
     _iom->sendStringLn( _input);
@@ -416,6 +424,44 @@ void RPNCalculator::processInput() {
     updateIOM(true);
     return;
   }
+  if( IsToken( _input, "pi", false)){
+    previous_X = rpnStack[0];
+    push(false);
+    rpnStack[0] = RPN_PI;
+    setStackRedraw();
+    _clearInput();
+    updateIOM(true);
+    return;
+  }
+  if( IsToken( _input, "radius", false)){
+    previous_X = rpnStack[0];
+    rpnStack[0] = sqrt( rpnStack[0]*rpnStack[0] + rpnStack[1]*rpnStack[1]);
+    _clearInput();
+    _popPartial();
+    updateIOM(true);
+    return;
+  }
+  if( IsToken( _input, "circa", false)){
+    previous_X = rpnStack[0];
+    rpnStack[0] = 2.0 * rpnStack[0] * RPN_PI;
+    _clearInput();
+    _popPartial();
+    updateIOM(true);
+    return;
+  }
+  if( IsToken( _input, "circ", false)){
+    previous_X = rpnStack[0];
+    rpnStack[0] = rpnStack[0] * rpnStack[0] * RPN_PI;
+    _clearInput();
+    _popPartial();
+    updateIOM(true);
+    return;
+  }
+  if( IsToken( _input, "quad", false)){
+    quad();
+    _clearInput();
+    return;
+  }
   if( IsToken( _input, "inv", false)){
     _clearInput();
     if( -1e-300 < rpnStack[0] && rpnStack[0] < 1e-300){
@@ -430,7 +476,7 @@ void RPNCalculator::processInput() {
     updateIOM(true);
   }
   if( IsToken( _input, "inj", false)){
-    convertDouble( rpnStack[0], _io_buffer, _precision, _force_scientific);
+    np.stringValue( rpnStack[0], _io_buffer);
     _iom->injectKeyboard();
   }
   np.parse(_input);  
@@ -562,6 +608,65 @@ void RPNCalculator::power(bool refresh) {
 //    return;    
 //  }
   _popPartial();
+  updateIOM(refresh);
+}
+void RPNCalculator::quad(bool refresh) {
+  // Trivial solution
+  if( rpnStack[2] == 0.0 && rpnStack[1] == 0.0 && rpnStack[0] == 0.0){
+    setRPNLabel( 0, RPN_Message_Table[7]);
+    setStackRedraw();
+    updateIOM(refresh);
+    return;    
+  }
+  // No roots
+  if( rpnStack[2] == 0.0 && rpnStack[1] == 0.0){
+    setRPNLabel( 0, RPN_Message_Table[8]);
+    setStackRedraw();
+    updateIOM(refresh);
+    return;    
+  }
+  double tmp = rpnStack[2] * 2.0;
+  // Linear single root
+  if( tmp == 0.0){
+    setRPNLabel( 0, RPN_Message_Table[9]);
+    tmp = -rpnStack[0] / rpnStack[1];
+    _popPartial();
+    _popPartial();
+    rpnStack[0] = tmp;
+    setStackRedraw();
+    updateIOM(refresh);
+    return;    
+  }
+  double discr = rpnStack[1] * rpnStack[1] - 4.0 * rpnStack[0] * rpnStack[2];
+  // Quad single root
+  if( -1e-300 < discr && discr < 1e-300){
+    setRPNLabel( 0, RPN_Message_Table[9]);
+    tmp = -rpnStack[1] / tmp;
+    _popPartial();
+    _popPartial();
+    rpnStack[0] = tmp;
+    setStackRedraw();
+    updateIOM(refresh);
+    return;    
+  }
+  // Quad two roots
+  if( discr > 0.0){
+    setRPNLabel( 0, RPN_Message_Table[10]);
+    rpnStack[2] = discr;
+    discr = sqrt( discr) / tmp;
+    tmp = -rpnStack[1] / tmp;
+    rpnStack[0] = tmp+discr;
+    rpnStack[1] = tmp-discr;
+    setStackRedraw();
+    updateIOM(refresh);
+    return;    
+  }
+  setRPNLabel( 0, RPN_Message_Table[11]);
+  rpnStack[2] = discr;
+  discr = sqrt( -discr) / tmp;
+  rpnStack[0] = -rpnStack[1] / tmp;
+  rpnStack[1] = discr;
+  setStackRedraw();
   updateIOM(refresh);
 }
 

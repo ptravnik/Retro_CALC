@@ -30,7 +30,28 @@
 #define _ESC_       27
 #define _RPN_       31
 #define _SP_        32
+#define _HASH_      36
+#define _DOLLAR_    37
+#define _PERCENT_   38
+#define _COMMA_     44
+#define _DECIMAL_   46
 #define _ZERO_      48
+#define _NINER_     57
+#define _ALPHA_C_   65
+#define _FOXTROT_C_ 70
+#define _ZULU_C_    90
+#define _UNDSCR_    95
+#define _ALPHA_     97
+#define _FOXTROT_  102
+#define _ZULU_     122
+#define _YO_C_     168
+#define _YO_       184
+#define _ANNA_C_   192
+#define _YAKOV_C_  223
+#define _ANNA_     224
+#define _YAKOV_    255
+
+
 #define _COLON_     58
 #define _DEL_      127
 #define _PLSMNS_   177
