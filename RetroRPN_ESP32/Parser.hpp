@@ -78,14 +78,14 @@ class NameParser{
     inline byte * Name(){
       return _name;
     }
-  private:
-    byte _name[_MAX_IDENTIFIER_ + 2];
-    byte _name_position;
     inline void _reset_name(){
       result = false;
       *_name = _NUL_;
       _name_position = 0;
     };
+  private:
+    byte _name[_MAX_IDENTIFIER_ + 2];
+    byte _name_position;
     inline void _add_char_to_name( byte *ptr){
       _name[_name_position++] = *ptr;
       _name[_name_position] = _NUL_;
@@ -103,6 +103,9 @@ class ExpressionParser{
     NameParser nameParser;
     MathFunctions mathFunctions;
     MathFunction *lastMathFunction;
+    inline byte *_getCurrentPosition(){
+      return _parser_position;
+    }
   private:
     bool _expression_error = false;
     byte *_parser_position;

@@ -42,7 +42,6 @@ class RPNCalculator{
   public:
     bool expectCommand = false;
     double rpnStack[RPN_STACK];
-    double previous_X = 0.0;
     unsigned long init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep);
     unsigned long tick();
     void show();
@@ -87,12 +86,12 @@ class RPNCalculator{
     void processHOME();
     void processEND();
     void resetRPNLabels(bool refresh=true);
-    void setRPNLabel( byte label, byte *message);
-    inline void setRPNLabel( byte label, char *message){
-      setRPNLabel( label, (byte *)message);
+    void setRPNLabel( byte label, byte *message, bool refresh=true);
+    inline void setRPNLabel( byte label, char *message, bool refresh=true){
+      setRPNLabel( label, (byte *)message, refresh);
     };
-    inline void setRPNLabel( byte label, const char *message){
-      setRPNLabel( label, (byte *)message);
+    inline void setRPNLabel( byte label, const char *message, bool refresh=true){
+      setRPNLabel( label, (byte *)message, refresh);
     };
     inline void setStackRedraw(){
       memset( _stackRedrawRequired, true, 3);
@@ -108,11 +107,26 @@ class RPNCalculator{
     void _popPartial();
     void _clearInput();
     void _evaluateCommand();
+    void _evaluateString();
     void _checkTrigAccuracy();
     inline void _swapQuick(){
       double tmp = rpnStack[0];
       rpnStack[0] = rpnStack[1];
       rpnStack[1] = tmp;
+    };
+    inline void _pushQuick(){
+      for(byte i=RPN_STACK-1; i>0; i--)
+       rpnStack[i] = rpnStack[i-1];
+    };
+    inline void _popQuick(){
+      for(byte i=1; i<RPN_STACK; i++)
+        rpnStack[i-1] = rpnStack[i];
+    };
+    inline void _savePrevious( byte i=0){
+      _ep->mathFunctions.previous_X = rpnStack[i];
+    };
+    inline void _restorePrevious(){
+      rpnStack[0] = _ep->mathFunctions.previous_X;
     };
 };
 

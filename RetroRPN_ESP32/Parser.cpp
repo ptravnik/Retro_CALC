@@ -463,6 +463,13 @@ byte *ExpressionParser::parse(byte *str){
   _parser_position = str;
   _ignore_Blanks();
 
+  // this is a kludge to test RPN screen TODO: unkludge!
+  if( *_parser_position == '#'){
+    nameParser._reset_name();
+    result = _STRING_;
+    return _parser_position; 
+  }
+
   // names evaluation
   if( IsNameStarter( *_parser_position) ){
     _parser_position = nameParser.parse(_parser_position);
@@ -483,11 +490,12 @@ byte *ExpressionParser::parse(byte *str){
     Serial.print("Located function: ");
     Serial.println(lastMathFunction->name0);
     #endif
+    MathFunction *mfptr = lastMathFunction; // could be a recursive call!
     if(_parse_FunctionArguments(lastMathFunction)){
       result = _STRING_;
       return _parser_position;
     }
-    double *tmp = mathFunctions.Compute( lastMathFunction, _args);
+    double *tmp = mathFunctions.Compute( mfptr, _args);
     #ifdef __DEBUG
     Serial.print("Computation returned: ");
     Serial.println(*tmp);
