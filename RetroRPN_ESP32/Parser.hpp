@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
 //
 //  RetroRPN - "Электроника МК-90" reborn
 //  Copyright (c) 2019 Pavel Travnik.  All right reserved.
@@ -12,6 +12,7 @@
 #include <Arduino.h>
 #include <math.h>
 #include "Utilities.hpp"
+#include "MathFunctions.hpp"
 
 #define _NOT_A_NUMBER_  0 
 #define _INTEGER_       1
@@ -46,6 +47,15 @@ class NumberParser{
     byte *stringHex( double n, byte *ptr=NULL, byte max_len=_NUMBER_LENGTH_);
     byte *stringHex( byte *ptr=NULL, byte max_len=_NUMBER_LENGTH_);
     byte *parse( byte *str);
+    void negate();
+    inline void setValue( double v){
+      result = _REAL_;
+      _dValue = v;
+    }
+    inline void setValue( int64_t v){
+      result = _INTEGER_;
+      _iValue = v;
+    }
 private:
     byte _numString[_NUMBER_LENGTH_];
     double _dValue = 0.0;           
@@ -62,6 +72,12 @@ class NameParser{
   public:
     bool result = false;
     byte *parse( byte *str);
+    inline bool isKeyword( const char *kw){
+      return result && (strcmp(kw, (char *)_name)==0);
+    }
+    inline byte * Name(){
+      return _name;
+    }
   private:
     byte _name[_MAX_IDENTIFIER_ + 2];
     byte _name_position;
@@ -79,22 +95,30 @@ class NameParser{
 class ExpressionParser{
   public:
     byte result = _NOT_A_NUMBER_;
-    double realValue();
-    int64_t integerValue();
-    byte *stringValue();
+    inline void init(){
+      mathFunctions.init();
+    };
     byte *parse( byte *str);
+    NumberParser numberParser;
+    NameParser nameParser;
+    MathFunctions mathFunctions;
+    MathFunction *lastMathFunction;
   private:
+    bool _expression_error = false;
+    byte *_parser_position;
+    double _args[3];
+    inline void _ignore_Blanks(){
+      while(IsSpacer(*_parser_position))
+        _parser_position++;
+    };
+    inline bool _check_NextToken( byte c){
+      if( *_parser_position != c ) return false;
+      _parser_position++;
+      return true;
+    };
+    bool _validate_NextCharacter( byte c);
+    bool _parse_ListMember( byte terminator);
+    bool _parse_FunctionArguments(MathFunction *mf);
 };
-
-////
-//// Processes a bracket pair
-////
-//static double parse_BracketPair(){
-//  if( validate_NextCharacter( '(')) return 0.0;
-//  double a = parse_Expression_AND_OR();
-//  if( validate_NextCharacter( ')')) return 0.0;
-//  return a;
-//}
-
 
 #endif // _PARSER_HPP

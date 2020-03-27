@@ -18,14 +18,19 @@ bool IsSpacer(byte b){
 }
 
 bool IsNumberTerm(byte b){
-  const char list[] = ")*+-/<=>]^";
+  const char list[] = ":;,)*+-/<=>]^";
   if( IsSpacer(b)) return true;
   return strchr(list, (char)b) != NULL;
 }
 
 bool IsNameTerm(byte b){
-  const char list[] = ")*+-/<=>]^";
+  const char list[] = ":;,()*+-/<=>[]^";
   if( IsSpacer(b)) return true;
+  return strchr(list, (char)b) != NULL;
+}
+
+bool IsListTerm(byte b){
+  const char list[] = ",;";
   return strchr(list, (char)b) != NULL;
 }
 
@@ -39,6 +44,21 @@ bool IsNameStarter(byte b){
   if( b == _UNDSCR_) return true; // underscore
   if(  _ANNA_C_ <= b) return true; // Russian CP1251
   return (b == _YO_) || (b == _YO_C_); // Yo
+}
+
+bool IsEndStatement( byte b){
+  if( b == _NUL_) return true;
+  if( b == _CR_) return true;
+  if( b == _LF_) return true;
+  if( b == ':') return true;
+  return false;
+}
+
+bool IsOneOfKeywords(byte *str, const char **keywords, byte nkw){
+  for(byte i=0; i<nkw; i++){
+    if( IsKeyword(str, keywords[i])) return true;
+  }
+  return false;
 }
 
 //bool IsToken(char *line, char *token){

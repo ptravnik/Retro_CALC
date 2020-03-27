@@ -11,6 +11,7 @@
 //#define __DEBUG
 
 static volatile bool PowerOffRequested = false;
+static ExpressionParser myEP;
 static IOManager myIO;
 static SDManager mySD;
 static LCDManager myLCD;
@@ -76,7 +77,8 @@ unsigned long ESP32Host::init() {
   _waitUntilSleepPinHigh();
   PowerOffRequested = false;
   attachInterrupt( POWER_DETECT_PIN, isrPower, RISING);
-  myRPN.init(&myIO, &myLCD, &mySD);
+  myEP.init();
+  myRPN.init(&myIO, &myLCD, &mySD, &myEP);
   myLCD.waitForEndSplash( initStarted);
 
   // TODO: interface selector here

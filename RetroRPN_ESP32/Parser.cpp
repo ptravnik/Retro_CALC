@@ -47,6 +47,19 @@ int64_t NumberParser::integerValue(){
   return 0;
 }
 
+void NumberParser::negate(){
+  switch(result){
+    case _REAL_:
+      _dValue = -_dValue;
+      return;
+    case _INTEGER_:
+      _iValue = -_iValue;
+      return;
+    default:
+      break;
+  }
+}
+
 //
 // Converts double or int properly
 // Note that the buffer length must be sufficient to acommodate at least 
@@ -197,7 +210,7 @@ byte *NumberParser::stringHex( byte *ptr, byte max_len){
 //
 byte *NumberParser::parse( byte *str){
   #ifdef __DEBUG
-  Serial.print("Parsing: [");
+  Serial.print("Number parsing: [");
   Serial.print((char*)str);
   Serial.println("]");
   #endif  
@@ -386,7 +399,7 @@ byte *NumberParser::_parseHex( byte *str){
 //
 byte *NameParser::parse( byte *str){
   #ifdef __DEBUG
-  Serial.print("Parsing: [");
+  Serial.print("Name parsing: [");
   Serial.print((char*)str);
   Serial.println("]");
   #endif
@@ -413,4 +426,128 @@ byte *NameParser::parse( byte *str){
     return ptr;
   _reset_name();
   return str;
+}
+
+//
+// Checks if the value at text position is character c
+// Used for finding commas, new lines and such
+//
+bool ExpressionParser::_validate_NextCharacter( byte c){
+  _expression_error = _expression_error && (*_parser_position != c);
+  if( _expression_error) return true;
+  _parser_position++;
+  _ignore_Blanks();
+  return false;  
+}
+
+//
+// Processes a bracket pair (less the opening bracket) or list member 
+//
+bool ExpressionParser::_parse_ListMember( byte terminator){
+  _parser_position = parse(_parser_position);
+  if( numberParser.result == _NOT_A_NUMBER_) return true;
+  if( _validate_NextCharacter( terminator)) return true;
+  _ignore_Blanks();
+  return false;
+}
+
+byte *ExpressionParser::parse(byte *str){
+  #ifdef __DEBUG
+  Serial.print("Parsing: [");
+  Serial.print((char*)str);
+  Serial.println("]");
+  #endif  
+
+  result = _NOT_A_NUMBER_;
+  _expression_error = false;
+  _parser_position = str;
+  _ignore_Blanks();
+
+  // names evaluation
+  if( IsNameStarter( *_parser_position) ){
+    _parser_position = nameParser.parse(_parser_position);
+    if(!nameParser.result) return _parser_position;
+    #ifdef __DEBUG
+    Serial.print("Found keyword: ");
+    Serial.println((char *)nameParser.Name());
+    #endif
+    lastMathFunction = mathFunctions.getFunction(nameParser.Name());
+    if( lastMathFunction == NULL){
+      #ifdef __DEBUG
+      Serial.println("This name is indefined!");
+      #endif
+      result = _STRING_;
+      return _parser_position;
+    }
+    #ifdef __DEBUG
+    Serial.print("Located function: ");
+    Serial.println(lastMathFunction->name0);
+    #endif
+    if(_parse_FunctionArguments(lastMathFunction)){
+      result = _STRING_;
+      return _parser_position;
+    }
+    double *tmp = mathFunctions.Compute( lastMathFunction, _args);
+    #ifdef __DEBUG
+    Serial.print("Computation returned: ");
+    Serial.println(*tmp);
+    #endif
+    numberParser.setValue(*tmp);
+    result = numberParser.result;
+    return _parser_position;
+  }
+  
+  // Unary + and unary - by recursive calls such as 5 * -2; not sure is this should be allowed
+  if( _check_NextToken( '+')){
+    parse(_parser_position);
+    _expression_error = _expression_error || !IsEndStatement( *_parser_position);
+    if(_expression_error) return _parser_position;
+    result = numberParser.result;
+    return _parser_position;
+  }
+  if( _check_NextToken( '-')){
+    parse(_parser_position);
+    _expression_error = _expression_error || !IsEndStatement( *_parser_position);
+    if(_expression_error) return _parser_position;
+    numberParser.negate();
+    result = numberParser.result;
+    return _parser_position;
+  }
+
+  // opening bracket - evaluate inside, get a pair braket
+  if( _check_NextToken( '(')){
+    if( _parse_ListMember( ')')) return _parser_position;
+    result = numberParser.result;
+    return _parser_position;
+  }
+  
+  // not a bracket - leftovers
+  _parser_position = numberParser.parse(_parser_position);
+  result = numberParser.result;
+  return _parser_position;
+}
+
+bool ExpressionParser::_parse_FunctionArguments(MathFunction *mf){
+  _ignore_Blanks();
+  if(mf->nArgs == 0) return false;
+  if(!_check_NextToken( '(')) return true;
+  for( byte i=0; i<mf->nArgs-1; i++){
+    if( _parse_ListMember( ',')) return true;
+    _args[i] = numberParser.realValue();
+    #ifdef __DEBUG
+    Serial.print("Argument [");
+    Serial.print( i);
+    Serial.print("] parsed: ");
+    Serial.println(_args[0]);
+    #endif
+  }
+  if( _parse_ListMember( ')')) return true;
+  _args[mf->nArgs-1] = numberParser.realValue();
+  #ifdef __DEBUG
+  Serial.print("Argument [");
+  Serial.print( mf->nArgs-1);
+  Serial.print("] parsed: ");
+  Serial.println(_args[mf->nArgs-1]);
+  #endif
+  return false;
 }

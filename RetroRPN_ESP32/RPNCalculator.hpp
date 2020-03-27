@@ -43,7 +43,7 @@ class RPNCalculator{
     bool expectCommand = false;
     double rpnStack[RPN_STACK];
     double previous_X = 0.0;
-    unsigned long init(IOManager *iom, LCDManager *lcd, SDManager *sd);
+    unsigned long init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep);
     unsigned long tick();
     void show();
     void redraw();
@@ -68,6 +68,7 @@ class RPNCalculator{
     IOManager *_iom;
     LCDManager *_lcd;
     SDManager *_sd;
+    ExpressionParser *_ep;
     byte _input[INPUT_COLS];
     byte _inputPrevious[INPUT_COLS];
     uint16_t cursor_column = 0;
@@ -95,17 +96,24 @@ class RPNCalculator{
     };
     inline void setStackRedraw(){
       memset( _stackRedrawRequired, true, 3);
-      };
+    };
     inline void copyToPrevious(){
       strcpy( (char *)_inputPrevious, (char *)_input);
-      };
+    };
     inline bool isInputEmpty(){
       return *_input == _NUL_;
-    }
+    };
     void copyFromPrevious();
     void updateIOM(bool refresh=true);
     void _popPartial();
     void _clearInput();
+    void _evaluateCommand();
+    void _checkTrigAccuracy();
+    inline void _swapQuick(){
+      double tmp = rpnStack[0];
+      rpnStack[0] = rpnStack[1];
+      rpnStack[1] = tmp;
+    };
 };
 
 #endif //RPNCALCULATOR_HPP

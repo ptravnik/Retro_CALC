@@ -27,7 +27,7 @@ inline bool IsSpacer(char b){
 //
 // Skips any blanks in the input
 //
-static byte *ignore_Blanks( byte * ptr){
+inline byte *ignore_Blanks( byte * ptr){
   while( IsSpacer(*ptr)) ptr++;
   return ptr;
 }
@@ -41,6 +41,14 @@ inline bool IsDigit(byte b){
 inline bool IsDigit(char b){
   return '0'<=b && b<='9';
 };
+
+//
+// ComparesStrings, returns true if identical
+//
+inline bool IsKeyword(byte *str, const char *keyword){
+  return strcmp((char *)str, keyword) == 0;
+}
+inline bool IsOneOfKeywords(byte *str, const char **keywords, byte nkw=1);
 
 //
 // Returns true if a hexadecimal digit
@@ -103,6 +111,18 @@ bool IsNameTerm(byte b);
 inline bool IsNameTerm(char b){
   return IsNameTerm((byte)b);
 };
+bool IsListTerm(byte b);
+inline bool IsListTerm(char b){
+  return IsListTerm((byte)b);
+};
+
+//
+// returns true if the character is an end of statement
+//
+bool IsEndStatement( byte b);
+inline bool IsEndStatement( char b){
+  return IsEndStatement((byte)b);
+}
 
 //
 // Compares a token
