@@ -236,9 +236,15 @@ kbd.addButtonSimple("lL  лЛ  ") # 39
 kbd.addButtonNoSwitch(["#CODE=008","#CODE=127","#CODE=008","#CODE=127",
                        "#CODE=008","#CODE=127","#CODE=008","#CODE=127"]) # 40
 
-kbd.addButtonSimple("zZ  зЗ  ") # 41
-kbd.addButtonSimple("xX  хХ  ") # 42
-kbd.addButtonSimple("cC  цЦ  ") # 43
+#kbd.addButtonSimple("zZ  зЗ  ") # 41
+kbd.addButtonNoSwitch(["z","Z","#CODE=010sin#CODE=013","#CODE=010asin#CODE=013",
+                       "з","З","#CODE=010sin#CODE=013","#CODE=010asin#CODE=013"]) # 41 (sine)
+#kbd.addButtonSimple("xX  хХ  ") # 42
+kbd.addButtonNoSwitch(["x","X","#CODE=010cos#CODE=013","#CODE=010acos#CODE=013",
+                       "х","Х","#CODE=010cos#CODE=013","#CODE=010acos#CODE=013"]) # 42 (cosine)
+#kbd.addButtonSimple("cC  цЦ  ") # 43
+kbd.addButtonNoSwitch(["c","C","#CODE=010tan#CODE=013","#CODE=010atan#CODE=013",
+                       "ц","Ц","#CODE=010tan#CODE=013","#CODE=010atan#CODE=013"]) # 42 (tangent)
 kbd.addButtonSimple("vV  вВ  ") # 44
 kbd.addButtonSimple("bB  бБ  ") # 45
 kbd.addButtonSimple("nN  нН  ") # 46
@@ -262,8 +268,8 @@ kbd.addButton([("#CODE=020", 0), ("S-down",1), ("#CODE=024",0), ("S-pgdn",3),
                ("#CODE=020", 4), ("S-down",5), ("#CODE=024",4), ("S-pgdn",7)])   # 55 arrow down
 kbd.addButton([("#CODE=019", 0), ("S-up",1), ("#CODE=023",0), ("S-pgup",3),
                ("#CODE=019", 4), ("S-up",5), ("#CODE=023",4), ("S-pgup",7)])     # 56 arrow up
-kbd.addButton([("#CODE=018", 0), ("S-right",1), ("#CODE=022",0), ("S-end",3),
-               ("#CODE=018", 4), ("S-right",5), ("#CODE=022",4), ("S-end",7)])   # 57 arrow right
+kbd.addButton([("#CODE=018", 0), ("S-right",1), ("#CODE=022",0), ("#CODE=010inj#CODE=013",0),
+               ("#CODE=018", 4), ("S-right",5), ("#CODE=022",4), ("#CODE=010inj#CODE=013",4)])   # 57 arrow right
 kbd.addButtonNoSwitch(["#CODE=013","#CODE=013","SC-end","SC-home",
                        "#CODE=013","#CODE=013","SC-end","SC-home"])              # 58 ENTER
 kbd.addButton([("", 1), ("",0), ("",2), ("",3),
