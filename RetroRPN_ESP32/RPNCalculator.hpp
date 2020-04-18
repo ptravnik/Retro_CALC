@@ -47,7 +47,7 @@ class RPNCalculator{
     void show();
     void redraw();
     void sendChar( byte c);
-    void processInput();
+    void processInput(bool silent=false);
     void push( bool refresh=true);
     void pop( bool refresh=true);
     void swap( bool refresh=true);

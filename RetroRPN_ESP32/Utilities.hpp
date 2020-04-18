@@ -155,10 +155,14 @@ byte *convertToCP1251( byte *buff, const char *message, size_t limit);
 //
 inline size_t strlen( byte *t){
   return strlen((char *)t);
-}
+};
 inline size_t strlen( const byte *t){
   return strlen((char *)t);
-}
+};
+inline bool startsWithC(byte *ptr, const char *val){
+  byte * tmp = (byte *)strstr((const char*)ptr, val);
+  return tmp == ptr;
+};
 
 //
 // Converts double properly

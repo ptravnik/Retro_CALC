@@ -31,6 +31,7 @@
 #define _RPN_DIV0_CHECK_ 8
 #define _RPN_QUICK_PUSH_ 9
 #define _RPN_SWAP_ONLY_  10
+#define _RPN_INVTRIG_    11
 
 #define _MF_AMODE_KW_   0
 #define _MF_DEG_KW_     1
@@ -60,8 +61,13 @@
 #define _MF_SCIRC_KW_   25
 #define _MF_VSPHERE_KW_ 26
 #define _MF_SSPHERE_KW_ 27
+#define _MF_ASIN_KW_    28
+#define _MF_ACOS_KW_    29
+#define _MF_ATAN_KW_    30
+#define _MF_TRUE_KW_    31
+#define _MF_FALSE_KW_   32
 
-#define NMATH_FUNCTIONS 28
+#define NMATH_FUNCTIONS 33
 
 struct MathFunction{
     int16_t id = 0;
@@ -82,6 +88,7 @@ class MathFunctions{
     double *Compute( MathFunction *mf, double arg);
     double *Compute( MathFunction *mf);
     double getConvertedAngle( double a);
+    double getUnconvertedAngle( double a);
     double *quad( double *args);
     double previous_X = 0.0;
   private:

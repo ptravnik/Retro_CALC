@@ -18,13 +18,13 @@ bool IsSpacer(byte b){
 }
 
 bool IsNumberTerm(byte b){
-  const char list[] = ":;,)*+-/<=>]^";
+  const char list[] = ":;,)*+-/<=>]^%";
   if( IsSpacer(b)) return true;
   return strchr(list, (char)b) != NULL;
 }
 
 bool IsNameTerm(byte b){
-  const char list[] = ":;,()*+-/<=>[]^";
+  const char list[] = ":;,()*+-/<=>[]^%";
   if( IsSpacer(b)) return true;
   return strchr(list, (char)b) != NULL;
 }

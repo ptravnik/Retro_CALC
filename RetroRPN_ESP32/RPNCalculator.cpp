@@ -25,6 +25,7 @@ const char RPN_RegName3[] PROGMEM = "z:";
 const char RPN_Prompt[] PROGMEM = "> ";
 const char RPN_Error_DivZero[] PROGMEM = "Err: div 0";
 const char RPN_Error_NAN[] PROGMEM = "Err: NaN";
+const char RPN_Error_Trig[] PROGMEM = "Err: |X|>1";
 const char RPN_Warning_ZeroPowerZero[] PROGMEM = "Warn: 0^0";
 const char RPN_Warning_Accuracy[] PROGMEM = "Warn: Inaccurate!";
 const char RPN_Mode_Degrees[] PROGMEM = "Mode: Degrees";
@@ -179,8 +180,11 @@ void RPNCalculator::sendChar( byte c) {
     case _RPN_:
       expectCommand = true;
       return;
+    case _LF_:
+      processInput(true);
+      return;
     case _CR_:
-      processInput();
+      processInput(false);
       return;
     case _LEFT_:
       processLEFT();
@@ -273,7 +277,7 @@ void RPNCalculator::processCommand(byte c){
 //
 // Parses line and performs operation
 //
-void RPNCalculator::processInput() {
+void RPNCalculator::processInput( bool silent) {
   #ifdef __DEBUG
   Serial.print("Processing Input: [");
   Serial.print( (char *)_input);
@@ -298,8 +302,10 @@ void RPNCalculator::processInput() {
       for(byte i=RPN_STACK-1; i>0; i--)
         rpnStack[i] = rpnStack[i-1];
       rpnStack[0] = _ep->numberParser.realValue();
-      setStackRedraw();
-      updateIOM();
+      if( !silent){
+        setStackRedraw();
+        updateIOM();
+      }
       break;
   }
   _clearInput();
@@ -579,6 +585,14 @@ void RPNCalculator::_evaluateCommand(){
     case _RPN_CHECK_TRIG_:
       _checkTrigAccuracy();
       break;
+    case _RPN_INVTRIG_:
+      if( abs(rpnStack[0]) > 1.0){
+        setRPNLabel( 0, RPN_Error_Trig);
+        _stackRedrawRequired[ 0] = true;
+        updateIOM(doUpdateIOM);
+        return;
+      }
+      break;
     case _RPN_DIV0_CHECK_:
       if( rpnStack[0] == 0.0){
         setRPNLabel( 0, RPN_Error_DivZero);
@@ -621,7 +635,7 @@ void RPNCalculator::_evaluateCommand(){
       break;
   }
   return_ptr = _ep->mathFunctions.Compute( _ep->lastMathFunction, rpnStack);
-  rpnStack[0] = return_ptr[0];
+  if( _ep->lastMathFunction->nArgs > 0) rpnStack[0] = return_ptr[0];
   if( doPopPartial && _ep->lastMathFunction->nArgs > 1) _popPartial();
   else _stackRedrawRequired[ 0] = true;
   updateIOM(doUpdateIOM);

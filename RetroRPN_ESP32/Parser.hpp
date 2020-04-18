@@ -109,7 +109,7 @@ class ExpressionParser{
   private:
     bool _expression_error = false;
     byte *_parser_position;
-    double _args[3];
+    //double _args[3];
     inline void _ignore_Blanks(){
       while(IsSpacer(*_parser_position))
         _parser_position++;
@@ -120,8 +120,16 @@ class ExpressionParser{
       return true;
     };
     bool _validate_NextCharacter( byte c);
+    bool _validate_NextOperation( const char *op1);
+    bool _validate_NextOperation( const char *op1, const char *op2);
     bool _parse_ListMember( byte terminator);
-    bool _parse_FunctionArguments(MathFunction *mf);
+    bool _parse_FunctionArguments(MathFunction *mf, double *_args);
+    byte *_parse_Expression_Comparison();
+    byte *_parse_Expression_Add_Sub();
+    byte *_parse_Expression_Mult_Div();
+    byte *_parse_Expression_Power();
+    byte *_parse_Expression_Value();
+    byte *_bracket_Check();
 };
 
 #endif // _PARSER_HPP

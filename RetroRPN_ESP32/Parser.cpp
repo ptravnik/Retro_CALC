@@ -433,7 +433,7 @@ byte *NameParser::parse( byte *str){
 // Used for finding commas, new lines and such
 //
 bool ExpressionParser::_validate_NextCharacter( byte c){
-  _expression_error = _expression_error && (*_parser_position != c);
+  _expression_error = _expression_error || (*_parser_position != c);
   if( _expression_error) return true;
   _parser_position++;
   _ignore_Blanks();
@@ -441,27 +441,62 @@ bool ExpressionParser::_validate_NextCharacter( byte c){
 }
 
 //
+// Checks if the value at text position is one of operations
+// Used for finding ** and such
+//
+bool ExpressionParser::_validate_NextOperation( const char *op1){
+  if( _expression_error) return true;
+  if( startsWithC(_parser_position, op1)){
+    _parser_position += strlen(op1);
+    _ignore_Blanks();
+    return false;
+  }
+  return true;
+}
+bool ExpressionParser::_validate_NextOperation( const char *op1, const char *op2){
+  if( _expression_error) return true;
+  if( startsWithC(_parser_position, op1)){
+    _parser_position += strlen(op1);
+    _ignore_Blanks();
+    return false;
+  }
+  if( startsWithC(_parser_position, op2)){
+    _parser_position += strlen(op2);
+    _ignore_Blanks();
+    return false;
+  }
+  return true;
+}
+
+//
 // Processes a bracket pair (less the opening bracket) or list member 
 //
 bool ExpressionParser::_parse_ListMember( byte terminator){
-  _parser_position = parse(_parser_position);
+  _parse_Expression_Comparison();
+  //_parse_Expression_Value();
+  //_parser_position = parse(_parser_position);
   if( numberParser.result == _NOT_A_NUMBER_) return true;
   if( _validate_NextCharacter( terminator)) return true;
   _ignore_Blanks();
   return false;
 }
 
+//
+// Main parsing entry
+//
 byte *ExpressionParser::parse(byte *str){
   #ifdef __DEBUG
   Serial.print("Parsing: [");
   Serial.print((char*)str);
   Serial.println("]");
-  #endif  
+  #endif
 
   result = _NOT_A_NUMBER_;
   _expression_error = false;
   _parser_position = str;
   _ignore_Blanks();
+  byte *ptr = _bracket_Check();
+  if( _expression_error) return ptr;
 
   // this is a kludge to test RPN screen TODO: unkludge!
   if( *_parser_position == '#'){
@@ -470,7 +505,196 @@ byte *ExpressionParser::parse(byte *str){
     return _parser_position; 
   }
 
+  _parse_Expression_Comparison();
+  //_parse_Expression_Add_Sub();
+  //_parse_Expression_Mult_Div();
+  //_parse_Expression_Power();
+  if( _expression_error) result = _NOT_A_NUMBER_;
+  return _parser_position;
+}
+
+//
+// Processes comparisons left to right
+//
+byte *ExpressionParser::_parse_Expression_Comparison(){
+  double a,b;
+  byte *ptr = _parse_Expression_Add_Sub();
+  if(_expression_error) return ptr;
+  a = numberParser.realValue();
+  while(true){
+    _ignore_Blanks();
+    if( !_validate_NextOperation( "<=")){
+      ptr = _parse_Expression_Add_Sub();
+      if(_expression_error) return ptr;
+      b = numberParser.realValue();
+      a = (a<=b)? 1.0: 0.0;
+      continue;
+    }
+    if( !_validate_NextOperation( ">=")){
+      ptr = _parse_Expression_Add_Sub();
+      if(_expression_error) return ptr;
+      b = numberParser.realValue();
+      a = (a>=b)? 1.0: 0.0;
+      continue;
+    }
+    if( !_validate_NextOperation( "<")){
+      ptr = _parse_Expression_Add_Sub();
+      if(_expression_error) return ptr;
+      b = numberParser.realValue();
+      a = (a<b)? 1.0: 0.0;
+      continue;
+    }
+    if( !_validate_NextOperation( ">")){
+      ptr = _parse_Expression_Add_Sub();
+      if(_expression_error) return ptr;
+      b = numberParser.realValue();
+      a = (a>b)? 1.0: 0.0;
+      continue;
+    }
+    if( !_validate_NextOperation( "==")){
+      ptr = _parse_Expression_Add_Sub();
+      if(_expression_error) return ptr;
+      b = numberParser.realValue();
+      a = (a==b)? 1.0: 0.0;
+      continue;
+    }
+    if( !_validate_NextOperation( "!=", "<>")){
+      ptr = _parse_Expression_Add_Sub();
+      if(_expression_error) return ptr;
+      b = numberParser.realValue();
+      a = (a!=b)? 1.0: 0.0;
+      continue;
+    }
+    if( !_validate_NextOperation( "is not ", "IS NOT ")){
+      ptr = _parse_Expression_Add_Sub();
+      if(_expression_error) return ptr;
+      b = numberParser.realValue();
+      a = (a!=b)? 1.0: 0.0;
+      continue;
+    }
+    if( !_validate_NextOperation( "is ", "IS ")){
+      ptr = _parse_Expression_Add_Sub();
+      if(_expression_error) return ptr;
+      b = numberParser.realValue();
+      a = (a==b)? 1.0: 0.0;
+      continue;
+    }
+    break;
+  }
+  numberParser.setValue( a);
+  return _parser_position;
+}
+
+//
+// Processes addition and subtraction left to right
+//
+byte *ExpressionParser::_parse_Expression_Add_Sub(){
+  double a,b;
+  byte *ptr = _parse_Expression_Mult_Div();
+  if(_expression_error) return ptr;
+  a = numberParser.realValue();
+  while(true){
+    _ignore_Blanks();
+    if(*_parser_position == '+' && _parser_position[1] != '+') {
+      _parser_position++;
+      ptr = _parse_Expression_Mult_Div();
+      if(_expression_error) return ptr;
+      a += numberParser.realValue();
+      continue;
+    }
+    if(*_parser_position == '-' && _parser_position[1] != '-') {
+      _parser_position++;
+      ptr = _parse_Expression_Mult_Div();
+      if(_expression_error) return ptr;
+      a -= numberParser.realValue();
+      continue;
+    }
+    break;
+  }
+  numberParser.setValue( a);
+  return _parser_position;
+}
+
+//
+// Processes multiplication and division left to right
+//
+byte *ExpressionParser::_parse_Expression_Mult_Div(){
+  double a,b;
+  int64_t c;
+  byte *ptr = _parse_Expression_Power();
+  if(_expression_error) return ptr;
+  a = numberParser.realValue();
+  while(true){
+    _ignore_Blanks();
+    if(*_parser_position == '*' && _parser_position[1] != '*') {
+      _parser_position++;
+      ptr = _parse_Expression_Power();
+      if(_expression_error) return ptr;
+      a *= numberParser.realValue();
+      continue;
+    }
+    if( !_validate_NextOperation( "//")){
+      ptr = _parse_Expression_Power();
+      if(_expression_error) return ptr;
+      c = numberParser.integerValue();
+      _expression_error = (c == 0);
+      if(_expression_error) return ptr;
+      a = (double)((int64_t)a / c);
+      continue;
+    }
+    if(*_parser_position == '/' && _parser_position[1] != '/') {
+      _parser_position++;
+      ptr = _parse_Expression_Power();
+      if(_expression_error) return ptr;
+      b = numberParser.realValue();
+      _expression_error = (b == 0.0);
+      if(_expression_error) return ptr;
+      a /= b;
+      continue;
+    }
+    if( !_validate_NextOperation( "%")){
+      ptr = _parse_Expression_Power();
+      if(_expression_error) return ptr;
+      c = numberParser.integerValue();
+      _expression_error = (a > _HUGE_POS_INTEGER_) || (a < _HUGE_NEG_INTEGER_) || (c == 0);
+      if(_expression_error) return ptr;
+      a = (double)((int64_t)a % c);
+      continue;
+    }
+    break;
+  }
+  numberParser.setValue( a);
+  return _parser_position;
+}
+
+//
+// Processes power left to right
+//
+byte *ExpressionParser::_parse_Expression_Power(){
+  double a,b;
+  byte *ptr = _parse_Expression_Value();
+  if(_expression_error) return ptr;
+  a = numberParser.realValue();
+  while(true){
+    _ignore_Blanks();
+    if(_validate_NextOperation( "^", "**")){
+      numberParser.setValue( a); 
+      break;
+    }
+    ptr = _parse_Expression_Value();
+    if(_expression_error) return ptr;
+    b = numberParser.realValue();
+    a = pow(a, b);
+  }
+  return _parser_position;
+}
+
+//
+// Processes expression for value
+//
+byte *ExpressionParser::_parse_Expression_Value(){
   // names evaluation
+  _ignore_Blanks();
   if( IsNameStarter( *_parser_position) ){
     _parser_position = nameParser.parse(_parser_position);
     if(!nameParser.result) return _parser_position;
@@ -491,10 +715,19 @@ byte *ExpressionParser::parse(byte *str){
     Serial.println(lastMathFunction->name0);
     #endif
     MathFunction *mfptr = lastMathFunction; // could be a recursive call!
-    if(_parse_FunctionArguments(lastMathFunction)){
+    double _args[3]; // kept on system stack
+    if(_parse_FunctionArguments(lastMathFunction, _args)){
       result = _STRING_;
       return _parser_position;
     }
+    #ifdef __DEBUG
+    Serial.print("Function: ");
+    Serial.print(mfptr->name1);
+    for( byte i=0; i<3; i++){
+      Serial.print(" ");
+      Serial.print(_args[i]);
+    }
+    #endif    
     double *tmp = mathFunctions.Compute( mfptr, _args);
     #ifdef __DEBUG
     Serial.print("Computation returned: ");
@@ -507,15 +740,17 @@ byte *ExpressionParser::parse(byte *str){
   
   // Unary + and unary - by recursive calls such as 5 * -2; not sure is this should be allowed
   if( _check_NextToken( '+')){
-    parse(_parser_position);
-    _expression_error = _expression_error || !IsEndStatement( *_parser_position);
+    //Serial.println("Arrived into unary plus:");
+    //Serial.println((const char *)_parser_position);    
+    _parse_Expression_Comparison();
     if(_expression_error) return _parser_position;
     result = numberParser.result;
     return _parser_position;
   }
   if( _check_NextToken( '-')){
-    parse(_parser_position);
-    _expression_error = _expression_error || !IsEndStatement( *_parser_position);
+    //Serial.println("Arrived into negation:");
+    //Serial.println((const char *)_parser_position);    
+    _parse_Expression_Comparison();
     if(_expression_error) return _parser_position;
     numberParser.negate();
     result = numberParser.result;
@@ -524,6 +759,8 @@ byte *ExpressionParser::parse(byte *str){
 
   // opening bracket - evaluate inside, get a pair braket
   if( _check_NextToken( '(')){
+    //Serial.println("Arrived into brackets:");
+    //Serial.println((const char *)_parser_position);    
     if( _parse_ListMember( ')')) return _parser_position;
     result = numberParser.result;
     return _parser_position;
@@ -535,7 +772,7 @@ byte *ExpressionParser::parse(byte *str){
   return _parser_position;
 }
 
-bool ExpressionParser::_parse_FunctionArguments(MathFunction *mf){
+bool ExpressionParser::_parse_FunctionArguments(MathFunction *mf, double *_args){
   _ignore_Blanks();
   if(mf->nArgs == 0) return false;
   if(!_check_NextToken( '(')) return true;
@@ -558,4 +795,21 @@ bool ExpressionParser::_parse_FunctionArguments(MathFunction *mf){
   Serial.println(_args[mf->nArgs-1]);
   #endif
   return false;
+}
+
+//
+// Returns true if unmatched brackets
+//
+byte *ExpressionParser::_bracket_Check(){
+  byte *ptr = _parser_position;
+  int8_t bracket_count = 0;
+  while( *ptr){
+    if( *ptr == '(') bracket_count++;
+    if( *ptr == ')') bracket_count--;
+    _expression_error = bracket_count<0;
+    if( _expression_error) return ptr;
+    ptr++; 
+  }
+  _expression_error = bracket_count != 0;
+  return ptr;
 }

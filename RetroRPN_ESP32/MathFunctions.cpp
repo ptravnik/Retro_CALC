@@ -96,6 +96,21 @@ const char _MF_VSPHERE[] PROGMEM = "VSPHERE";
 //#define _MF_SSPHERE_KW_ 27
 const char _MF_ssphere[] PROGMEM = "ssphere";
 const char _MF_SSPHERE[] PROGMEM = "SSPHERE";
+//#define _MF_ASIN_KW_ 28
+const char _MF_asin[] PROGMEM = "asin";
+const char _MF_ASIN[] PROGMEM = "ASIN";
+//#define _MF_ACOS_KW_ 29
+const char _MF_acos[] PROGMEM = "acos";
+const char _MF_ACOS[] PROGMEM = "ACOS";
+//#define _MF_ATAN_KW_ 30
+const char _MF_atan[] PROGMEM = "atan";
+const char _MF_ATAN[] PROGMEM = "ATAN";
+//#define _MF_TRUE_KW_ 31
+const char _MF_True[] PROGMEM = "True";
+const char _MF_TRUE[] PROGMEM = "TRUE";
+//#define _MF_FALSE_KW_ 32
+const char _MF_False[] PROGMEM = "False";
+const char _MF_FALSE[] PROGMEM = "FALSE";
 
 void MathFunctions::init( byte amod){
   angleMode = amod;
@@ -108,7 +123,7 @@ void MathFunctions::init( byte amod){
   _addFunction( _MF_cos, _MF_COS, 1, 1, _RPN_CHECK_TRIG_); // 6
   _addFunction( _MF_tan, _MF_TAN, 1, 1, _RPN_CHECK_TRIG_); // 7
   _addFunction( _MF_pow, _MF_POW, 2, 1, _RPN_POWER_); // 8
-  _addFunction( _MF_neg, _MF_NEG, 2, 1, _RPN_POWER_); // 9
+  _addFunction( _MF_neg, _MF_NEG, 1, 1); // 9
   _addFunction( _MF_ln, _MF_LN, 1, 1); // 10
   _addFunction( _MF_lg, _MF_LG, 1, 1); // 11
   _addFunction( _MF_log, _MF_LOG, 2, 1, _RPN_SWAP_XY_); // 12
@@ -127,6 +142,11 @@ void MathFunctions::init( byte amod){
   _addFunction( _MF_scirc, _MF_SCIRC, 1, 1); // 25
   _addFunction( _MF_vsphere, _MF_VSPHERE, 1, 1); // 26
   _addFunction( _MF_ssphere, _MF_SSPHERE, 1, 1); // 27
+  _addFunction( _MF_asin, _MF_ASIN, 1, 1, _RPN_INVTRIG_); // 28
+  _addFunction( _MF_acos, _MF_ACOS, 1, 1, _RPN_INVTRIG_); // 29
+  _addFunction( _MF_atan, _MF_ATAN, 1, 1); // 30
+  _addFunction( _MF_True, _MF_TRUE, 0, 1); // 31
+  _addFunction( _MF_False, _MF_FALSE, 0, 1); // 32
 }
 
 void MathFunctions::setAngleMode(byte m){
@@ -161,9 +181,14 @@ double *MathFunctions::Compute( MathFunction *mf, double *args){
     case _MF_GRAD_KW_:
       _rets[0] = 2.0;
       break;
-      #define _MF_PI_KW_ 4
     case _MF_PI_KW_:
       _rets[0] = _MATH_PI_;
+      break;
+    case _MF_TRUE_KW_:
+      _rets[0] = 1.0;
+      break;
+    case _MF_FALSE_KW_:
+      _rets[0] = 0.0;
       break;
     case _MF_SIN_KW_:
       #ifdef __DEBUG
@@ -176,11 +201,20 @@ double *MathFunctions::Compute( MathFunction *mf, double *args){
       #endif
       _rets[0] = sin( getConvertedAngle(args[0]));
       break;
+    case _MF_ASIN_KW_:
+      _rets[0] = getUnconvertedAngle(asin(args[0]));
+      break;
     case _MF_COS_KW_:
       _rets[0] = cos( getConvertedAngle(args[0]));
       break;
+    case _MF_ACOS_KW_:
+      _rets[0] = getUnconvertedAngle(acos(args[0]));
+      break;
     case _MF_TAN_KW_:
       _rets[0] = tan( getConvertedAngle(args[0]));
+      break;
+    case _MF_ATAN_KW_:
+      _rets[0] = getUnconvertedAngle(atan(args[0]));
       break;
     case _MF_POW_KW_: 
       _rets[0] = pow(args[0], args[1]);
@@ -287,6 +321,11 @@ void MathFunctions::_addFunction( const char *name0, const char *name1, byte nAr
 
 double MathFunctions::getConvertedAngle( double a){
   return a * _angleConversions[angleMode];
+}
+
+double MathFunctions::getUnconvertedAngle( double a){
+  if( isnan(a)) return a;
+  return a / _angleConversions[angleMode];
 }
 
 double *MathFunctions::quad( double *rpnStack) {
