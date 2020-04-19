@@ -9,17 +9,19 @@ The ultimate goal is to build a powerful RPN calculator, programmable in BASIC-l
 1. Arduino SD card reader; this version is for Uno, but runs on Mega with pins 10-13 using Soft SPI
 1. Piezo speaker on line 9
 1. Hardware keyboard on lines A0-A4
-1. LCD screen 128x64 pixels on SPI 
+1. LCD screen 128x64 pixels on SPI
+
+The code development for this version is currently suspended and is likely to be deprecated.
 
 ## The SECOND mockup version:
 
 1. ESP32 Dev Module
-1. Micro SD card reader
-1. Hardware keyboard on lines A0-A4
-1. LCD screen 128x64 pixels on SPI
+1. Micro SD card reader on VSPI 5, 18, 19, 23
+1. Hardware keyboard on lines 25-27 and 32, 33; pin 34 is used for power switch
+1. LCD screen 128x64 pixels on HSPI 12-15 
 1. Arduino Micro Pro 3.3V, 8 MHz as a "keyboard/mouse injector"
 
-The code is partially ported and tested ESP-32 platform. Production PCBs from China are delayed due to Novel Coronavirus outbreak.
+The code is partially ported and tested on the ESP-32 platform. Production PCBs from China are delayed due to Novel Coronavirus outbreak; Keyboard PCB has been received, assembled and tested.
 
 # Build Instructions
 
