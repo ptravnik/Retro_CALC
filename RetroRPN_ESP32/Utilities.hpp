@@ -89,10 +89,12 @@ inline bool IsNameStarter(char b){
 //
 inline bool IsNameCharacter(byte b){
   if(IsNameStarter( b)) return true;
+  if(IsDigit(b)) return true;
   return (b == _PERCENT_) || (b ==_DOLLAR_);
 }
 inline bool IsNameCharacter(char b){
   if(IsNameStarter( (byte)b)) return true;
+  if(IsDigit(b)) return true;
   return (b == '%') || (b=='$');
 };
 

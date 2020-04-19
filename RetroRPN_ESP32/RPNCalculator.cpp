@@ -42,6 +42,9 @@ const char RPN_Message_Root1[] PROGMEM = "Root 1";
 const char RPN_Message_Root2[] PROGMEM = "Root 2";
 const char RPN_Message_ComplexPart[] PROGMEM = "Complex part";
 const char RPN_Message_RealPart[] PROGMEM = "Real part";
+const char RPN_Message_Gain[] PROGMEM = "Gain";
+const char RPN_Message_Offset[] PROGMEM = "Offset";
+const char RPN_Message_Goff_Solution[] PROGMEM = "Y=Gain*X+Offset";
 const char *const RPN_Message_Table[] PROGMEM = {
   RPN_StatusMessage,
   RPN_RegName1,
@@ -68,11 +71,11 @@ unsigned long RPNCalculator::init(IOManager *iom, LCDManager *lcd, SDManager *sd
   _messages[1] = _messages[0] + SCR_COLS;
   _messages[2] = _messages[1] + SCR_COLS;
   _messages[3] = _messages[2] + SCR_COLS;
-  resetRPNLabels();
+  resetRPNLabels(false);
   memset(_input, (byte)0, INPUT_COLS);
   memset(_inputPrevious, (byte)0, INPUT_COLS);
+  loadState();
   setStackRedraw();
-  for( byte i=0; i<RPN_STACK; i++) rpnStack[i] = 0.0;
   return _iom->keepAwake();
 }
 
@@ -470,6 +473,27 @@ void RPNCalculator::quad(bool refresh) {
 }
 
 //
+// Decorator for goff2 equation solver
+//
+void RPNCalculator::goff2(bool refresh) {
+  // No solution
+  if( rpnStack[3] == rpnStack[1]){
+    setRPNLabel( 0, RPN_Message_Trivial, false);
+    return;    
+  }
+  // Solution
+  double *tmp = _ep->mathFunctions.goff2(rpnStack);
+  setRPNLabel( 0, RPN_Message_Goff_Solution, false);
+  setRPNLabel( 1, RPN_Message_Offset, false);
+  setRPNLabel( 2, RPN_Message_Gain, false);
+  _popPartial();
+  _popPartial();
+  rpnStack[0] = tmp[0];
+  rpnStack[1] = tmp[1];
+  return;
+}
+
+//
 // process character entry
 //
 void RPNCalculator::processEntry(byte c) {
@@ -551,9 +575,19 @@ void RPNCalculator::copyFromPrevious(){
 // TODO
 //
 void RPNCalculator::loadState(){
+  for( byte i=0; i<RPN_STACK; i++) rpnStack[i] = 0.0;
+  if( !_sd->SDMounted) return;
+  #ifdef __DEBUG
+  Serial.println("loadState called");
+  #endif
+  //for( byte i=0; i<RPN_STACK; i++) rpnStack[i] = double( i);
 }
 
 void RPNCalculator::saveState(){
+  if( !_sd->SDMounted) return;
+  #ifdef __DEBUG
+  Serial.println("saveState called");
+  #endif
 }
 
 //
@@ -628,6 +662,11 @@ void RPNCalculator::_evaluateCommand(){
       break;
     case _RPN_QUAD_SOLVER:
       quad(true);
+      setStackRedraw();
+      updateIOM(doUpdateIOM);
+      return;
+    case _RPN_GOFF2_SOLVER:
+      goff2(true);
       setStackRedraw();
       updateIOM(doUpdateIOM);
       return;

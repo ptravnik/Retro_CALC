@@ -111,6 +111,9 @@ const char _MF_TRUE[] PROGMEM = "TRUE";
 //#define _MF_FALSE_KW_ 32
 const char _MF_False[] PROGMEM = "False";
 const char _MF_FALSE[] PROGMEM = "FALSE";
+//#define _MF_GOFF2_KW_ 33
+const char _MF_goff2[] PROGMEM = "goff2";
+const char _MF_GOFF2[] PROGMEM = "GOFF2";
 
 void MathFunctions::init( byte amod){
   angleMode = amod;
@@ -147,6 +150,7 @@ void MathFunctions::init( byte amod){
   _addFunction( _MF_atan, _MF_ATAN, 1, 1); // 30
   _addFunction( _MF_True, _MF_TRUE, 0, 1); // 31
   _addFunction( _MF_False, _MF_FALSE, 0, 1); // 32
+  _addFunction( _MF_goff2, _MF_GOFF2, 4, 2, _RPN_GOFF2_SOLVER); // 33
 }
 
 void MathFunctions::setAngleMode(byte m){
@@ -283,6 +287,9 @@ double *MathFunctions::Compute( MathFunction *mf, double *args){
     case _MF_SSPHERE_KW_:
       _rets[0] = _MATH_PI_ * 4.0 * args[0] * args[0];
       break;
+    case _MF_GOFF2_KW_:
+      goff2( args);
+      break;
     default:
       break;
   }
@@ -328,6 +335,9 @@ double MathFunctions::getUnconvertedAngle( double a){
   return a / _angleConversions[angleMode];
 }
 
+//
+// Solves a quadratic equation
+//
 double *MathFunctions::quad( double *rpnStack) {
   // Trivial solution or no roots
   _clearRets();
@@ -360,5 +370,18 @@ double *MathFunctions::quad( double *rpnStack) {
   // Complex roots
   _rets[1] = sqrt(-_rets[2]) / a;
   _rets[0] -= rpnStack[1] / a;
+  return _rets;
+}
+
+//
+// Solves gain-offset
+//
+double *MathFunctions::goff2( double *rpnStack) {
+  // Trivial solution with the same X1, X2
+  _clearRets();
+  double dx = rpnStack[3] - rpnStack[1];
+  if( dx == 0.0) return _rets;
+  _rets[1] = (rpnStack[2] - rpnStack[0])/dx;
+  _rets[0] = rpnStack[0] - _rets[1]*rpnStack[1];
   return _rets;
 }

@@ -124,10 +124,11 @@ void ESP32Host::_checkSleepPin(){
 
 void ESP32Host::deepSleep( byte msg){
   if( msg > 0) myIO.sendStringUTF8Ln( IO_Sleep_Table[msg]);
-  delay(500);
+  delay(1500);
   myLCD.sleepOn();
   // TODO add calls for saving the system state
   myRPN.saveState();
+  delay(1500);
   mySD.sleepOn();
   myIO.sleepOn(); // consoles quit the last!
   _waitUntilSleepPinHigh(); // prevent jitter

@@ -74,7 +74,6 @@ bool SDManager::_detectSDCard(){
 unsigned long SDManager::init( IOManager *iom){
   _io_buffer = iom->getIOBuffer();
   _iom = iom;
-  //_lcd = lcd;
   pinMode(SD_DETECT_PIN, INPUT_PULLUP);   // sets the digital pin for SD check
   _detectSDCard();
   SDCheckRequested = false;
@@ -171,7 +170,7 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
 //}
 //
 //void writeFile(fs::FS &fs, const char * path, const char * message){
-//    Serial.printf("Writing file: %s\n", path);
+//  Serial.println("Writing file: %s\n", path);
 //
 //    File file = fs.open(path, FILE_WRITE);
 //    if(!file){

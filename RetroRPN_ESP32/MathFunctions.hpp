@@ -32,6 +32,7 @@
 #define _RPN_QUICK_PUSH_ 9
 #define _RPN_SWAP_ONLY_  10
 #define _RPN_INVTRIG_    11
+#define _RPN_GOFF2_SOLVER 12
 
 #define _MF_AMODE_KW_   0
 #define _MF_DEG_KW_     1
@@ -66,8 +67,9 @@
 #define _MF_ATAN_KW_    30
 #define _MF_TRUE_KW_    31
 #define _MF_FALSE_KW_   32
+#define _MF_GOFF2_KW_   33
 
-#define NMATH_FUNCTIONS 33
+#define NMATH_FUNCTIONS 34
 
 struct MathFunction{
     int16_t id = 0;
@@ -90,6 +92,7 @@ class MathFunctions{
     double getConvertedAngle( double a);
     double getUnconvertedAngle( double a);
     double *quad( double *args);
+    double *goff2( double *args);
     double previous_X = 0.0;
   private:
     size_t _id;

@@ -472,9 +472,7 @@ bool ExpressionParser::_validate_NextOperation( const char *op1, const char *op2
 // Processes a bracket pair (less the opening bracket) or list member 
 //
 bool ExpressionParser::_parse_ListMember( byte terminator){
-  _parse_Expression_Comparison();
-  //_parse_Expression_Value();
-  //_parser_position = parse(_parser_position);
+  _parse_Expression_Logic();
   if( numberParser.result == _NOT_A_NUMBER_) return true;
   if( _validate_NextCharacter( terminator)) return true;
   _ignore_Blanks();
@@ -505,11 +503,96 @@ byte *ExpressionParser::parse(byte *str){
     return _parser_position; 
   }
 
-  _parse_Expression_Comparison();
+  _parse_Expression_Logic();
+  //_parse_Expression_NOT();
+  //_parse_Expression_Comparison();
   //_parse_Expression_Add_Sub();
   //_parse_Expression_Mult_Div();
   //_parse_Expression_Power();
   if( _expression_error) result = _NOT_A_NUMBER_;
+  return _parser_position;
+}
+
+//
+// Processes logic left to right
+//
+byte *ExpressionParser::_parse_Expression_Logic(){
+  double a,b;
+  byte *ptr = _parse_Expression_NOT();
+  if(_expression_error) return ptr;
+  a = numberParser.realValue();
+  while(true){
+    _ignore_Blanks();
+    if( !_validate_NextOperation( "and ", "AND ")){
+      ptr = _parse_Expression_NOT();
+      if(_expression_error) return ptr;
+      b = numberParser.realValue();
+      a = (a>0.5 && b>0.5)? 1.0: 0.0;
+      continue;
+    }
+    if( !_validate_NextOperation( "or ", "OR ")){
+      ptr = _parse_Expression_NOT();
+      if(_expression_error) return ptr;
+      b = numberParser.realValue();
+      a = (a>0.5 || b>0.5)? 1.0: 0.0;
+      continue;
+    }
+    if( !_validate_NextOperation( "nor ", "NOR ")){
+      ptr = _parse_Expression_NOT();
+      if(_expression_error) return ptr;
+      b = numberParser.realValue();
+      a = (a>0.5 || b>0.5)? 0.0: 1.0;
+      continue;
+    }
+    if( !_validate_NextOperation( "xor ", "XOR ")){
+      ptr = _parse_Expression_NOT();
+      if(_expression_error) return ptr;
+      b = numberParser.realValue();
+      a = ((a>0.5 && b>0.5) || (a<0.5 && b<0.5))? 0.0: 1.0;
+      continue;
+    }
+    break;
+  }
+  numberParser.setValue( a);
+  return _parser_position;
+}
+
+//
+// Processes logical not left to right
+//
+byte *ExpressionParser::_parse_Expression_NOT(){
+  double a;
+  byte *ptr;
+  while(true){
+    _ignore_Blanks();
+    if( !_validate_NextOperation( "not ", "NOT ")){
+      ptr = _parse_Expression_NOT();
+      if(_expression_error) return ptr;
+      a = (numberParser.realValue()>0.5)? 0.0: 1.0;
+      break;
+    }
+    if( !_validate_NextOperation( "and ", "AND ")){
+      _expression_error = true;
+      return _parser_position;
+    }
+    if( !_validate_NextOperation( "or ", "OR ")){
+      _expression_error = true;
+      return _parser_position;
+    }
+    if( !_validate_NextOperation( "nor ", "NOR ")){
+      _expression_error = true;
+      return _parser_position;
+    }
+    if( !_validate_NextOperation( "xor ", "XOR ")){
+      _expression_error = true;
+      return _parser_position;
+    }
+    ptr = _parse_Expression_Comparison();
+    if(_expression_error) return ptr;
+    a = numberParser.realValue();
+    break;
+  }
+  numberParser.setValue( a);
   return _parser_position;
 }
 
@@ -523,6 +606,13 @@ byte *ExpressionParser::_parse_Expression_Comparison(){
   a = numberParser.realValue();
   while(true){
     _ignore_Blanks();
+    if( !_validate_NextOperation( "!=", "<>")){
+      ptr = _parse_Expression_Add_Sub();
+      if(_expression_error) return ptr;
+      b = numberParser.realValue();
+      a = (a!=b)? 1.0: 0.0;
+      continue;
+    }
     if( !_validate_NextOperation( "<=")){
       ptr = _parse_Expression_Add_Sub();
       if(_expression_error) return ptr;
@@ -556,13 +646,6 @@ byte *ExpressionParser::_parse_Expression_Comparison(){
       if(_expression_error) return ptr;
       b = numberParser.realValue();
       a = (a==b)? 1.0: 0.0;
-      continue;
-    }
-    if( !_validate_NextOperation( "!=", "<>")){
-      ptr = _parse_Expression_Add_Sub();
-      if(_expression_error) return ptr;
-      b = numberParser.realValue();
-      a = (a!=b)? 1.0: 0.0;
       continue;
     }
     if( !_validate_NextOperation( "is not ", "IS NOT ")){
@@ -742,7 +825,7 @@ byte *ExpressionParser::_parse_Expression_Value(){
   if( _check_NextToken( '+')){
     //Serial.println("Arrived into unary plus:");
     //Serial.println((const char *)_parser_position);    
-    _parse_Expression_Comparison();
+    _parse_Expression_Logic();
     if(_expression_error) return _parser_position;
     result = numberParser.result;
     return _parser_position;
@@ -750,7 +833,7 @@ byte *ExpressionParser::_parse_Expression_Value(){
   if( _check_NextToken( '-')){
     //Serial.println("Arrived into negation:");
     //Serial.println((const char *)_parser_position);    
-    _parse_Expression_Comparison();
+    _parse_Expression_Logic();
     if(_expression_error) return _parser_position;
     numberParser.negate();
     result = numberParser.result;

@@ -124,6 +124,8 @@ class ExpressionParser{
     bool _validate_NextOperation( const char *op1, const char *op2);
     bool _parse_ListMember( byte terminator);
     bool _parse_FunctionArguments(MathFunction *mf, double *_args);
+    byte *_parse_Expression_Logic();
+    byte *_parse_Expression_NOT();
     byte *_parse_Expression_Comparison();
     byte *_parse_Expression_Add_Sub();
     byte *_parse_Expression_Mult_Div();

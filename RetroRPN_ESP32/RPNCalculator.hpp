@@ -60,6 +60,7 @@ class RPNCalculator{
     void power( bool refresh=true);
     void signchange( bool refresh=true);
     void quad( bool refresh=true);
+    void goff2( bool refresh=true);
     void loadState();
     void saveState();
   private:
