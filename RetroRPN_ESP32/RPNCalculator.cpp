@@ -1,15 +1,15 @@
 //////////////////////////////////////////////////////////
 //
 //  RetroRPN - "Электроника МК-90" reborn
-//  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+//  Copyright (c) 2019 Pavel Travnik.  All rights reserved.
 //  See main file for the license
 //
 //////////////////////////////////////////////////////////
 
 #include "RPNCalculator.hpp"
-#include "Utilities.hpp"
-#include "IOManager.hpp"
-#include "LCDManager.hpp"
+#include "./src/Utilities.hpp"
+#include "./src/IOManager.hpp"
+#include "./src/LCDManager.hpp"
 #include "SDManager.hpp"
 #include "Keywords.hpp"
 #include "MathFunctions.hpp"
@@ -388,6 +388,7 @@ void RPNCalculator::signchange(bool refresh) {
   _savePrevious();
   rpnStack[0] = -rpnStack[0];
   _stackRedrawRequired[ 0] = true;
+  _stackRedrawRequired[ 1] = true;
   updateIOM(refresh);
 }
 void RPNCalculator::power(bool refresh) {

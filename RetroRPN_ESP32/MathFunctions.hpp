@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////
 //
 //  RetroRPN - "Электроника МК-90" reborn
-//  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+//  Copyright (c) 2019 Pavel Travnik.  All rights reserved.
 //  See main file for the license
 //
 //////////////////////////////////////////////////////////
@@ -11,7 +11,7 @@
 
 #include <Arduino.h>
 #include <math.h>
-#include "Utilities.hpp"
+#include "./src/Utilities.hpp"
 
 #define _MODE_DEGREES_  0
 #define _MODE_RADIAN_   1 
@@ -68,8 +68,9 @@
 #define _MF_TRUE_KW_    31
 #define _MF_FALSE_KW_   32
 #define _MF_GOFF2_KW_   33
+#define _MF_CATH_KW_    34
 
-#define NMATH_FUNCTIONS 34
+#define NMATH_FUNCTIONS 35
 
 struct MathFunction{
     int16_t id = 0;

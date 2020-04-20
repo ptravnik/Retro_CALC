@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////
 //
 //  RetroRPN - "Электроника МК-90" reborn
-//  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+//  Copyright (c) 2019 Pavel Travnik.  All rights reserved.
 //  See main file for the license
 //
 //////////////////////////////////////////////////////////
@@ -20,7 +20,7 @@
 #define SDMANAGER_HPP
 
 #include <Arduino.h>
-#include "IOManager.hpp"
+#include "./src/IOManager.hpp"
 //#include "LCDManager.hpp"
 
 // or use LED_BUILTIN=2 constant for built-in LED

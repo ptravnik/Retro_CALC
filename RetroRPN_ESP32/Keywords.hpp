@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////
 //
 //  RetroRPN - "Электроника МК-90" reborn
-//  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+//  Copyright (c) 2019 Pavel Travnik.  All rights reserved.
 //  See main file for the license
 //
 //////////////////////////////////////////////////////////
@@ -11,7 +11,7 @@
 
 #include <Arduino.h>
 #include <math.h>
-#include "Utilities.hpp"
+#include "./src/Utilities.hpp"
 
 #define _NOT_AN_ID_ 0
 #define _UNKNOWN_ID_ 1

@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////
 //
 //  RetroRPN - "Электроника МК-90" reborn
-//  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+//  Copyright (c) 2019 Pavel Travnik.  All rights reserved.
 //  See main file for the license
 //
 //////////////////////////////////////////////////////////
@@ -30,9 +30,9 @@
 #define POWER_OFF_PERIOD  720000
 
 #include <Arduino.h>
-#include "IOManager.hpp"
+#include "./src/IOManager.hpp"
 #include "SDManager.hpp"
-#include "LCDManager.hpp"
+#include "./src/LCDManager.hpp"
 #include "RPNCalculator.hpp"
 
 #define IO_MSG_POWER_BUTTON 0

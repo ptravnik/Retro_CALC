@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////
 //
 //  RetroRPN - "Электроника МК-90" reborn
-//  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+//  Copyright (c) 2019 Pavel Travnik.  All rights reserved.
 //  See main file for the license
 //
 //////////////////////////////////////////////////////////
@@ -24,8 +24,8 @@
 #define RPNCALCULATOR_HPP
 
 #include <Arduino.h>
-#include "IOManager.hpp"
-#include "LCDManager.hpp"
+#include "./src/IOManager.hpp"
+#include "./src/LCDManager.hpp"
 #include "SDManager.hpp"
 #include "Parser.hpp"
 #include "Keywords.hpp"

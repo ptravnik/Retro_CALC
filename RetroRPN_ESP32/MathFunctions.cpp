@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////
 //
 //  RetroRPN - "Электроника МК-90" reborn
-//  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+//  Copyright (c) 2019 Pavel Travnik.  All rights reserved.
 //  See main file for the license
 //
 //////////////////////////////////////////////////////////
@@ -114,6 +114,9 @@ const char _MF_FALSE[] PROGMEM = "FALSE";
 //#define _MF_GOFF2_KW_ 33
 const char _MF_goff2[] PROGMEM = "goff2";
 const char _MF_GOFF2[] PROGMEM = "GOFF2";
+//#define _MF_CATH_KW_ 34
+const char _MF_cath[] PROGMEM = "cath";
+const char _MF_CATH[] PROGMEM = "CATH";
 
 void MathFunctions::init( byte amod){
   angleMode = amod;
@@ -151,6 +154,7 @@ void MathFunctions::init( byte amod){
   _addFunction( _MF_True, _MF_TRUE, 0, 1); // 31
   _addFunction( _MF_False, _MF_FALSE, 0, 1); // 32
   _addFunction( _MF_goff2, _MF_GOFF2, 4, 2, _RPN_GOFF2_SOLVER); // 33
+  _addFunction( _MF_cath, _MF_CATH, 2, 1); // 34
 }
 
 void MathFunctions::setAngleMode(byte m){
@@ -264,6 +268,9 @@ double *MathFunctions::Compute( MathFunction *mf, double *args){
       break;
     case _MF_RADIUS_KW_:
       _rets[0] = sqrt( args[0]*args[0]+args[1]*args[1]);
+      break;
+    case _MF_CATH_KW_:
+      _rets[0] = sqrt( abs(args[0]*args[0]-args[1]*args[1]));
       break;
     case _MF_QUAD_KW_:
       quad( args);
