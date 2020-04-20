@@ -1,6 +1,6 @@
 /*
   Cyrillic_Phonetic.h - codes and macros for Hardware keyboard.
-  Copyright (c) 2019 Pavel Travnik.  All right reserved.
+  Copyright (c) 2019 Pavel Travnik.  All rights reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
