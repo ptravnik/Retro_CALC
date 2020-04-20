@@ -11,9 +11,7 @@
 # aaaaa aaaaaaaaa - a 12-bit shift in the macros table;
 # the latter is composed of null-terminated strings, up to 4k in length.
 #
-# This generator is for the production version of the keyboard (v 2.0)
-# Note that the key layout is somewhat different for the bottom row as compared
-# with v 1.0 and the mockup layouts
+# This generator is for the pre-production version of the keyboard (v 1.0)
 #
 # Strokes are called in the form of ("Command", next_mode)
 # Command can be composed of a single unicode character
@@ -240,10 +238,13 @@ kbd.addButtonSimple("lL  лЛ  ") # 39
 kbd.addButtonNoSwitch(["#CODE=008","#CODE=127","#CODE=008","#CODE=127",
                        "#CODE=008","#CODE=127","#CODE=008","#CODE=127"]) # 40
 
+#kbd.addButtonSimple("zZ  зЗ  ") # 41
 kbd.addButtonNoSwitch(["z","Z","#CODE=010sin#CODE=013","#CODE=010asin#CODE=013",
                        "з","З","#CODE=010sin#CODE=013","#CODE=010asin#CODE=013"]) # 41 (sine)
+#kbd.addButtonSimple("xX  хХ  ") # 42
 kbd.addButtonNoSwitch(["x","X","#CODE=010cos#CODE=013","#CODE=010acos#CODE=013",
                        "х","Х","#CODE=010cos#CODE=013","#CODE=010acos#CODE=013"]) # 42 (cosine)
+#kbd.addButtonSimple("cC  цЦ  ") # 43
 kbd.addButtonNoSwitch(["c","C","#CODE=010tan#CODE=013","#CODE=010atan#CODE=013",
                        "ц","Ц","#CODE=010tan#CODE=013","#CODE=010atan#CODE=013"]) # 42 (tangent)
 kbd.addButtonSimple("vV  вВ  ") # 44
@@ -263,23 +264,26 @@ kbd.addButton([("", 2), ("",2), ("",0), ("",2),
                ("", 6), ("",6), ("",4), ("",6)])   # 52 F1
 kbd.addButton([("", 3), ("",3), ("",3), ("",0),
                ("", 7), ("",7), ("",7), ("",0)])   # 53 F2
-kbd.addButton([("", 1), ("",0), ("",2), ("",3),
-               ("", 5), ("",4), ("",6), ("",7)])   # 54 SHIFT
 kbd.addButton([("#CODE=017", 0), ("S-left",1), ("#CODE=021",0), ("S-home",1),
-               ("#CODE=017", 4), ("S-left",5), ("#CODE=021",4), ("S-home",5)])   # 55 arrow left
-kbd.addButton([("#CODE=019", 0), ("S-up",1), ("#CODE=023",0), ("S-pgup",3),
-               ("#CODE=019", 4), ("S-up",5), ("#CODE=023",4), ("S-pgup",7)])     # 56 arrow up / prev
+               ("#CODE=017", 4), ("S-left",5), ("#CODE=021",4), ("S-home",5)])   # 54 arrow left
 kbd.addButton([("#CODE=020", 0), ("S-down",1), ("#CODE=024",0), ("S-pgdn",3),
-               ("#CODE=020", 4), ("S-down",5), ("#CODE=024",4), ("S-pgdn",7)])   # 57 arrow down
+               ("#CODE=020", 4), ("S-down",5), ("#CODE=024",4), ("S-pgdn",7)])   # 55 arrow down
+kbd.addButton([("#CODE=019", 0), ("S-up",1), ("#CODE=023",0), ("S-pgup",3),
+               ("#CODE=019", 4), ("S-up",5), ("#CODE=023",4), ("S-pgup",7)])     # 56 arrow up
 kbd.addButton([("#CODE=018", 0), ("S-right",1), ("#CODE=022",0), ("#CODE=010inj#CODE=013",0),
-               ("#CODE=018", 4), ("S-right",5), ("#CODE=022",4), ("#CODE=010inj#CODE=013",4)])   # 58 arrow right
+               ("#CODE=018", 4), ("S-right",5), ("#CODE=022",4), ("#CODE=010inj#CODE=013",4)])   # 57 arrow right
 kbd.addButtonNoSwitch(["#CODE=013","#CODE=013","SC-end","SC-home",
-                       "#CODE=013","#CODE=013","SC-end","SC-home"])              # 59 ENTER
+                       "#CODE=013","#CODE=013","SC-end","SC-home"])              # 58 ENTER
+kbd.addButton([("", 1), ("",0), ("",2), ("",3),
+               ("", 5), ("",4), ("",6), ("",7)])   # 59 SHIFT
 
 
-f = open("Cyrillic_Phonetic_CP1251.h", "w")
+f = open("Cyrillic_Phonetic_CP1251_Mockup.h", "w")
 f.write("/*\n")
-f.write("  Cyrillic_Phonetic_CP1251.h - codes and macros for Hardware keyboard.\n")
+f.write("  Cyrillic_Phonetic_CP1251_Mockup.h - codes and macros for Hardware keyboard.\n")
+f.write("  This is applicable to the pre-production mockup version;\n")
+f.write("  For the production layout, use Cyrillic_Phonetic_CP1251.h\n")
+f.write("\n")
 f.write("  Copyright (c) 2019 Pavel Travnik.  All rights reserved.\n")
 f.write("\n")
 f.write("  This library is free software; you can redistribute it and/or\n")
