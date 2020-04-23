@@ -21,7 +21,6 @@
 
 #include <Arduino.h>
 #include "./src/IOManager.hpp"
-//#include "LCDManager.hpp"
 
 // or use LED_BUILTIN=2 constant for built-in LED
 #define SD_DETECT_PIN      4

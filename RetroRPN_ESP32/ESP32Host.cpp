@@ -16,6 +16,7 @@ static IOManager myIO;
 static SDManager mySD;
 static LCDManager myLCD;
 static RPNCalculator myRPN;
+static FileManager myFM;
 
 const char IO_WelcomeMessage0[] PROGMEM = "***********************";
 const char IO_WelcomeMessage1[] PROGMEM = "* ЭЛЕКТРОНИКА МК-2090 *";
@@ -79,11 +80,12 @@ unsigned long ESP32Host::init() {
   attachInterrupt( POWER_DETECT_PIN, isrPower, RISING);
   myEP.init();
   myRPN.init(&myIO, &myLCD, &mySD, &myEP);
+  myFM.init(&myIO, &myLCD, &mySD, &myEP);
   myLCD.waitForEndSplash( initStarted);
 
-  // TODO: interface selector here
-  myRPN.show();
-  myRPN.redraw();
+  // TODO: remember selector here
+  selectUI(UI_RPNCALC);
+  redraw();
   return myIO.keepAwake(); 
 }
 
@@ -92,7 +94,18 @@ unsigned long ESP32Host::tick() {
   mySD.tick();
   myIO.tick();
   myLCD.tick();
-  myRPN.tick();  
+  switch(currentUI){
+    case UI_RPNCALC:
+      myRPN.tick();  
+      break;
+    case UI_FILEMAN:
+      myFM.tick();
+      break;
+    case UI_EDITOR:
+    case UI_CONSOLE:
+    default:
+      break; 
+  }   
   unsigned long dt = millis() - myIO.lastInput;
   if(dt > POWER_OFF_PERIOD){
     deepSleep( IO_MSG_INACTIVE);
@@ -108,13 +121,49 @@ unsigned long ESP32Host::tick() {
   }
   if( myLCD.isAsleep){
     myLCD.sleepOff();
-    myRPN.show();
-    myRPN.redraw();
+    show();
+    redraw();
     return myIO.lastInput;
   }
   myLCD.LEDOn();
-  myRPN.redraw();
+  redraw();
   return myIO.lastInput;
+}
+
+void ESP32Host::selectUI(byte ui){
+  if( currentUI == ui) return;
+  currentUI = ui;
+  show();
+}
+
+void ESP32Host::show(){
+  switch(currentUI){
+    case UI_RPNCALC:
+      myRPN.show();
+      break;
+    case UI_FILEMAN:
+      myFM.show();
+      break;
+    case UI_EDITOR:
+    case UI_CONSOLE:
+    default:
+      break; 
+  }   
+}
+
+void ESP32Host::redraw(){
+  switch(currentUI){
+    case UI_RPNCALC:
+      myRPN.redraw();
+      break;
+    case UI_FILEMAN:
+      myFM.redraw();
+      break;
+    case UI_EDITOR:
+    case UI_CONSOLE:
+    default:
+      break; 
+  }   
 }
 
 void ESP32Host::_checkSleepPin(){
@@ -124,11 +173,11 @@ void ESP32Host::_checkSleepPin(){
 
 void ESP32Host::deepSleep( byte msg){
   if( msg > 0) myIO.sendStringUTF8Ln( IO_Sleep_Table[msg]);
-  delay(1500);
+  delay(500);
   myLCD.sleepOn();
   // TODO add calls for saving the system state
   myRPN.saveState();
-  delay(1500);
+  delay(1000); // finish card activity
   mySD.sleepOn();
   myIO.sleepOn(); // consoles quit the last!
   _waitUntilSleepPinHigh(); // prevent jitter

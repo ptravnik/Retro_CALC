@@ -33,7 +33,7 @@
 #define INPUT_COLS    256
 #define INPUT_LIMIT   255
 #define HSCROLL_LIMIT  18
-#define RPN_STACK      20
+
 // Move must be one less than RPN_STACK times sizeof( double)
 #define RPN_MOVE   (RPN_STACK-1)*sizeof( double)
 #define RPN_PI        3.14159265359
@@ -41,7 +41,6 @@
 class RPNCalculator{
   public:
     bool expectCommand = false;
-    double rpnStack[RPN_STACK];
     unsigned long init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep);
     unsigned long tick();
     void show();
@@ -105,29 +104,39 @@ class RPNCalculator{
     };
     void copyFromPrevious();
     void updateIOM(bool refresh=true);
-    void _popPartial();
     void _clearInput();
     void _evaluateCommand();
     void _evaluateString();
     void _checkTrigAccuracy();
-    inline void _swapQuick(){
-      double tmp = rpnStack[0];
-      rpnStack[0] = rpnStack[1];
-      rpnStack[1] = tmp;
+    void _swapQuick();
+    void _popPartial();
+    void _popPartial( double v);
+    void _pushQuick();
+    void _pushQuick(double v);
+    void _popQuick(byte start=1);
+    inline void _savePrev( byte i=0){
+      _ep->mathFunctions.previous_X = _ep->mathFunctions.rpnStack[i];
     };
-    inline void _pushQuick(){
-      for(byte i=RPN_STACK-1; i>0; i--)
-       rpnStack[i] = rpnStack[i-1];
+    inline void _restorePrev(){
+      _ep->mathFunctions.rpnStack[0] = _ep->mathFunctions.previous_X;
     };
-    inline void _popQuick(){
-      for(byte i=1; i<RPN_STACK; i++)
-        rpnStack[i-1] = rpnStack[i];
+    inline double _getSt( byte i){
+      return _ep->mathFunctions.rpnStack[i];
     };
-    inline void _savePrevious( byte i=0){
-      _ep->mathFunctions.previous_X = rpnStack[i];
+    inline void _setSt( byte i, double v){
+      _ep->mathFunctions.rpnStack[i] = v;
     };
-    inline void _restorePrevious(){
-      rpnStack[0] = _ep->mathFunctions.previous_X;
+    inline bool _isStZero( byte i){
+      return _ep->mathFunctions.rpnStack[i] == 0.0;
+    };
+    inline void _setRedrawAndUpdateIOM( bool refresh){    
+      setStackRedraw();
+      updateIOM(refresh);
+    };
+    inline void _savePopAndUpdate( double v, bool refresh) {
+      _savePrev();
+      _popPartial(v);
+      updateIOM(refresh);
     };
 };
 

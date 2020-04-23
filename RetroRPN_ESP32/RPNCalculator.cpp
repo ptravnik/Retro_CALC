@@ -16,8 +16,6 @@
 
 //#define __DEBUG
 
-//static ExpressionParser ep;
-
 const char RPN_StatusMessage[] PROGMEM = "RPN Ready";
 const char RPN_RegName1[] PROGMEM = "x:";
 const char RPN_RegName2[] PROGMEM = "y:";
@@ -112,7 +110,7 @@ void RPNCalculator::redraw() {
     if( !_stackRedrawRequired[i]) continue;
     _stackRedrawRequired[i] = false;
     _lcd->clearLine( j);
-    size_t len = _ep->numberParser.stringValue(rpnStack[i], _io_buffer)-_io_buffer;
+    size_t len = _ep->numberParser.stringValue(_getSt(i), _io_buffer)-_io_buffer;
     if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
     _lcd->cursorTo( SCR_RIGHT-len, j);
     _lcd->sendString( _io_buffer);
@@ -134,7 +132,7 @@ void RPNCalculator::updateIOM( bool refresh) {
   _iom->sendLn();
   for( byte i=3; i>0; i--){
     _iom->sendStringLn( _messages[i]);
-    size_t len = _ep->numberParser.stringValue(rpnStack[i-1], _io_buffer)-_io_buffer;
+    size_t len = _ep->numberParser.stringValue(_getSt(i-1), _io_buffer)-_io_buffer;
     if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
     for( byte j=0; j<SCR_RIGHT-len; j++) _iom->sendChar( ' ');
     _iom->sendStringUTF8Ln();
@@ -267,11 +265,8 @@ void RPNCalculator::processCommand(byte c){
       break;
   }
   _ep->parse(_input);  
-  if( _ep->result != _NOT_A_NUMBER_){
-    for(byte i=RPN_STACK-1; i>0; i--)
-      rpnStack[i] = rpnStack[i-1];
-    rpnStack[0] = _ep->numberParser.realValue();
-  }
+  if( _ep->result != _NOT_A_NUMBER_)
+    _pushQuick(_ep->numberParser.realValue());
   _clearInput();
   expectCommand = false;
   processCommand( c);
@@ -299,12 +294,11 @@ void RPNCalculator::processInput( bool silent) {
       _evaluateCommand();
       break;
     case _NOT_A_NUMBER_:
+      // TODO: Message
       Serial.println("Result is NAN");
       break;
     default:
-      for(byte i=RPN_STACK-1; i>0; i--)
-        rpnStack[i] = rpnStack[i-1];
-      rpnStack[0] = _ep->numberParser.realValue();
+      _pushQuick(_ep->numberParser.realValue());
       if( !silent){
         setStackRedraw();
         updateIOM();
@@ -318,113 +312,81 @@ void RPNCalculator::processInput( bool silent) {
 // Stack operations
 // 
 void RPNCalculator::push(bool refresh) {
-  _savePrevious();
+  _savePrev();
   _pushQuick();
-  setStackRedraw();
-  updateIOM(refresh);
+  _setRedrawAndUpdateIOM( refresh);
 }
 void RPNCalculator::pop(bool refresh) {
-  _savePrevious();
+  _savePrev();
   _popQuick();
-  setStackRedraw();
-  updateIOM(refresh);
-}
-void RPNCalculator::_popPartial() {
-  for(byte i=2; i<RPN_STACK; i++)
-    rpnStack[i-1] = rpnStack[i];
-  setStackRedraw();
+  _setRedrawAndUpdateIOM( refresh);
 }
 void RPNCalculator::swap(bool refresh) {
-  _savePrevious();
+  _savePrev();
   _swapQuick();
   _stackRedrawRequired[ 0] = true;
   _stackRedrawRequired[ 1] = true;
   updateIOM(refresh);
 }
 void RPNCalculator::roll(bool refresh) {
-  double tmp = rpnStack[RPN_STACK-1];
-  _pushQuick();
-  rpnStack[0] = tmp;
-  setStackRedraw();
-  updateIOM(refresh);
+  _pushQuick(_getSt(RPN_STACK-1));
+  _setRedrawAndUpdateIOM( refresh);
 }
 void RPNCalculator::prev(bool refresh) {
-  _pushQuick();
-  _restorePrevious();
-  setStackRedraw();
-  updateIOM(refresh);
+  _pushQuick(_ep->mathFunctions.previous_X);
+  _setRedrawAndUpdateIOM( refresh);
 }
 void RPNCalculator::add(bool refresh) {
-  _savePrevious();
-  rpnStack[0] += rpnStack[1];
-  _popPartial();
-  updateIOM(refresh);
+  _savePopAndUpdate( _getSt(1) + _getSt(0), refresh);
 }
 void RPNCalculator::subtract(bool refresh) {
-  _savePrevious();
-  rpnStack[0] = rpnStack[1] - rpnStack[0];
-  _popPartial();
-  updateIOM(refresh);
+  _savePopAndUpdate( _getSt(1) - _getSt(0), refresh);
 }
 void RPNCalculator::multiply(bool refresh) {
-  _savePrevious();
-  rpnStack[0] *= rpnStack[1];
-  _popPartial();
-  updateIOM(refresh);
+  _savePopAndUpdate( _getSt(1) * _getSt(0), refresh);
 }
 void RPNCalculator::divide(bool refresh) {
-  if( -1e-300 < rpnStack[0] && rpnStack[0] < 1e-300){
+  if( abs(_getSt(0)) < 1e-300){
     setRPNLabel( 0, RPN_Error_DivZero);
-    setStackRedraw();
-    updateIOM(refresh);
+    _setRedrawAndUpdateIOM( refresh);
     return;    
   }
-  _savePrevious();
-  rpnStack[0] = rpnStack[1] / rpnStack[0];
-  _popPartial();
-  updateIOM(refresh);
+  _savePopAndUpdate( _getSt(1) / _getSt(0), refresh);
 }
 void RPNCalculator::signchange(bool refresh) {
-  _savePrevious();
-  rpnStack[0] = -rpnStack[0];
-  _stackRedrawRequired[ 0] = true;
-  _stackRedrawRequired[ 1] = true;
-  updateIOM(refresh);
+  _savePrev();
+  _setSt(0, -_getSt(0));
+  _setRedrawAndUpdateIOM( refresh);
 }
 void RPNCalculator::power(bool refresh) {
-  _savePrevious( 1);
+  _savePrev(1);
   //_messages
   // power zero: using "1 convention"  
-  if( rpnStack[0] == 0.0){
+  if( _getSt(0) == 0.0){
     setRPNLabel( 0, RPN_Warning_ZeroPowerZero);
-    rpnStack[0] = 1.0;
-    _popPartial();
+    _popPartial( 1.0);
     updateIOM(refresh);
     return;
   }
   // positive power of zero: zero
-  if( rpnStack[0] > 0.0 && rpnStack[1] == 0.0){
-    rpnStack[0] = 0.0;
-    _popPartial();
+  if( _getSt(0) > 0.0 && _getSt(1) == 0.0){
+    _popPartial( 0.0);
     updateIOM(refresh);
     return;
   }
   // negative power of zero: div by zero
-  if( rpnStack[0] < 0.0 && rpnStack[1] == 0.0){
+  if( _getSt(0) < 0.0 && _isStZero(1)){
     setRPNLabel( 0, RPN_Error_DivZero);
-    //setStackRedraw();
-    updateIOM(refresh);
+    _setRedrawAndUpdateIOM( refresh);
     return;
   }
-  double tmp = pow( rpnStack[1], rpnStack[0]);
+  double tmp = pow( _getSt(1), _getSt(0));
   if( isnan(tmp)){
     setRPNLabel( 0, RPN_Error_NAN);
-    //setStackRedraw();
-    updateIOM(refresh);
+    _setRedrawAndUpdateIOM( refresh);
     return;    
   }
-  rpnStack[0] = tmp;
-  _popPartial();
+  _popPartial( tmp);
   updateIOM(refresh);
 }
 
@@ -432,8 +394,7 @@ void RPNCalculator::power(bool refresh) {
 // If the number is large, periodic functions are useless
 //
 void RPNCalculator::_checkTrigAccuracy(){
-  double tmp = _ep->mathFunctions.getConvertedAngle(rpnStack[0]);
-  if( tmp < 0) tmp = -tmp;
+  double tmp = abs( _ep->mathFunctions.getConvertedAngle(_getSt(0)));
   if( tmp > 1e+16)
     setRPNLabel( 0, RPN_Warning_Accuracy);
 }
@@ -443,18 +404,18 @@ void RPNCalculator::_checkTrigAccuracy(){
 //
 void RPNCalculator::quad(bool refresh) {
   // Trivial solution
-  if( rpnStack[2] == 0.0 && rpnStack[1] == 0.0 && rpnStack[0] == 0.0){
+  if( _isStZero(2) && _isStZero(1) && _isStZero(0)){
     setRPNLabel( 0, RPN_Message_Trivial, false);
     return;    
   }
   // No roots
-  if( rpnStack[2] == 0.0 && rpnStack[1] == 0.0){
+  if( _isStZero(2) && _isStZero(1)){
     setRPNLabel( 0, RPN_Message_NoRoots, false);
     return;    
   }
   // Solve
-  double *tmp = _ep->mathFunctions.quad(rpnStack);
-  for(byte i=0; i<3; i++) rpnStack[i] = tmp[i];
+  double *tmp = _ep->mathFunctions.quad(_ep->mathFunctions.rpnStack);
+  for(byte i=0; i<3; i++) _setSt(i, tmp[i]);
   setRPNLabel( 3, RPN_Message_Discriminant, false);
   // Complex roots
   if(tmp[2] < 0.0){
@@ -478,19 +439,19 @@ void RPNCalculator::quad(bool refresh) {
 //
 void RPNCalculator::goff2(bool refresh) {
   // No solution
-  if( rpnStack[3] == rpnStack[1]){
+  if( _getSt(3) == _getSt(1)){
     setRPNLabel( 0, RPN_Message_Trivial, false);
     return;    
   }
   // Solution
-  double *tmp = _ep->mathFunctions.goff2(rpnStack);
+  double *tmp = _ep->mathFunctions.goff2(_ep->mathFunctions.rpnStack);
   setRPNLabel( 0, RPN_Message_Goff_Solution, false);
   setRPNLabel( 1, RPN_Message_Offset, false);
   setRPNLabel( 2, RPN_Message_Gain, false);
-  _popPartial();
-  _popPartial();
-  rpnStack[0] = tmp[0];
-  rpnStack[1] = tmp[1];
+  _popQuick(3);
+  _setSt(0, tmp[0]);
+  _setSt(1, tmp[1]);
+  setStackRedraw();
   return;
 }
 
@@ -573,15 +534,15 @@ void RPNCalculator::copyFromPrevious(){
 }
 
 //
-// TODO
+// TODO: load and save functionality here
 //
 void RPNCalculator::loadState(){
-  for( byte i=0; i<RPN_STACK; i++) rpnStack[i] = 0.0;
+  for( byte i=0; i<RPN_STACK; i++) _setSt(i, 0.0);
   if( !_sd->SDMounted) return;
   #ifdef __DEBUG
   Serial.println("loadState called");
   #endif
-  //for( byte i=0; i<RPN_STACK; i++) rpnStack[i] = double( i);
+  //for( byte i=0; i<RPN_STACK; i++) _setSt(i, double( i));
 }
 
 void RPNCalculator::saveState(){
@@ -610,10 +571,10 @@ void RPNCalculator::_evaluateCommand(){
   bool doPopPartial = true;
   bool doUpdateIOM = true;
   double *return_ptr;
-  _savePrevious();
+  _savePrev();
   switch(_ep->lastMathFunction->RPNtag){
     case _RPN_AMODE_:
-      _ep->mathFunctions.Compute( _ep->lastMathFunction, rpnStack);
+      _ep->mathFunctions.Compute( _ep->lastMathFunction, _ep->mathFunctions.rpnStack);
       setRPNLabel( 0, RPN_AMOD_Table[_ep->mathFunctions.angleMode]);
       pop(true);
       return;
@@ -621,7 +582,7 @@ void RPNCalculator::_evaluateCommand(){
       _checkTrigAccuracy();
       break;
     case _RPN_INVTRIG_:
-      if( abs(rpnStack[0]) > 1.0){
+      if( abs(_getSt(0)) > 1.0){
         setRPNLabel( 0, RPN_Error_Trig);
         _stackRedrawRequired[ 0] = true;
         updateIOM(doUpdateIOM);
@@ -629,18 +590,18 @@ void RPNCalculator::_evaluateCommand(){
       }
       break;
     case _RPN_DIV0_CHECK_:
-      if( rpnStack[0] == 0.0){
+      if( _isStZero(0)){
         setRPNLabel( 0, RPN_Error_DivZero);
         doPopPartial = false;
       }
       break;
     case _RPN_ROOTYX_:
-      if( rpnStack[0] == 0.0){
+      if( _isStZero(0)){
         setRPNLabel( 0, RPN_Error_DivZero);
         doPopPartial = false;
         break;
       }
-      rpnStack[0] = 1.0/rpnStack[0];
+      _setSt(0, 1.0 / _getSt(0));
       // fall-through!
     case _RPN_POWER_:
       power(true);
@@ -649,35 +610,33 @@ void RPNCalculator::_evaluateCommand(){
       swap(true);
       return;
     case _RPN_SWAP_XY_:
-      _savePrevious(1);
+      _savePrev(1);
       _swapQuick();
       break;
     case _RPN_QUICK_PUSH_:
       _pushQuick();
       break;
     case _RPN_SQRT_CHECK_:
-      if( rpnStack[0] < 0.0){
+      if( _getSt(0) < 0.0){
         setRPNLabel( 0, RPN_Message_Complex);
-        rpnStack[0] = -rpnStack[0];
+        _setSt(0, -_getSt(0));
       }      
       break;
     case _RPN_QUAD_SOLVER:
       quad(true);
-      setStackRedraw();
-      updateIOM(doUpdateIOM);
+      _setRedrawAndUpdateIOM( doUpdateIOM);
       return;
     case _RPN_GOFF2_SOLVER:
       goff2(true);
-      setStackRedraw();
-      updateIOM(doUpdateIOM);
+      _setRedrawAndUpdateIOM( doUpdateIOM);
       return;
     default:
       break;
   }
-  return_ptr = _ep->mathFunctions.Compute( _ep->lastMathFunction, rpnStack);
-  if( _ep->lastMathFunction->nArgs > 0) rpnStack[0] = return_ptr[0];
+  return_ptr = _ep->mathFunctions.Compute( _ep->lastMathFunction, _ep->mathFunctions.rpnStack);
+  if( _ep->lastMathFunction->nArgs > 0) _setSt(0, return_ptr[0]);
   if( doPopPartial && _ep->lastMathFunction->nArgs > 1) _popPartial();
-  else _stackRedrawRequired[ 0] = true;
+  else setStackRedraw();
   updateIOM(doUpdateIOM);
 }
 
@@ -706,14 +665,14 @@ void RPNCalculator::_evaluateString(){
     return;
   }
   if( IsToken( _ep->nameParser.Name(), "hex", false)){
-    _ep->numberParser.stringHex( rpnStack[0], _input);
+    _ep->numberParser.stringHex( _getSt(0), _input);
     cursor_column = strlen(_input);
     display_starts = 0;
     _iom->sendStringLn( _input);
     return;
   }
   if( IsToken( _ep->nameParser.Name(), "inj", false)){
-    _ep->numberParser.stringValue( rpnStack[0], _io_buffer);
+    _ep->numberParser.stringValue( _getSt(0), _io_buffer);
     _iom->injectKeyboard();
     _clearInput();
     return;
@@ -768,4 +727,30 @@ void RPNCalculator::_evaluateString(){
   }
   Serial.println("Unknown command:");
   Serial.println((char *)_ep->_getCurrentPosition());
+}
+
+void RPNCalculator::_pushQuick(){
+  for(byte i=RPN_STACK-1; i>0; i--)
+    _ep->mathFunctions.rpnStack[i] = _ep->mathFunctions.rpnStack[i-1];
+}
+void RPNCalculator::_pushQuick(double v){
+  _pushQuick();
+  _ep->mathFunctions.rpnStack[0] = v;
+}
+void RPNCalculator::_popQuick(byte start){
+  for(byte i=start; i<RPN_STACK; i++)
+    _ep->mathFunctions.rpnStack[i-1] = _ep->mathFunctions.rpnStack[i];
+}
+void RPNCalculator::_popPartial() {
+  _popQuick(2);
+  setStackRedraw();
+}
+void RPNCalculator::_popPartial( double v) {
+  _popPartial();
+  _ep->mathFunctions.rpnStack[0] = v;
+}
+void RPNCalculator::_swapQuick(){
+  double tmp = _ep->mathFunctions.rpnStack[0];
+  _ep->mathFunctions.rpnStack[0] = _ep->mathFunctions.rpnStack[1];
+  _ep->mathFunctions.rpnStack[1] = tmp;
 }

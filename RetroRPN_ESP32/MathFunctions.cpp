@@ -117,6 +117,9 @@ const char _MF_GOFF2[] PROGMEM = "GOFF2";
 //#define _MF_CATH_KW_ 34
 const char _MF_cath[] PROGMEM = "cath";
 const char _MF_CATH[] PROGMEM = "CATH";
+//#define _MF_STACK_KW_ 35
+const char _MF_stack[] PROGMEM = "stack";
+const char _MF_STACK[] PROGMEM = "STACK";
 
 void MathFunctions::init( byte amod){
   angleMode = amod;
@@ -155,6 +158,7 @@ void MathFunctions::init( byte amod){
   _addFunction( _MF_False, _MF_FALSE, 0, 1); // 32
   _addFunction( _MF_goff2, _MF_GOFF2, 4, 2, _RPN_GOFF2_SOLVER); // 33
   _addFunction( _MF_cath, _MF_CATH, 2, 1); // 34
+  _addFunction( _MF_stack, _MF_STACK, 1, 1); // 35
 }
 
 void MathFunctions::setAngleMode(byte m){
@@ -174,6 +178,7 @@ MathFunction *MathFunctions::getFunction(byte *str){
 
 double *MathFunctions::Compute( MathFunction *mf, double *args){
   byte a = _MODE_DEGREES_;
+  int iStack = 0;
   switch(mf->id){
     case _MF_AMODE_KW_: // amode (temporary)
      if( 0.5 <= args[0] && args[0] < 1.5) a = _MODE_RADIAN_; 
@@ -281,6 +286,12 @@ double *MathFunctions::Compute( MathFunction *mf, double *args){
     case _MF_SWAP_KW_:
       _rets[0] = args[1];
       _rets[1] = args[0];
+      break;
+    case _MF_STACK_KW_:
+      iStack = (int)floor(args[0]);
+      if( iStack<0) iStack = 0;
+      if( iStack>=RPN_STACK) iStack = RPN_STACK-1;
+      _rets[0] = rpnStack[iStack];
       break;
     case _MF_LCIRC_KW_:
       _rets[0] = _MATH_PI_ * 2.0 * args[0];

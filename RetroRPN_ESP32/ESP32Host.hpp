@@ -31,20 +31,29 @@
 
 #include <Arduino.h>
 #include "./src/IOManager.hpp"
-#include "SDManager.hpp"
 #include "./src/LCDManager.hpp"
+#include "SDManager.hpp"
 #include "RPNCalculator.hpp"
+#include "FileManager.hpp"
 
 #define IO_MSG_POWER_BUTTON 0
-#define IO_MSG_INACTIVE 1
-#define IO_MSG_SHUTDOWN 2
-
-#define IO_BUFFER_LENGTH 256
+#define IO_MSG_INACTIVE     1
+#define IO_MSG_SHUTDOWN     2
+#define IO_BUFFER_LENGTH    256
+#define UI_UNDEFINED        0
+#define UI_RPNCALC          1
+#define UI_FILEMAN          2
+#define UI_EDITOR           3
+#define UI_CONSOLE          4
 
 class ESP32Host{
   public:
+    byte currentUI = UI_UNDEFINED;
     unsigned long init();
     unsigned long tick();
+    void selectUI(byte ui); 
+    void show();
+    void redraw();
     void deepSleep( byte msg = IO_MSG_SHUTDOWN);   
   private:
     byte _io_buffer[IO_BUFFER_LENGTH];
