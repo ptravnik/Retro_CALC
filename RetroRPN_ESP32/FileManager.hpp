@@ -18,6 +18,7 @@
 
 class FileManager{
   public:
+    byte nextUI = UI_UNDEFINED;
     unsigned long init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep);
     unsigned long tick();
     void show();

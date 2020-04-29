@@ -11,7 +11,12 @@
 
 #include <Arduino.h>
 #include <math.h>
-#include "./src/Utilities.hpp"
+
+#define UI_UNDEFINED        0
+#define UI_RPNCALC          1
+#define UI_FILEMAN          2
+#define UI_EDITOR           3
+#define UI_CONSOLE          4
 
 #define _NOT_AN_ID_ 0
 #define _UNKNOWN_ID_ 1

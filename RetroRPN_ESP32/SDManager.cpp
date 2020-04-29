@@ -8,9 +8,6 @@
 
 #include "SDManager.hpp"
 #include "./src/Utilities.hpp"
-#include "FS.h"
-#include "SD.h"
-#include "SPI.h"
 
 //#define __DEBUG
 
@@ -26,6 +23,7 @@ const char *const SD_Message_Table[] PROGMEM = {
   SD_Message3,
   SD_Message4
   };
+const char SD_root[] PROGMEM = "/";
 
 //
 // Timer to check the SD status
@@ -62,8 +60,11 @@ bool SDManager::_detectSDCard(){
   if( !SDMounted) return inserted;
   cardSize = SD.cardSize() >> 20;
   sprintf( (char *)_io_buffer, SD_Message_Table[4], cardSize);
-  _iom->sendStringUTF8Ln( (char *)_io_buffer);  
-  //Serial.printf("SD Card Size: %llu MB\n", cardSize);
+  _iom->sendStringUTF8Ln( (char *)_io_buffer);
+  #ifdef __DEBUG  
+  Serial.printf("SD Card Size: %llu MB\n", cardSize);
+  #endif
+  _checkRoot();
   keepAwake();
   return inserted;  
 }
@@ -92,6 +93,31 @@ uint8_t SDManager::cardType(){
   return SD.cardType();
 }
 
+void SDManager::_checkRoot(){
+  if(!SDInserted) return;
+  if(!SDMounted) return;
+  File root = SD.open(currentDir);
+  if(!root){
+    #ifdef __DEBUG
+    Serial.println("Failed to open directory, reset to root");
+    #endif
+    strncpy( currentDir, SD_root, CURRENT_DIR_LEN);
+    return;
+  }
+  if(!root.isDirectory()){
+    #ifdef __DEBUG
+    Serial.println("Not a directory, reset to root");
+    #endif
+    strncpy( currentDir, SD_root, CURRENT_DIR_LEN);
+  }
+  root.close();
+}
+
+File SDManager::_getCurrentDir(){
+  _checkRoot();
+  return SD.open(currentDir);
+}
+
 void SDManager::sleepOn(){
   if( !SDMounted) return;
   SD.end();
@@ -104,28 +130,22 @@ void SDManager::sleepOff(){
   _detectSDCard();
 }
 
-void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
-    Serial.printf("Listing directory: %s\n", dirname);
+void SDManager::listDir(){
+    if(!SDInserted) return;
+    if(!SDMounted) return;
+    Serial.print("Listing directory: ");
+    Serial.println(currentDir);
 
-    File root = fs.open(dirname);
-    if(!root){
-        Serial.println("Failed to open directory");
-        return;
-    }
-    if(!root.isDirectory()){
-        Serial.println("Not a directory");
-        return;
-    }
+    File root = _getCurrentDir();
+    if(!root) return;
 
     File file = root.openNextFile();
     while(file){
         if(file.isDirectory()){
             Serial.print("  DIR : ");
             Serial.println(file.name());
-            if(levels){
-                listDir(fs, file.name(), levels -1);
-            }
-        } else {
+        }
+        else {
             Serial.print("  FILE: ");
             Serial.print(file.name());
             Serial.print("  SIZE: ");

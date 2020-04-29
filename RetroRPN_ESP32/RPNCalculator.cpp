@@ -43,6 +43,8 @@ const char RPN_Message_RealPart[] PROGMEM = "Real part";
 const char RPN_Message_Gain[] PROGMEM = "Gain";
 const char RPN_Message_Offset[] PROGMEM = "Offset";
 const char RPN_Message_Goff_Solution[] PROGMEM = "Y=Gain*X+Offset";
+const char RPN_Message_SD_Mounted[] PROGMEM = "SD mounted";
+const char RPN_Message_SD_Removed[] PROGMEM = "SD removed";
 const char *const RPN_Message_Table[] PROGMEM = {
   RPN_StatusMessage,
   RPN_RegName1,
@@ -70,6 +72,7 @@ unsigned long RPNCalculator::init(IOManager *iom, LCDManager *lcd, SDManager *sd
   _messages[2] = _messages[1] + SCR_COLS;
   _messages[3] = _messages[2] + SCR_COLS;
   resetRPNLabels(false);
+  _sdPrevMounted = _sd->SDMounted;
   memset(_input, (byte)0, INPUT_COLS);
   memset(_inputPrevious, (byte)0, INPUT_COLS);
   loadState();
@@ -98,7 +101,8 @@ void RPNCalculator::show(){
 // Redraws the number area on LCD
 //
 void RPNCalculator::redraw() {
-  byte lineNums[] = {6, 4, 2, 0}; 
+  byte lineNums[] = {6, 4, 2, 0};
+  _checkSDStatus();
   for(byte i=0; i<4; i++){
     if( !_messageRedrawRequired[i]) continue;
     _messageRedrawRequired[i] = false;
@@ -677,6 +681,12 @@ void RPNCalculator::_evaluateString(){
     _clearInput();
     return;
   }
+  if( IsToken( _ep->nameParser.Name(), "fman", false)){
+    copyToPrevious();
+    _clearInput();
+    nextUI = UI_FILEMAN;
+    return;
+  }
   if( IsToken( _ep->_getCurrentPosition(), "#scr prompt ", false)){
     copyToPrevious();
     setRPNLabel( 0, _input+12);
@@ -753,4 +763,11 @@ void RPNCalculator::_swapQuick(){
   double tmp = _ep->mathFunctions.rpnStack[0];
   _ep->mathFunctions.rpnStack[0] = _ep->mathFunctions.rpnStack[1];
   _ep->mathFunctions.rpnStack[1] = tmp;
+}
+void RPNCalculator::_checkSDStatus(){
+  if(_sdPrevMounted == _sd->SDMounted) return;
+  _sdPrevMounted = _sd->SDMounted;
+  setRPNLabel( 0, _sdPrevMounted? RPN_Message_SD_Mounted: RPN_Message_SD_Removed);
+  //_iom->sendLn( _messages[0]);
+  //_iom->sendStringLn( _messages[0]);
 }

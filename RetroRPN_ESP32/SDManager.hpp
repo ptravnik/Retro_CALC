@@ -20,6 +20,9 @@
 #define SDMANAGER_HPP
 
 #include <Arduino.h>
+#include "FS.h"
+#include "SD.h"
+//#include "SPI.h"
 #include "./src/IOManager.hpp"
 
 // or use LED_BUILTIN=2 constant for built-in LED
@@ -32,12 +35,14 @@
 
 #define SD_CARD_OUT          255
 #define SD_CARD_NOT_MOUNTED  254
+#define CURRENT_DIR_LEN      256
 
 class SDManager{
   public:
     volatile bool SDInserted = false;
     volatile bool SDMounted = false;
     volatile uint64_t cardSize = 0;
+    char currentDir[CURRENT_DIR_LEN];
 
     unsigned long init(IOManager *iom);
     unsigned long tick();
@@ -47,11 +52,13 @@ class SDManager{
     };
     void sleepOn();
     void sleepOff();
+    void listDir();
   private:
     byte *_io_buffer;
     IOManager *_iom;
-    //LCDManager *_lcd;
     void _checkSDPin();
+    void _checkRoot();
+    File _getCurrentDir();
     bool _detectSDCard();
 };
 

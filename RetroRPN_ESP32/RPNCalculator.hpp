@@ -40,6 +40,7 @@
 
 class RPNCalculator{
   public:
+    byte nextUI = UI_UNDEFINED;
     bool expectCommand = false;
     unsigned long init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep);
     unsigned long tick();
@@ -76,6 +77,8 @@ class RPNCalculator{
     bool _messageRedrawRequired[ 4];
     bool _stackRedrawRequired[ 3];
     byte *_messages[4];
+    bool _sdPrevMounted = false;
+    void _checkSDStatus();
     void processCommand(byte c);
     void processEntry(byte c);
     void processDEL();

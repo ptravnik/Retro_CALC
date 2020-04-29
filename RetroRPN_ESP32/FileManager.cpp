@@ -86,11 +86,20 @@ unsigned long FileManager::tick(){
 void FileManager::show(){
   _lcd->wordWrap = false;
   _lcd->scrollLock = true;
-  _lcd->clearScreen( _SP_, false);
-  _lcd->invertRow(6, true);
+  _lcd->clearScreen( _SP_, true);
+  for(byte r=0; r<8; r++){
+    _lcd->cursorTo( 0, r);
+    _lcd->sendString( "File Manager!");
+  }  
+  //_lcd->invertRow(6, true);
   //setStackRedraw();
   //resetRPNLabels( false);
   _iom->sendLn();
+  _iom->sendStringLn( "File Manager here");
+  _lcd->redraw();
+  _sd->listDir();
+  delay(2000);
+  nextUI = UI_RPNCALC;
 }
 
 //

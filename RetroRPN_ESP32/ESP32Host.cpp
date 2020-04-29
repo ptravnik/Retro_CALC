@@ -94,12 +94,15 @@ unsigned long ESP32Host::tick() {
   mySD.tick();
   myIO.tick();
   myLCD.tick();
+  byte *uiRequest = NULL;
   switch(currentUI){
     case UI_RPNCALC:
-      myRPN.tick();  
+      myRPN.tick();
+      uiRequest = &(myRPN.nextUI); 
       break;
     case UI_FILEMAN:
       myFM.tick();
+      uiRequest = &(myFM.nextUI); 
       break;
     case UI_EDITOR:
     case UI_CONSOLE:
@@ -126,8 +129,18 @@ unsigned long ESP32Host::tick() {
     return myIO.lastInput;
   }
   myLCD.LEDOn();
-  redraw();
+  if( uiRequest != NULL && *uiRequest != UI_UNDEFINED)
+    selectUI(uiRequest);
+  else
+    redraw();
   return myIO.lastInput;
+}
+
+void ESP32Host::selectUI(byte *ui){
+  if( *ui == UI_UNDEFINED) return;
+  byte tmp = *ui;
+  *ui = UI_UNDEFINED;
+  selectUI(tmp);
 }
 
 void ESP32Host::selectUI(byte ui){
