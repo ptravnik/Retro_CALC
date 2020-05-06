@@ -15,6 +15,7 @@ static ExpressionParser myEP;
 static IOManager myIO;
 static SDManager mySD;
 static LCDManager myLCD;
+static CommandLine myCL;
 static RPNCalculator myRPN;
 static FileManager myFM;
 
@@ -79,7 +80,8 @@ unsigned long ESP32Host::init() {
   PowerOffRequested = false;
   attachInterrupt( POWER_DETECT_PIN, isrPower, RISING);
   myEP.init();
-  myRPN.init(&myIO, &myLCD, &mySD, &myEP);
+  myCL.init(&myIO, &myLCD);
+  myRPN.init(&myIO, &myLCD, &mySD, &myEP, &myCL);
   myFM.init(&myIO, &myLCD, &mySD, &myEP);
   myLCD.waitForEndSplash( initStarted);
 

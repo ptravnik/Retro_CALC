@@ -8,10 +8,6 @@
 
 #include "RPNCalculator.hpp"
 #include "./src/Utilities.hpp"
-#include "./src/IOManager.hpp"
-#include "./src/LCDManager.hpp"
-#include "SDManager.hpp"
-#include "Keywords.hpp"
 #include "MathFunctions.hpp"
 
 //#define __DEBUG
@@ -61,20 +57,19 @@ const char *const RPN_AMOD_Table[] PROGMEM = {
 //
 // Inits calculator
 //
-unsigned long RPNCalculator::init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep){
+unsigned long RPNCalculator::init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep, CommandLine *cl){
   _io_buffer = iom->getIOBuffer();
   _iom = iom;
   _lcd = lcd;
   _sd = sd;
   _ep = ep;
+  _cl = cl;
   _messages[0] = _messageBuffer;
   _messages[1] = _messages[0] + SCR_COLS;
   _messages[2] = _messages[1] + SCR_COLS;
   _messages[3] = _messages[2] + SCR_COLS;
   resetRPNLabels(false);
   _sdPrevMounted = _sd->SDMounted;
-  memset(_input, (byte)0, INPUT_COLS);
-  memset(_inputPrevious, (byte)0, INPUT_COLS);
   loadState();
   setStackRedraw();
   return _iom->keepAwake();
@@ -94,7 +89,7 @@ void RPNCalculator::show(){
   _lcd->invertRow(6, true);
   setStackRedraw();
   resetRPNLabels( false);
-  _iom->sendLn();
+  _cl->show();
 }
 
 //
@@ -119,19 +114,13 @@ void RPNCalculator::redraw() {
     _lcd->cursorTo( SCR_RIGHT-len, j);
     _lcd->sendString( _io_buffer);
   }
-  byte *ptr = _input + display_starts;
-  _lcd->cursorToBottom();
-  _lcd->clearLine( SCR_BOTTOM);
-  _lcd->sendStringUTF8( RPN_Message_Table[4]);
-  _lcd->sendString( ptr, HSCROLL_LIMIT);
-  _lcd->cursorTo( cursor_column - display_starts + 2, SCR_BOTTOM);
-  _lcd->redraw();
+  _cl->redraw();
 }
 
 //
 // Draws the stack to the serial ports
 //
-void RPNCalculator::updateIOM( bool refresh) {
+void RPNCalculator::_updateIOM( bool refresh) {
   if( !refresh) return;
   _iom->sendLn();
   for( byte i=3; i>0; i--){
@@ -153,7 +142,7 @@ void RPNCalculator::resetRPNLabels( bool refresh) {
     convertToCP1251( _messages[i], RPN_Message_Table[i], HSCROLL_LIMIT);
     _messageRedrawRequired[i] = true;
   }
-  updateIOM(refresh);
+  _updateIOM(refresh);
 }
 
 //
@@ -166,7 +155,7 @@ void RPNCalculator::setRPNLabel( byte label, byte *message, bool refresh) {
   else
     convertToCP1251( _messages[label], RPN_Message_Table[label], HSCROLL_LIMIT);
   _messageRedrawRequired[label] = true;
-  updateIOM(refresh);
+  _updateIOM(refresh);
 }
 
 //
@@ -179,9 +168,6 @@ void RPNCalculator::sendChar( byte c) {
     return;
   }
   switch(c){
-    case _BS_:
-      processBS();
-      return;
     case _RPN_:
       expectCommand = true;
       return;
@@ -191,20 +177,9 @@ void RPNCalculator::sendChar( byte c) {
     case _CR_:
       processInput(false);
       return;
-    case _LEFT_:
-      processLEFT();
-      return;
-    case _RIGHT_:
-      processRIGHT();
-      return;
-    case _HOME_:
-      processHOME();
-      return;
-    case _END_:
-      processEND();
-      return;
     case _UP_:
-      copyFromPrevious();
+      _cl->copyFromPrevious();
+      _cl->updateIOM();
       return;
     case _DOWN_:
       swap();
@@ -216,13 +191,11 @@ void RPNCalculator::sendChar( byte c) {
       roll();
       return;
     case _ESC_:
-      processESC();
+      _cl->processESC();
+      resetRPNLabels(true);
       return;
-    case _DEL_:
-      processDEL();
-      return;
-    default: // other chars
-      processEntry(c);
+    default: // other chars go to command line
+      _cl->sendChar(c);
       break;
   }
 }
@@ -231,7 +204,7 @@ void RPNCalculator::sendChar( byte c) {
 // Silent command execution
 //
 void RPNCalculator::processCommand(byte c){
-  if(isInputEmpty()){
+  if(_cl->isInputEmpty()){
     switch(c){
       case '+':
         add();
@@ -252,7 +225,7 @@ void RPNCalculator::processCommand(byte c){
         signchange();
         return;
     default:
-      processEntry(c);
+      _cl->processEntry(c);
       break;
     }
     return;
@@ -260,18 +233,18 @@ void RPNCalculator::processCommand(byte c){
   switch(c){
     case '+':
     case '-':
-      if( cursor_column >= 2 && _input[cursor_column-1] == 'e' && IsDigitOrDecimal( _input[cursor_column-2])){
-        processEntry(c);
+      if( _cl->isMagnitudeEntry()){
+        _cl->processEntry(c);
         return;
       }
       break;
     default:
       break;
   }
-  _ep->parse(_input);  
+  _ep->parse(_cl->getInput());  
   if( _ep->result != _NOT_A_NUMBER_)
     _pushQuick(_ep->numberParser.realValue());
-  _clearInput();
+  _cl->clearInput();
   expectCommand = false;
   processCommand( c);
 }
@@ -282,13 +255,13 @@ void RPNCalculator::processCommand(byte c){
 void RPNCalculator::processInput( bool silent) {
   #ifdef __DEBUG
   Serial.print("Processing Input: [");
-  Serial.print( (char *)_input);
+  Serial.print( (char *)_cl->getInput());
   Serial.println("]");
   #else
   _iom->sendLn();
   #endif
-  copyToPrevious();
-  _ep->parse(_input); 
+  _cl->copyToPrevious();
+  _ep->parse(_cl->getInput()); 
   switch(_ep->result){
     case _STRING_:
       if( _ep->lastMathFunction == NULL){
@@ -305,11 +278,11 @@ void RPNCalculator::processInput( bool silent) {
       _pushQuick(_ep->numberParser.realValue());
       if( !silent){
         setStackRedraw();
-        updateIOM();
+        _updateIOM();
       }
       break;
   }
-  _clearInput();
+  _cl->clearInput();
 }
 
 //
@@ -330,7 +303,7 @@ void RPNCalculator::swap(bool refresh) {
   _swapQuick();
   _stackRedrawRequired[ 0] = true;
   _stackRedrawRequired[ 1] = true;
-  updateIOM(refresh);
+  _updateIOM(refresh);
 }
 void RPNCalculator::roll(bool refresh) {
   _pushQuick(_getSt(RPN_STACK-1));
@@ -369,13 +342,13 @@ void RPNCalculator::power(bool refresh) {
   if( _getSt(0) == 0.0){
     setRPNLabel( 0, RPN_Warning_ZeroPowerZero);
     _popPartial( 1.0);
-    updateIOM(refresh);
+    _updateIOM(refresh);
     return;
   }
   // positive power of zero: zero
   if( _getSt(0) > 0.0 && _getSt(1) == 0.0){
     _popPartial( 0.0);
-    updateIOM(refresh);
+    _updateIOM(refresh);
     return;
   }
   // negative power of zero: div by zero
@@ -391,7 +364,7 @@ void RPNCalculator::power(bool refresh) {
     return;    
   }
   _popPartial( tmp);
-  updateIOM(refresh);
+  _updateIOM(refresh);
 }
 
 //
@@ -460,84 +433,6 @@ void RPNCalculator::goff2(bool refresh) {
 }
 
 //
-// process character entry
-//
-void RPNCalculator::processEntry(byte c) {
-  if( c < _SP_) return; // unsupported service characters
-  if( cursor_column >= INPUT_LIMIT) return; // line full
-  byte *ptr = _input+cursor_column;
-  if( *ptr){ // insert to the middle of the line
-    memmove( ptr+1, ptr, INPUT_LIMIT-cursor_column);
-    *ptr = c;
-    _input[INPUT_LIMIT] = 0;
-    }
-  else{ // add at the end of line
-    *ptr++ = c;
-    *ptr = 0;
-    }
-  processRIGHT(); // move the cursor
-  _iom->sendChar(c);
-}
-
-//
-// process del
-//
-void RPNCalculator::processDEL() {
-  byte *ptr = _input+cursor_column;
-  if( !(*ptr)) return; // end of string - nothing to delete
-  memmove( ptr, ptr+1, INPUT_LIMIT-cursor_column);
-}
-
-//
-// process backspace - the same as pressing LEFT and DEL 
-//
-void RPNCalculator::processBS() {
-  if( !cursor_column) return; // nothing to delete
-  processLEFT();
-  processDEL();
-}
-
-//
-// process other buttons 
-//
-void RPNCalculator::processESC() {
-  resetRPNLabels(true);
-  _clearInput();
-}
-
-void RPNCalculator::processLEFT() {
-  if( !cursor_column) return; // no place like home
-  cursor_column--;
-  if( display_starts>cursor_column)
-    display_starts=cursor_column;
-}
-
-void RPNCalculator::processRIGHT() {
-  byte *ptr = _input+cursor_column;
-  if( !(*ptr)) return; // end of string - no place to move
-  cursor_column++;
-  if( cursor_column-display_starts >= HSCROLL_LIMIT)
-    display_starts++;
-}
-
-void RPNCalculator::processHOME() {
-  cursor_column = 0;
-  display_starts = 0;
-}
-
-void RPNCalculator::processEND() {
-  cursor_column = strlen( _input);
-  if( cursor_column > HSCROLL_LIMIT)
-    display_starts = cursor_column - HSCROLL_LIMIT;
-}
-
-void RPNCalculator::copyFromPrevious(){
-  strcpy( (char *)_input, (char *)_inputPrevious);
-  processEND();
-  updateIOM();
-}
-
-//
 // TODO: load and save functionality here
 //
 void RPNCalculator::loadState(){
@@ -554,15 +449,6 @@ void RPNCalculator::saveState(){
   #ifdef __DEBUG
   Serial.println("saveState called");
   #endif
-}
-
-//
-// process input after entry 
-//
-void RPNCalculator::_clearInput() {
-  *_input = 0;
-  cursor_column = 0;
-  display_starts = 0;
 }
 
 //
@@ -589,7 +475,7 @@ void RPNCalculator::_evaluateCommand(){
       if( abs(_getSt(0)) > 1.0){
         setRPNLabel( 0, RPN_Error_Trig);
         _stackRedrawRequired[ 0] = true;
-        updateIOM(doUpdateIOM);
+        _updateIOM(doUpdateIOM);
         return;
       }
       break;
@@ -641,98 +527,99 @@ void RPNCalculator::_evaluateCommand(){
   if( _ep->lastMathFunction->nArgs > 0) _setSt(0, return_ptr[0]);
   if( doPopPartial && _ep->lastMathFunction->nArgs > 1) _popPartial();
   else setStackRedraw();
-  updateIOM(doUpdateIOM);
+  _updateIOM(doUpdateIOM);
 }
 
 //
 // Process other string commands, such as "roll" 
 //
 void RPNCalculator::_evaluateString(){
+  byte *ptr;
   if( IsToken( _ep->nameParser.Name(), "cls", false)){
     resetRPNLabels();
-    _clearInput();
+    _cl->clearInput();
     return;
   }
   if( IsToken( _ep->nameParser.Name(), "push", false)){
     push();
-    _clearInput();
+    _cl->clearInput();
     return;
   }
   if( IsToken( _ep->nameParser.Name(), "pop", false)){
     pop();
-    _clearInput();
+    _cl->clearInput();
     return;
   }
   if( IsToken( _ep->nameParser.Name(), "roll", false)){
     roll();
-    _clearInput();
+    _cl->clearInput();
     return;
   }
   if( IsToken( _ep->nameParser.Name(), "hex", false)){
-    _ep->numberParser.stringHex( _getSt(0), _input);
-    cursor_column = strlen(_input);
-    display_starts = 0;
-    _iom->sendStringLn( _input);
+    ptr = _cl->getInput();
+    _ep->numberParser.stringHex( _getSt(0), ptr);
+    _cl->processEND();
+    _iom->sendStringLn( ptr);
     return;
   }
   if( IsToken( _ep->nameParser.Name(), "inj", false)){
     _ep->numberParser.stringValue( _getSt(0), _io_buffer);
     _iom->injectKeyboard();
-    _clearInput();
+    _cl->clearInput();
     return;
   }
   if( IsToken( _ep->nameParser.Name(), "fman", false)){
-    copyToPrevious();
-    _clearInput();
+    _cl->copyToPrevious();
+    _cl->clearInput();
     nextUI = UI_FILEMAN;
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr prompt ", false)){
-    copyToPrevious();
-    setRPNLabel( 0, _input+12);
-    _clearInput();
+    _cl->copyToPrevious();
+    setRPNLabel( 0, _cl->getInput(12));
+    _cl->clearInput();
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr labelx ", false)){
-    copyToPrevious();
-    setRPNLabel( 1, _input+12);
-    _clearInput();
+    _cl->copyToPrevious();
+    setRPNLabel( 1, _cl->getInput(12));
+    _cl->clearInput();
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr labely ", false)){
-    copyToPrevious();
-    setRPNLabel( 2, _input+12);
-    _clearInput();
+    _cl->copyToPrevious();
+    setRPNLabel( 2, _cl->getInput(12));
+    _cl->clearInput();
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr labelz ", false)){
-    copyToPrevious();
-    setRPNLabel( 3, _input+12);
-    _clearInput();
+    _cl->copyToPrevious();
+    setRPNLabel( 3, _cl->getInput(12));
+    _cl->clearInput();
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr off", false)){
     Serial.println("LCD off");
     _lcd->sleepOn();
-    _clearInput();
+    _cl->clearInput();
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr on", false)){
     Serial.println("LCD on");
     _lcd->sleepOff();
-    _clearInput();
+    _cl->clearInput();
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr+", false)){
     Serial.println("LCD up");
     _lcd->changeLED( 16);
-    _clearInput();
+    _cl->clearInput();
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr-", false)){
     Serial.println("LCD down");
     _lcd->changeLED( -16);
-    _clearInput();
+    _cl->clearInput();
     return;
   }
   Serial.println("Unknown command:");

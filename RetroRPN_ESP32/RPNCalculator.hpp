@@ -26,6 +26,7 @@
 #include <Arduino.h>
 #include "./src/IOManager.hpp"
 #include "./src/LCDManager.hpp"
+#include "./src/CommandLine.hpp"
 #include "SDManager.hpp"
 #include "Parser.hpp"
 #include "Keywords.hpp"
@@ -42,7 +43,7 @@ class RPNCalculator{
   public:
     byte nextUI = UI_UNDEFINED;
     bool expectCommand = false;
-    unsigned long init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep);
+    unsigned long init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep, CommandLine *cl);
     unsigned long tick();
     void show();
     void redraw();
@@ -63,31 +64,6 @@ class RPNCalculator{
     void goff2( bool refresh=true);
     void loadState();
     void saveState();
-  private:
-    byte *_io_buffer;
-    IOManager *_iom;
-    LCDManager *_lcd;
-    SDManager *_sd;
-    ExpressionParser *_ep;
-    byte _input[INPUT_COLS];
-    byte _inputPrevious[INPUT_COLS];
-    uint16_t cursor_column = 0;
-    uint16_t display_starts = 0;
-    byte _messageBuffer[SCR_COLS * 4];
-    bool _messageRedrawRequired[ 4];
-    bool _stackRedrawRequired[ 3];
-    byte *_messages[4];
-    bool _sdPrevMounted = false;
-    void _checkSDStatus();
-    void processCommand(byte c);
-    void processEntry(byte c);
-    void processDEL();
-    void processBS();
-    void processESC();
-    void processLEFT();
-    void processRIGHT();
-    void processHOME();
-    void processEND();
     void resetRPNLabels(bool refresh=true);
     void setRPNLabel( byte label, byte *message, bool refresh=true);
     inline void setRPNLabel( byte label, char *message, bool refresh=true){
@@ -99,15 +75,21 @@ class RPNCalculator{
     inline void setStackRedraw(){
       memset( _stackRedrawRequired, true, 3);
     };
-    inline void copyToPrevious(){
-      strcpy( (char *)_inputPrevious, (char *)_input);
-    };
-    inline bool isInputEmpty(){
-      return *_input == _NUL_;
-    };
-    void copyFromPrevious();
-    void updateIOM(bool refresh=true);
-    void _clearInput();
+  private:
+    byte *_io_buffer;
+    IOManager *_iom;
+    LCDManager *_lcd;
+    SDManager *_sd;
+    ExpressionParser *_ep;
+    CommandLine *_cl;
+    byte _messageBuffer[SCR_COLS * 4];
+    bool _messageRedrawRequired[ 4];
+    bool _stackRedrawRequired[ 3];
+    byte *_messages[4];
+    bool _sdPrevMounted = false;
+    void _checkSDStatus();
+    void processCommand(byte c);
+    void _updateIOM(bool refresh=true);
     void _evaluateCommand();
     void _evaluateString();
     void _checkTrigAccuracy();
@@ -134,12 +116,12 @@ class RPNCalculator{
     };
     inline void _setRedrawAndUpdateIOM( bool refresh){    
       setStackRedraw();
-      updateIOM(refresh);
+      _updateIOM(refresh);
     };
     inline void _savePopAndUpdate( double v, bool refresh) {
       _savePrev();
       _popPartial(v);
-      updateIOM(refresh);
+      _updateIOM(refresh);
     };
 };
 

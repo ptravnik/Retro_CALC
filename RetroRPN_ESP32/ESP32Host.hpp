@@ -32,6 +32,7 @@
 #include <Arduino.h>
 #include "./src/IOManager.hpp"
 #include "./src/LCDManager.hpp"
+#include "./src/CommandLine.hpp"
 #include "Keywords.hpp"
 #include "SDManager.hpp"
 #include "RPNCalculator.hpp"
