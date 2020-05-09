@@ -212,10 +212,10 @@ kbd.addButtonNoSwitch(["9",'()#CODE=017',"[]#CODE=017","{}#CODE=017",
                        "9",'()#CODE=017',"[]#CODE=017","{}#CODE=017"])  # 19
 kbd.addButtonNoSwitch(["0",'=',"==","!=",
                        "0",'+',"==","!="])                              # 20
-
-kbd.addButtonNoSwitch(["q","Q","#CODE=010quad#CODE=013","#CODE=010goff2#CODE=013",
-                       "я","Я","#CODE=010quad#CODE=013","#CODE=010goff2#CODE=013"]) # 21 (quad/goff2)
-kbd.addButtonSimple("wW  жЖ  ") # 22
+kbd.addButtonNoSwitch(["q","Q","#CODE=010quad#CODE=013","",
+                       "я","Я","#CODE=010quad#CODE=013",""]) # 21 (quad)
+kbd.addButtonNoSwitch(["w","W","#CODE=010goff2#CODE=013","#CODE=010lin2#CODE=013",
+                       "ж","Ж","#CODE=010goff2#CODE=013","#CODE=010lin2#CODE=013"]) # 22 (goff2/lin2)
 kbd.addButtonSimple("eE  еЕ  ") # 23
 kbd.addButtonNoSwitch(["r","R","#CODE=010radius#CODE=013","#CODE=010cath#CODE=013",
                        "р","Р","#CODE=010radius#CODE=013","#CODE=010cath#CODE=013"]) # 24 (radius/cath)
