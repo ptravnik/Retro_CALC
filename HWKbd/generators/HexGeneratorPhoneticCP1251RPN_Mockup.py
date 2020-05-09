@@ -175,14 +175,14 @@ kbd = Keyboard(encoding='cp1251')
 
 kbd.addButton([("#CODE=027", 0), ("#CODE=027",0), ("\t",2), ("\t",3),
                ("#CODE=027", 4), ("#CODE=027",4), ("\t",6), ("\t",7)]) # 01 ESC
-kbd.addButtonNoSwitch(["#CODE=031+","+","+","+",
-                       "э","Э","+","+"])                              # 02
-kbd.addButtonNoSwitch(["#CODE=031-","-","-","-",
-                       "ю","Ю","-","-"])                              # 03
-kbd.addButtonNoSwitch(["#CODE=031*","*","*","*",
-                       "ъ","Ъ","*","*"])                              # 04
-kbd.addButtonNoSwitch(["#CODE=031/","/","/","/",
-                       "ь","Ь","/","/"])                              # 05
+kbd.addButtonNoSwitch(["#CODE=031+","+","#CODE=010rpn#CODE=013","+",
+                       "э","Э","#CODE=010rpn#CODE=013","+"])          # 02
+kbd.addButtonNoSwitch(["#CODE=031-","-","#CODE=010cli#CODE=013","-",
+                       "ю","Ю","#CODE=010cli#CODE=013","-"])          # 03
+kbd.addButtonNoSwitch(["#CODE=031*","*","#CODE=010edit#CODE=013","*",
+                       "ъ","Ъ","#CODE=010edit#CODE=013","*"])         # 04
+kbd.addButtonNoSwitch(["#CODE=031/","/","#CODE=010fman","fman",
+                       "ь","Ь","#CODE=010fman","fman"])               # 05
 kbd.addButtonNoSwitch(["#CODE=031^","^","^","^",
                        "ё","Ё","^","^"])                              # 06
 kbd.addButtonNoSwitch(["#CODE=031#CODE=177","~","\\","#CODE=177",
