@@ -120,6 +120,9 @@ const char _MF_CATH[] PROGMEM = "CATH";
 //#define _MF_STACK_KW_ 35
 const char _MF_stack[] PROGMEM = "stack";
 const char _MF_STACK[] PROGMEM = "STACK";
+//#define _MF_STACK_KW_ 36
+const char _MF_lin2[] PROGMEM = "lin2";
+const char _MF_LIN2[] PROGMEM = "LIN2";
 
 void MathFunctions::init( byte amod){
   angleMode = amod;
@@ -159,6 +162,7 @@ void MathFunctions::init( byte amod){
   _addFunction( _MF_goff2, _MF_GOFF2, 4, 2, _RPN_GOFF2_SOLVER); // 33
   _addFunction( _MF_cath, _MF_CATH, 2, 1); // 34
   _addFunction( _MF_stack, _MF_STACK, 1, 1); // 35
+  _addFunction( _MF_lin2, _MF_LIN2, 1, 1); // 36
 }
 
 void MathFunctions::setAngleMode(byte m){
@@ -308,6 +312,9 @@ double *MathFunctions::Compute( MathFunction *mf, double *args){
     case _MF_GOFF2_KW_:
       goff2( args);
       break;
+    case _MF_LIN2_KW_:
+      _rets[0] = _gain * args[0] + _offset;
+      break;
     default:
       break;
   }
@@ -401,5 +408,7 @@ double *MathFunctions::goff2( double *rpnStack) {
   if( dx == 0.0) return _rets;
   _rets[1] = (rpnStack[2] - rpnStack[0])/dx;
   _rets[0] = rpnStack[0] - _rets[1]*rpnStack[1];
+  _gain = _rets[1];
+  _offset = _rets[0];
   return _rets;
 }

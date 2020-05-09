@@ -75,8 +75,9 @@
 #define _MF_GOFF2_KW_     33
 #define _MF_CATH_KW_      34
 #define _MF_STACK_KW_     35
+#define _MF_LIN2_KW_      36
 
-#define NMATH_FUNCTIONS   36
+#define NMATH_FUNCTIONS   37
 #define RPN_STACK         20
 
 class Keyword{

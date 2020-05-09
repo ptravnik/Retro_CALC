@@ -50,6 +50,8 @@ class MathFunctions{
     size_t _id;
     double _rets[NMATH_RETURNS];
     MathFunction _mf[NMATH_FUNCTIONS];
+    double _gain = 1;
+    double _offset = 0;
     void _addFunction( const char *name0, const char *name1, byte nArgs, byte nRets, byte RPNtag=_RPN_COMMON_);
     inline void _clearRets(){
       for(byte i=0; i<NMATH_RETURNS; i++)_rets[i] = 0.0; 
