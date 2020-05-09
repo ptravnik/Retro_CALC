@@ -17,6 +17,7 @@ static SDManager mySD;
 static LCDManager myLCD;
 static CommandLine myCL;
 static RPNCalculator myRPN;
+static BasicConsole myBAS;
 static FileManager myFM;
 
 const char IO_WelcomeMessage0[] PROGMEM = "***********************";
@@ -82,6 +83,7 @@ unsigned long ESP32Host::init() {
   myEP.init();
   myCL.init(&myIO, &myLCD);
   myRPN.init(&myIO, &myLCD, &mySD, &myEP, &myCL);
+  myBAS.init(&myIO, &myLCD, &mySD, &myEP, &myCL, &myRPN);
   myFM.init(&myIO, &myLCD, &mySD, &myEP);
   myLCD.waitForEndSplash( initStarted);
 
@@ -108,6 +110,8 @@ unsigned long ESP32Host::tick() {
       break;
     case UI_EDITOR:
     case UI_CONSOLE:
+      myBAS.tick();
+      uiRequest = &(myBAS.nextUI); 
     default:
       break; 
   }   
@@ -161,7 +165,9 @@ void ESP32Host::show(){
       break;
     case UI_EDITOR:
     case UI_CONSOLE:
+      myBAS.show();
     default:
+      Serial.println("UI undefined");
       break; 
   }   
 }
@@ -176,6 +182,7 @@ void ESP32Host::redraw(){
       break;
     case UI_EDITOR:
     case UI_CONSOLE:
+      myBAS.redraw();
     default:
       break; 
   }   

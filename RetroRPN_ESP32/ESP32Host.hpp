@@ -36,6 +36,7 @@
 #include "Keywords.hpp"
 #include "SDManager.hpp"
 #include "RPNCalculator.hpp"
+#include "BasicConsole.hpp"
 #include "FileManager.hpp"
 
 #define IO_MSG_POWER_BUTTON 0

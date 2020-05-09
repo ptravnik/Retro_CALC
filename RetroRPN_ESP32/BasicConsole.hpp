@@ -20,32 +20,35 @@
   7 - (+/-) (177) - sign change
 */
 
-#ifndef RPNCALCULATOR_HPP
-#define RPNCALCULATOR_HPP
+#ifndef BASICCONSOLE_HPP
+#define BASICCONSOLE_HPP
 
 #include <Arduino.h>
 #include "./src/IOManager.hpp"
 #include "./src/LCDManager.hpp"
 #include "./src/CommandLine.hpp"
 #include "./src/Utilities.hpp"
-#include "SDManager.hpp"
-#include "Parser.hpp"
-#include "Keywords.hpp"
-#include "MathFunctions.hpp"
+#include "RPNCalculator.hpp"
+//#include "SDManager.hpp"
+//#include "Parser.hpp"
+//#include "Keywords.hpp"
+//#include "MathFunctions.hpp"
 
 #define INPUT_COLS    256
 #define INPUT_LIMIT   255
 #define HSCROLL_LIMIT  18
+#define VIRTUAL_SCREEN_COLS  80
+#define VIRTUAL_SCREEN_ROWS  40
 
 // Move must be one less than RPN_STACK times sizeof( double)
 #define RPN_MOVE   (RPN_STACK-1)*sizeof( double)
 #define RPN_PI        3.14159265359
 
-class RPNCalculator{
+class BasicConsole{
   public:
     byte nextUI = UI_UNDEFINED;
     bool expectCommand = false;
-    unsigned long init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep, CommandLine *cl);
+    unsigned long init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep, CommandLine *cl, RPNCalculator *rpn);
     unsigned long tick();
     void show();
     void redraw();
@@ -66,14 +69,6 @@ class RPNCalculator{
     void goff2( bool refresh=true);
     void loadState();
     void saveState();
-    void resetRPNLabels(bool refresh=true);
-    void setRPNLabel( byte label, byte *message, bool refresh=true);
-    inline void setRPNLabel( byte label, char *message, bool refresh=true){
-      setRPNLabel( label, (byte *)message, refresh);
-    };
-    inline void setRPNLabel( byte label, const char *message, bool refresh=true){
-      setRPNLabel( label, (byte *)message, refresh);
-    };
     inline void setStackRedraw(){
       memset( _stackRedrawRequired, true, 3);
     };
@@ -84,10 +79,10 @@ class RPNCalculator{
     SDManager *_sd;
     ExpressionParser *_ep;
     CommandLine *_cl;
-    byte _messageBuffer[SCR_COLS * 4];
-    bool _messageRedrawRequired[ 4];
+    RPNCalculator *_rpn;
+    byte _virtualScreen[VIRTUAL_SCREEN_COLS * VIRTUAL_SCREEN_ROWS];
+    size_t _vs_bottom_row = 0;
     bool _stackRedrawRequired[ 3];
-    byte *_messages[4];
     bool _sdPrevMounted = false;
     void _checkSDStatus();
     void processCommand(byte c);
@@ -127,4 +122,4 @@ class RPNCalculator{
     };
 };
 
-#endif //RPNCALCULATOR_HPP
+#endif //BASICCONSOLE_HPP
