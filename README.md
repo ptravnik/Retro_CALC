@@ -34,6 +34,7 @@ The code is partially ported and tested on the ESP-32 platform. Production PCBs 
 ## To build for ESP32 Dev Board
 1. Tested on Arduino IDE 1.18.10. and 1.18.12.
 1. Install 2 libraries: [U8g2](https://github.com/ptravnik/Retro_CALC/tree/master/U8g2) for the LCD and [HWKbd](https://github.com/ptravnik/Retro_CALC/tree/master/HWKbd) for the keyboard. Alternatively just copy the same into the Arduino libraries folder (will not install the examples).
+1. Validate which version of hardware keyboard is connected: the production layout uses different h file as the buttons\' position is different from the early mockup. 
 1. Copy the source, [RetroRPN_ESP32](https://github.com/ptravnik/Retro_CALC/tree/master/RetroRPN_ESP32), to any convenient folder and open with Arduino IDE.
 1. Select the board as **ESP32 Dev Module**, compile and upload as usual. Dev modile requires you to hold **BOOT** down for security reasons; on my module (v 1) this pin is not exposed, so must be done with the button on the module itself. Your board may have this on GPIO 00 pin - wiring to an external button is recommended.
 
