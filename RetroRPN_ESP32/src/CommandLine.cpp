@@ -14,10 +14,10 @@ const char CLI_Prompt[] PROGMEM = "> ";
 //
 // Inits command line interface
 //
-unsigned long CommandLine::init(IOManager *iom, LCDManager *lcd){
-  _io_buffer = iom->getIOBuffer();
-  _iom = iom;
-  _lcd = lcd;
+unsigned long CommandLine::init(void *components[]){
+  _iom = (IOManager *)components[UI_COMP_IOManager];
+  _lcd = (LCDManager *)components[UI_COMP_LCDManager];
+  _io_buffer = _iom->getIOBuffer();
   memset(_input, (byte)0, INPUT_COLS);
   memset(_inputPrevious, (byte)0, INPUT_COLS);
   return _iom->keepAwake();
@@ -54,6 +54,14 @@ void CommandLine::updateIOM( bool refresh) {
   _iom->sendLn();
   _iom->sendStringUTF8( CLI_Prompt);
   _iom->sendStringUTF8( _input);
+}
+
+//
+// Draws the command line prompt
+//
+void CommandLine::showPrompt() {
+  _iom->sendLn();
+  _iom->sendStringUTF8( CLI_Prompt);
 }
 
 //

@@ -20,10 +20,12 @@
 #define SDMANAGER_HPP
 
 #include <Arduino.h>
+#include "./src/Keywords.hpp"
+#include "./src/IOManager.hpp"
+#include "./src/MessageBox.hpp"
 #include "FS.h"
 #include "SD.h"
 //#include "SPI.h"
-#include "./src/IOManager.hpp"
 
 // or use LED_BUILTIN=2 constant for built-in LED
 #define SD_DETECT_PIN      4
@@ -41,10 +43,11 @@ class SDManager{
   public:
     volatile bool SDInserted = false;
     volatile bool SDMounted = false;
+    volatile bool SDPrevMounted = false;
     volatile uint64_t cardSize = 0;
     char currentDir[CURRENT_DIR_LEN];
 
-    unsigned long init(IOManager *iom);
+    unsigned long init(void *components[]);
     unsigned long tick();
     uint8_t cardType();
     inline unsigned long keepAwake(){
@@ -53,9 +56,17 @@ class SDManager{
     void sleepOn();
     void sleepOff();
     void listDir();
+    const char *SD_Message();
+    void checkSDStatus();
+    bool setPrevMounted(){
+      if( SDPrevMounted == SDMounted) return true;
+      SDPrevMounted = SDMounted;
+      return false;
+    }
   private:
     byte *_io_buffer;
     IOManager *_iom;
+    MessageBox *_mb;
     void _checkSDPin();
     void _checkRoot();
     File _getCurrentDir();

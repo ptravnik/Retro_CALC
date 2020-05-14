@@ -13,30 +13,21 @@
   Keyboard commands:
   1 - arrow left / arrow right - moves input cursor in the command line
   2 - DEL / Backspace - command line editor
-  3 - arrow down - SWAP X and Y
-  4 - arrow up - previous command line recall
-  5 - LF - "silent" command line execution (stack operation follows)
-  6 - CR = enter - command line execution
-  7 - (+/-) (177) - sign change
+  3 - arrow up - previous command line recall
 */
 
 #ifndef COMMANDLINE_HPP
 #define COMMANDLINE_HPP
 
-#include <Arduino.h>
+#include "Keywords.hpp"
 #include "IOManager.hpp"
 #include "LCDManager.hpp"
-#include "Utilities.hpp"
-
-#define INPUT_COLS    256
-#define INPUT_LIMIT   255
-#define HSCROLL_LIMIT  18
 
 class CommandLine{
   public:
     uint16_t cursor_column = 0;
     uint16_t display_starts = 0;
-    unsigned long init(IOManager *iom, LCDManager *lcd);
+    unsigned long init(void *components[]);
     unsigned long tick();
     void show();
     void redraw();
@@ -62,6 +53,7 @@ class CommandLine{
     void copyFromPrevious();
     void clearInput();
     void updateIOM(bool refresh=true);
+    void showPrompt();
     void processEntry(byte c);
     void processDEL();
     void processBS();

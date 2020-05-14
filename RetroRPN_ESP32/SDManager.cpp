@@ -7,7 +7,7 @@
 //////////////////////////////////////////////////////////
 
 #include "SDManager.hpp"
-#include "./src/Utilities.hpp"
+//#include "./src/Utilities.hpp"
 
 //#define __DEBUG
 
@@ -16,6 +16,8 @@ const char SD_Message1[] PROGMEM = "+ SD removed";
 const char SD_Message2[] PROGMEM = "+ SD mounted";
 const char SD_Message3[] PROGMEM = "+ SD mount failed";
 const char SD_Message4[] PROGMEM = "+ SD size: %llu MB";
+const char SD_Message_Mounted[] PROGMEM = "SD mounted";
+const char SD_Message_Removed[] PROGMEM = "SD removed";
 const char *const SD_Message_Table[] PROGMEM = {
   SD_Message0,
   SD_Message1,
@@ -72,19 +74,34 @@ bool SDManager::_detectSDCard(){
 //
 // Init and status update
 //
-unsigned long SDManager::init( IOManager *iom){
-  _io_buffer = iom->getIOBuffer();
-  _iom = iom;
+unsigned long SDManager::init(void *components[]){
+  _iom = (IOManager *)components[UI_COMP_IOManager];
+  _mb = (MessageBox *)components[UI_COMP_MessageBox];
+  _io_buffer = _iom->getIOBuffer();
   pinMode(SD_DETECT_PIN, INPUT_PULLUP);   // sets the digital pin for SD check
   _detectSDCard();
+  SDPrevMounted = SDMounted;
   SDCheckRequested = false;
   attachInterrupt( SD_DETECT_PIN, isrSD, CHANGE);
   return keepAwake(); 
 }
 
+//
+// Returns a message about the SD status
+//
+const char *SDManager::SD_Message(){
+  if( SDMounted) return SD_Message_Mounted;
+  return SD_Message_Removed;
+}
+
 unsigned long SDManager::tick(){
   _checkSDPin();
   return _iom->lastInput;
+}
+
+void SDManager::checkSDStatus(){
+  if(setPrevMounted()) return;
+  _mb->setLabel(SD_Message());
 }
 
 uint8_t SDManager::cardType(){

@@ -10,16 +10,16 @@
 #define FILEMANAGER_HPP
 
 #include <Arduino.h>
+#include "./src/Keywords.hpp"
 #include "./src/IOManager.hpp"
 #include "./src/LCDManager.hpp"
 #include "SDManager.hpp"
-#include "Parser.hpp"
-#include "Keywords.hpp"
+#include "./src/Parser.hpp"
 
 class FileManager{
   public:
     byte nextUI = UI_UNDEFINED;
-    unsigned long init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep);
+    unsigned long init(void *components[]);
     unsigned long tick();
     void show();
     void redraw();

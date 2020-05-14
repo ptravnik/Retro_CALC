@@ -7,7 +7,6 @@
 //////////////////////////////////////////////////////////
 
 #include "LCDManager.hpp"
-#include "Utilities.hpp"
 
 //#define __DEBUG
 
@@ -24,9 +23,9 @@ static U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, LCD_CLOCK, LCD_DATA, LCD_CS, LC
 //
 // Inits LCD display
 //
-unsigned long LCDManager::init( IOManager *iom) {
-  _io_buffer = iom->getIOBuffer();
-  _iom = iom;
+unsigned long LCDManager::init( void *components[]) {
+  _iom = (IOManager *)components[UI_COMP_IOManager];
+  _io_buffer = _iom->getIOBuffer();
 
   // Set timer and attach to the led
   pinMode( LCD_LED_PIN, OUTPUT);

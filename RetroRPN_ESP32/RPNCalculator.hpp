@@ -10,28 +10,25 @@
   RPN_Calculator.hpp 
   Implements an RPN terminal for immediate BASIC execution
 
-  Keyboard commands:
-  1 - arrow left / arrow right - moves input cursor in the command line
-  2 - DEL / Backspace - command line editor
-  3 - arrow down - SWAP X and Y
-  4 - arrow up - previous command line recall
-  5 - LF - "silent" command line execution (stack operation follows)
-  6 - CR = enter - command line execution
-  7 - (+/-) (177) - sign change
+  Keyboard commands, additional to Command Line:
+  1 - arrow down - SWAP X and Y
+  2 - LF - "silent" command line execution (stack operation follows)
+  3 - CR = enter - command line execution
+  4 - (+/-) (177) - sign change
 */
 
 #ifndef RPNCALCULATOR_HPP
 #define RPNCALCULATOR_HPP
 
 #include <Arduino.h>
+#include "./src/Keywords.hpp"
 #include "./src/IOManager.hpp"
 #include "./src/LCDManager.hpp"
+#include "./src/RPNStackBox.hpp"
+#include "./src/MessageBox.hpp"
 #include "./src/CommandLine.hpp"
-#include "./src/Utilities.hpp"
 #include "SDManager.hpp"
-#include "Parser.hpp"
-#include "Keywords.hpp"
-#include "MathFunctions.hpp"
+#include "./src/Parser.hpp"
 
 #define INPUT_COLS    256
 #define INPUT_LIMIT   255
@@ -45,12 +42,12 @@ class RPNCalculator{
   public:
     byte nextUI = UI_UNDEFINED;
     bool expectCommand = false;
-    unsigned long init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep, CommandLine *cl);
+    unsigned long init( void *components[]);
     unsigned long tick();
     void show();
     void redraw();
     void sendChar( byte c);
-    void processInput(bool silent=false);
+    void processInput( bool silent=false);
     void push( bool refresh=true);
     void pop( bool refresh=true);
     void swap( bool refresh=true);
@@ -66,7 +63,8 @@ class RPNCalculator{
     void goff2( bool refresh=true);
     void loadState();
     void saveState();
-    void resetRPNLabels(bool refresh=true);
+    void updateIOM( bool refresh=true);
+    void resetRPNLabels( bool refresh=true);
     void setRPNLabel( byte label, byte *message, bool refresh=true);
     inline void setRPNLabel( byte label, char *message, bool refresh=true){
       setRPNLabel( label, (byte *)message, refresh);
@@ -75,7 +73,7 @@ class RPNCalculator{
       setRPNLabel( label, (byte *)message, refresh);
     };
     inline void setStackRedraw(){
-      memset( _stackRedrawRequired, true, 3);
+      _rsb->setStackRedraw();
     };
   private:
     byte *_io_buffer;
@@ -83,15 +81,10 @@ class RPNCalculator{
     LCDManager *_lcd;
     SDManager *_sd;
     ExpressionParser *_ep;
-    CommandLine *_cl;
-    byte _messageBuffer[SCR_COLS * 4];
-    bool _messageRedrawRequired[ 4];
-    bool _stackRedrawRequired[ 3];
-    byte *_messages[4];
-    bool _sdPrevMounted = false;
-    void _checkSDStatus();
-    void processCommand(byte c);
-    void _updateIOM(bool refresh=true);
+    RPNStackBox *_rsb;
+    MessageBox *_mb;
+    CommandLine *_cl;    
+    void _processCommand(byte c);
     void _evaluateCommand();
     void _evaluateString();
     void _checkTrigAccuracy();
@@ -118,12 +111,12 @@ class RPNCalculator{
     };
     inline void _setRedrawAndUpdateIOM( bool refresh){    
       setStackRedraw();
-      _updateIOM(refresh);
+      updateIOM(refresh);
     };
     inline void _savePopAndUpdate( double v, bool refresh) {
       _savePrev();
       _popPartial(v);
-      _updateIOM(refresh);
+      updateIOM(refresh);
     };
 };
 

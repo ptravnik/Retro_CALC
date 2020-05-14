@@ -7,48 +7,25 @@
 //////////////////////////////////////////////////////////
 
 /*
-  RPN_Calculator.hpp 
-  Implements an RPN terminal for immediate BASIC execution
+  BasicConsole.hpp 
+  Implements a console terminal for immediate BASIC execution
 
-  Keyboard commands:
-  1 - arrow left / arrow right - moves input cursor in the command line
-  2 - DEL / Backspace - command line editor
-  3 - arrow down - SWAP X and Y
-  4 - arrow up - previous command line recall
-  5 - LF - "silent" command line execution (stack operation follows)
-  6 - CR = enter - command line execution
-  7 - (+/-) (177) - sign change
+  Keyboard commands, additional to Command Line:
+  1 - arrow down/up - move between the screen stack lines
+  2 - CR = enter - command line execution
 */
 
 #ifndef BASICCONSOLE_HPP
 #define BASICCONSOLE_HPP
 
-#include <Arduino.h>
-#include "./src/IOManager.hpp"
-#include "./src/LCDManager.hpp"
-#include "./src/CommandLine.hpp"
-#include "./src/Utilities.hpp"
 #include "RPNCalculator.hpp"
-//#include "SDManager.hpp"
-//#include "Parser.hpp"
-//#include "Keywords.hpp"
-//#include "MathFunctions.hpp"
-
-#define INPUT_COLS    256
-#define INPUT_LIMIT   255
-#define HSCROLL_LIMIT  18
-#define VIRTUAL_SCREEN_COLS  80
-#define VIRTUAL_SCREEN_ROWS  40
-
-// Move must be one less than RPN_STACK times sizeof( double)
-#define RPN_MOVE   (RPN_STACK-1)*sizeof( double)
-#define RPN_PI        3.14159265359
+#include "TerminalBox.hpp"
 
 class BasicConsole{
   public:
     byte nextUI = UI_UNDEFINED;
     bool expectCommand = false;
-    unsigned long init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep, CommandLine *cl, RPNCalculator *rpn);
+    unsigned long init(void *components[]);
     unsigned long tick();
     void show();
     void redraw();
@@ -69,9 +46,7 @@ class BasicConsole{
     void goff2( bool refresh=true);
     void loadState();
     void saveState();
-    inline void setStackRedraw(){
-      memset( _stackRedrawRequired, true, 3);
-    };
+    void updateIOM(bool refresh=true);
   private:
     byte *_io_buffer;
     IOManager *_iom;
@@ -79,14 +54,10 @@ class BasicConsole{
     SDManager *_sd;
     ExpressionParser *_ep;
     CommandLine *_cl;
+    MessageBox *_mb;
     RPNCalculator *_rpn;
-    byte _virtualScreen[VIRTUAL_SCREEN_COLS * VIRTUAL_SCREEN_ROWS];
-    size_t _vs_bottom_row = 0;
-    bool _stackRedrawRequired[ 3];
-    bool _sdPrevMounted = false;
-    void _checkSDStatus();
+    TerminalBox *_trm;
     void processCommand(byte c);
-    void _updateIOM(bool refresh=true);
     void _evaluateCommand();
     void _evaluateString();
     void _checkTrigAccuracy();
@@ -112,13 +83,13 @@ class BasicConsole{
       return _ep->mathFunctions.rpnStack[i] == 0.0;
     };
     inline void _setRedrawAndUpdateIOM( bool refresh){    
-      setStackRedraw();
-      _updateIOM(refresh);
+      _rpn->setStackRedraw();
+      updateIOM(refresh);
     };
     inline void _savePopAndUpdate( double v, bool refresh) {
       _savePrev();
       _popPartial(v);
-      _updateIOM(refresh);
+      updateIOM(refresh);
     };
 };
 

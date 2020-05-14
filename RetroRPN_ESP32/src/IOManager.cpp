@@ -13,8 +13,6 @@
 // Use the appropriate hardware definition
 //#include "Cyrillic_Phonetic_CP1251.h"
 #include "Cyrillic_Phonetic_CP1251_Mockup.h"
-
-#include "Utilities.hpp"
 #include "IOManager.hpp"
 
 //#define __DEBUG

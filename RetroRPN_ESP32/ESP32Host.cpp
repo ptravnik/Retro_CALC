@@ -11,11 +11,14 @@
 //#define __DEBUG
 
 static volatile bool PowerOffRequested = false;
-static ExpressionParser myEP;
 static IOManager myIO;
 static SDManager mySD;
 static LCDManager myLCD;
+static ExpressionParser myEP;
+static MessageBox myMB;
 static CommandLine myCL;
+static RPNStackBox myRPNBox;
+static TerminalBox myTerminalBox;
 static RPNCalculator myRPN;
 static BasicConsole myBAS;
 static FileManager myFM;
@@ -51,10 +54,26 @@ void IRAM_ATTR isrPower() {
 }
 
 unsigned long ESP32Host::init() {
+  // Take timestamp
   unsigned long initStarted = myIO.init( _io_buffer);
-  myLCD.init( &myIO);
   
-  // show ASCII graphics
+  // In order of initialization
+  _host_Components[UI_COMP_IOManager] = &myIO;
+  _host_Components[UI_COMP_LCDManager] = &myLCD;
+  _host_Components[UI_COMP_SDManager] = &mySD;
+  _host_Components[UI_COMP_ExpressionParser] = &myEP;
+  _host_Components[UI_COMP_MessageBox] = &myMB;
+  _host_Components[UI_COMP_CommandLine] = &myCL;
+  _host_Components[UI_COMP_RPNBox] = &myRPNBox;
+  _host_Components[UI_COMP_RPNCalculator] = &myRPN;
+  _host_Components[UI_COMP_TerminalBox] = &myTerminalBox;
+  _host_Components[UI_COMP_BasicConsole] = &myBAS;
+  _host_Components[UI_COMP_FileManager] = &myFM;
+
+  // Warm-up LCD, show splash, while showing splash, do the rest
+  myLCD.init( _host_Components);
+  
+  // Show ASCII graphics
   for(byte i=0; i<3; i++) myIO.sendLn();
   for(byte i=0; i<3; i++)
     myIO.sendStringUTF8Ln(IO_Message_Table[i]);
@@ -73,18 +92,25 @@ unsigned long ESP32Host::init() {
     myIO.sendStringUTF8Ln( IO_Message_Table[6]);
   }
 
-  mySD.init( &myIO);
+  // Init SD and check hardware
+  mySD.init( _host_Components);
   myIO.flashKBDLEDs();
 
+  // Power management up
   pinMode(POWER_DETECT_PIN, INPUT);    // sets the digital pin for power check
   _waitUntilSleepPinHigh();
   PowerOffRequested = false;
   attachInterrupt( POWER_DETECT_PIN, isrPower, RISING);
+
+  // Other UI components
   myEP.init();
-  myCL.init(&myIO, &myLCD);
-  myRPN.init(&myIO, &myLCD, &mySD, &myEP, &myCL);
-  myBAS.init(&myIO, &myLCD, &mySD, &myEP, &myCL, &myRPN);
-  myFM.init(&myIO, &myLCD, &mySD, &myEP);
+  myMB.init(_host_Components);
+  myCL.init(_host_Components);
+  myRPNBox.init(_host_Components);
+  myRPN.init(_host_Components);
+  myTerminalBox.init(_host_Components);
+  myBAS.init(_host_Components);
+  myFM.init(_host_Components);
   myLCD.waitForEndSplash( initStarted);
 
   // TODO: remember selector here
@@ -166,6 +192,7 @@ void ESP32Host::show(){
     case UI_EDITOR:
     case UI_CONSOLE:
       myBAS.show();
+      break;
     default:
       Serial.println("UI undefined");
       break; 

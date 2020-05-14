@@ -27,10 +27,9 @@
 #ifndef LCDMANAGER_HPP
 #define LCDMANAGER_HPP
 
-#include <Arduino.h>
-#include <U8g2lib.h>
-#include "CP1251_mod.h"
+#include "Keywords.hpp"
 #include "IOManager.hpp"
+#include <U8g2lib.h>
 
 // fade LED PIN (replace with LED_BUILTIN=2 constant for built-in LED)
 // LCD PIN controls power for LCD
@@ -42,7 +41,7 @@
 #define LCD_LED_PIN        21
 
 // use first channel of 16 channels (started from zero)
-// use 13 bit precission for LEDC timer
+// use 13 bit precision for LEDC timer
 // use 5000 Hz as a LEDC base frequency
 #define LCD_LEDC_CHANNEL_0     0
 #define LCD_LEDC_TIMER_13_BIT  13
@@ -87,7 +86,7 @@ class LCDManager{
     bool forceRedraw = false;
     byte ledBrightness = 200;
 
-    unsigned long init( IOManager *iom);
+    unsigned long init( void *components[]);
     void waitForEndSplash( unsigned long start, bool cls = false);
     unsigned long tick();
 

@@ -29,11 +29,13 @@
 #define SCREEN_OFF_PERIOD 480000
 #define POWER_OFF_PERIOD  720000
 
-#include <Arduino.h>
+#include "./src/Keywords.hpp"
 #include "./src/IOManager.hpp"
 #include "./src/LCDManager.hpp"
+#include "./src/MessageBox.hpp"
 #include "./src/CommandLine.hpp"
-#include "Keywords.hpp"
+#include "./src/RPNStackBox.hpp"
+#include "TerminalBox.hpp"
 #include "SDManager.hpp"
 #include "RPNCalculator.hpp"
 #include "BasicConsole.hpp"
@@ -56,6 +58,7 @@ class ESP32Host{
     void deepSleep( byte msg = IO_MSG_SHUTDOWN);   
   private:
     byte _io_buffer[IO_BUFFER_LENGTH];
+    void *_host_Components[UI_COMPONENTS_COUNT];
     void _checkSleepPin();
     inline void _waitUntilSleepPinHigh(){
       while( !digitalRead(POWER_DETECT_PIN))

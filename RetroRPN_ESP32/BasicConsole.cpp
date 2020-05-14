@@ -11,10 +11,6 @@
 //#define __DEBUG
 
 const char BAS_StatusMessage[] PROGMEM = "BASIC Ready";
-const char BAS_RegName1[] PROGMEM = "x:";
-const char BAS_RegName2[] PROGMEM = "y:";
-const char BAS_RegName3[] PROGMEM = "z:";
-const char BAS_Prompt[] PROGMEM = "> ";
 const char BAS_Error_DivZero[] PROGMEM = "Err: div 0";
 const char BAS_Error_NAN[] PROGMEM = "Err: NaN";
 const char BAS_Error_Trig[] PROGMEM = "Err: |X|>1";
@@ -37,15 +33,6 @@ const char BAS_Message_RealPart[] PROGMEM = "Real part";
 const char BAS_Message_Gain[] PROGMEM = "Gain";
 const char BAS_Message_Offset[] PROGMEM = "Offset";
 const char BAS_Message_Goff_Solution[] PROGMEM = "Y=Gain*X+Offset";
-const char BAS_Message_SD_Mounted[] PROGMEM = "SD mounted";
-const char BAS_Message_SD_Removed[] PROGMEM = "SD removed";
-const char *const BAS_Message_Table[] PROGMEM = {
-  BAS_StatusMessage,
-  BAS_RegName1,
-  BAS_RegName2,
-  BAS_RegName3,
-  BAS_Prompt
-  };
 const char *const BAS_AMOD_Table[] PROGMEM = {
   BAS_Mode_Degrees,
   BAS_Mode_Radians,
@@ -53,19 +40,19 @@ const char *const BAS_AMOD_Table[] PROGMEM = {
   };
 
 //
-// Inits calculator
+// Inits console
 //
-unsigned long BasicConsole::init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep, CommandLine *cl, RPNCalculator *rpn){
-  _io_buffer = iom->getIOBuffer();
-  _iom = iom;
-  _lcd = lcd;
-  _sd = sd;
-  _ep = ep;
-  _cl = cl;
-  _rpn = rpn;
-  _sdPrevMounted = _sd->SDMounted;
+unsigned long BasicConsole::init(void *components[]){
+  _iom = (IOManager *)components[UI_COMP_IOManager];
+  _lcd = (LCDManager *)components[UI_COMP_LCDManager];
+  _sd = (SDManager *)components[UI_COMP_SDManager];
+  _ep = (ExpressionParser *)components[UI_COMP_ExpressionParser];
+  _cl = (CommandLine *)components[UI_COMP_CommandLine];
+  _mb = (MessageBox *)components[UI_COMP_MessageBox];
+  _rpn = (RPNCalculator *)components[UI_COMP_RPNCalculator];
+  _trm = (TerminalBox *)components[UI_COMP_TerminalBox];
+  _io_buffer = _iom->getIOBuffer();
   loadState();
-  setStackRedraw();
   return _iom->keepAwake();
 }
 
@@ -80,17 +67,18 @@ void BasicConsole::show(){
   _lcd->wordWrap = false;
   _lcd->scrollLock = true;
   _lcd->clearScreen( _SP_, false);
-  _lcd->invertRow(6, true);
-  setStackRedraw();
+  _mb->setLabel(BAS_StatusMessage, false);
+  _mb->show();
+  _cl->clearInput();
   _cl->show();
 }
 
 //
-// Redraws the number area on LCD
+// Redraws the text area on LCD
 //
 void BasicConsole::redraw() {
 //  byte lineNums[] = {6, 4, 2, 0};
-  _checkSDStatus();
+  _sd->checkSDStatus();
 //  for(byte i=0; i<4; i++){
 //    if( !_messageRedrawRequired[i]) continue;
 //    _messageRedrawRequired[i] = false;
@@ -107,13 +95,14 @@ void BasicConsole::redraw() {
 //    _lcd->cursorTo( SCR_RIGHT-len, j);
 //    _lcd->sendString( _io_buffer);
 //  }
+  _mb->redraw();
   _cl->redraw();
 }
 
 //
-// Draws the stack to the serial ports
+// Draws the line to the serial ports
 //
-void BasicConsole::_updateIOM( bool refresh) {
+void BasicConsole::updateIOM( bool refresh) {
 //  if( !refresh) return;
 //  _iom->sendLn();
 //  for( byte i=3; i>0; i--){
@@ -124,7 +113,7 @@ void BasicConsole::_updateIOM( bool refresh) {
 //    _iom->sendStringUTF8Ln();
 //  }
 //  _iom->sendStringLn( _messages[0]);
-  _iom->sendStringUTF8( BAS_Message_Table[4]);
+  _cl->updateIOM();
 }
 
 //
@@ -138,11 +127,8 @@ void BasicConsole::sendChar( byte c) {
   }
   switch(c){
     case _RPN_:
-      expectCommand = true;
       return;
     case _LF_:
-      processInput(true);
-      return;
     case _CR_:
       processInput(false);
       return;
@@ -175,9 +161,6 @@ void BasicConsole::sendChar( byte c) {
 void BasicConsole::processCommand(byte c){
   if(_cl->isInputEmpty()){
     switch(c){
-      case '+':
-        add();
-        return;
       case '-':
         subtract();
         return;
@@ -198,17 +181,6 @@ void BasicConsole::processCommand(byte c){
       break;
     }
     return;
-  }
-  switch(c){
-    case '+':
-    case '-':
-      if( _cl->isMagnitudeEntry()){
-        _cl->processEntry(c);
-        return;
-      }
-      break;
-    default:
-      break;
   }
   _ep->parse(_cl->getInput());  
   if( _ep->result != _NOT_A_NUMBER_)
@@ -241,13 +213,13 @@ void BasicConsole::processInput( bool silent) {
       break;
     case _NOT_A_NUMBER_:
       // TODO: Message
-      Serial.println("Result is NAN");
+      Serial.println("Console: Result is NAN");
       break;
     default:
       _pushQuick(_ep->numberParser.realValue());
       if( !silent){
-        setStackRedraw();
-        _updateIOM();
+        _rpn->setStackRedraw();
+        updateIOM();
       }
       break;
   }
@@ -268,11 +240,8 @@ void BasicConsole::pop(bool refresh) {
   _setRedrawAndUpdateIOM( refresh);
 }
 void BasicConsole::swap(bool refresh) {
-  _savePrev();
-  _swapQuick();
-  _stackRedrawRequired[ 0] = true;
-  _stackRedrawRequired[ 1] = true;
-  _updateIOM(refresh);
+  _rpn->swap(false);
+  updateIOM(refresh);
 }
 void BasicConsole::roll(bool refresh) {
   _pushQuick(_getSt(RPN_STACK-1));
@@ -293,7 +262,7 @@ void BasicConsole::multiply(bool refresh) {
 }
 void BasicConsole::divide(bool refresh) {
   if( abs(_getSt(0)) < 1e-300){
-    _rpn->setRPNLabel( 0, BAS_Error_DivZero);
+    _mb->setLabel(BAS_Error_DivZero);
     _setRedrawAndUpdateIOM( refresh);
     return;    
   }
@@ -309,31 +278,31 @@ void BasicConsole::power(bool refresh) {
   //_messages
   // power zero: using "1 convention"  
   if( _getSt(0) == 0.0){
-    _rpn->setRPNLabel( 0, BAS_Warning_ZeroPowerZero);
+    _mb->setLabel( BAS_Warning_ZeroPowerZero);
     _popPartial( 1.0);
-    _updateIOM(refresh);
+    updateIOM(refresh);
     return;
   }
   // positive power of zero: zero
   if( _getSt(0) > 0.0 && _getSt(1) == 0.0){
     _popPartial( 0.0);
-    _updateIOM(refresh);
+    updateIOM(refresh);
     return;
   }
   // negative power of zero: div by zero
   if( _getSt(0) < 0.0 && _isStZero(1)){
-    _rpn->setRPNLabel( 0, BAS_Error_DivZero);
+    _mb->setLabel(BAS_Error_DivZero);
     _setRedrawAndUpdateIOM( refresh);
     return;
   }
   double tmp = pow( _getSt(1), _getSt(0));
   if( isnan(tmp)){
-    _rpn->setRPNLabel( 0, BAS_Error_NAN);
+    _mb->setLabel( BAS_Error_NAN);
     _setRedrawAndUpdateIOM( refresh);
     return;    
   }
   _popPartial( tmp);
-  _updateIOM(refresh);
+  updateIOM(refresh);
 }
 
 //
@@ -342,7 +311,7 @@ void BasicConsole::power(bool refresh) {
 void BasicConsole::_checkTrigAccuracy(){
   double tmp = abs( _ep->mathFunctions.getConvertedAngle(_getSt(0)));
   if( tmp <= 1e+16) return;
-  _rpn->setRPNLabel( 0, BAS_Warning_Accuracy);
+  _mb->setLabel( BAS_Warning_Accuracy);
   Serial.println(BAS_Warning_Accuracy);
 }
 
@@ -381,79 +350,79 @@ void BasicConsole::saveState(){
 // Process a command, such as "sin" without parameters 
 //
 void BasicConsole::_evaluateCommand(){
-  #ifdef __DEBUG
-  Serial.println((char *)_ep->lastMathFunction->name0);
-  #endif
-  bool doPopPartial = true;
-  bool doUpdateIOM = true;
-  double *return_ptr;
-  _savePrev();
-  switch(_ep->lastMathFunction->RPNtag){
-    case _RPN_AMODE_:
-      _ep->mathFunctions.Compute( _ep->lastMathFunction, _ep->mathFunctions.rpnStack);
-      _rpn->setRPNLabel( 0, BAS_AMOD_Table[_ep->mathFunctions.angleMode]);
-      pop(true);
-      return;
-    case _RPN_CHECK_TRIG_:
-      _checkTrigAccuracy();
-      break;
-    case _RPN_INVTRIG_:
-      if( abs(_getSt(0)) > 1.0){
-        _rpn->setRPNLabel( 0, BAS_Error_Trig);
-        _stackRedrawRequired[ 0] = true;
-        _updateIOM(doUpdateIOM);
-        return;
-      }
-      break;
-    case _RPN_DIV0_CHECK_:
-      if( _isStZero(0)){
-        _rpn->setRPNLabel( 0, BAS_Error_DivZero);
-        doPopPartial = false;
-      }
-      break;
-    case _RPN_ROOTYX_:
-      if( _isStZero(0)){
-        _rpn->setRPNLabel( 0, BAS_Error_DivZero);
-        doPopPartial = false;
-        break;
-      }
-      _setSt(0, 1.0 / _getSt(0));
-      // fall-through!
-    case _RPN_POWER_:
-      power(true);
-      return;
-    case _RPN_SWAP_ONLY_:
-      swap(true);
-      return;
-    case _RPN_SWAP_XY_:
-      _savePrev(1);
-      _swapQuick();
-      break;
-    case _RPN_QUICK_PUSH_:
-      _pushQuick();
-      break;
-    case _RPN_SQRT_CHECK_:
-      if( _getSt(0) < 0.0){
-        _rpn->setRPNLabel( 0, BAS_Message_Complex);
-        _setSt(0, -_getSt(0));
-      }      
-      break;
-    case _RPN_QUAD_SOLVER:
-      quad(true);
-      _setRedrawAndUpdateIOM( doUpdateIOM);
-      return;
-    case _RPN_GOFF2_SOLVER:
-      goff2(true);
-      _setRedrawAndUpdateIOM( doUpdateIOM);
-      return;
-    default:
-      break;
-  }
-  return_ptr = _ep->mathFunctions.Compute( _ep->lastMathFunction, _ep->mathFunctions.rpnStack);
-  if( _ep->lastMathFunction->nArgs > 0) _setSt(0, return_ptr[0]);
-  if( doPopPartial && _ep->lastMathFunction->nArgs > 1) _popPartial();
-  else setStackRedraw();
-  _updateIOM(doUpdateIOM);
+//  #ifdef __DEBUG
+//  Serial.println((char *)_ep->lastMathFunction->name0);
+//  #endif
+//  bool doPopPartial = true;
+//  bool doUpdateIOM = true;
+//  double *return_ptr;
+//  _savePrev();
+//  switch(_ep->lastMathFunction->RPNtag){
+//    case _RPN_AMODE_:
+//      _ep->mathFunctions.Compute( _ep->lastMathFunction, _ep->mathFunctions.rpnStack);
+//      _rpn->setRPNLabel( 0, BAS_AMOD_Table[_ep->mathFunctions.angleMode]);
+//      pop(true);
+//      return;
+//    case _RPN_CHECK_TRIG_:
+//      _checkTrigAccuracy();
+//      break;
+//    case _RPN_INVTRIG_:
+//      if( abs(_getSt(0)) > 1.0){
+//        _rpn->setRPNLabel( 0, BAS_Error_Trig);
+//        _stackRedrawRequired[ 0] = true;
+//        _updateIOM(doUpdateIOM);
+//        return;
+//      }
+//      break;
+//    case _RPN_DIV0_CHECK_:
+//      if( _isStZero(0)){
+//        _rpn->setRPNLabel( 0, BAS_Error_DivZero);
+//        doPopPartial = false;
+//      }
+//      break;
+//    case _RPN_ROOTYX_:
+//      if( _isStZero(0)){
+//        _rpn->setRPNLabel( 0, BAS_Error_DivZero);
+//        doPopPartial = false;
+//        break;
+//      }
+//      _setSt(0, 1.0 / _getSt(0));
+//      // fall-through!
+//    case _RPN_POWER_:
+//      power(true);
+//      return;
+//    case _RPN_SWAP_ONLY_:
+//      swap(true);
+//      return;
+//    case _RPN_SWAP_XY_:
+//      _savePrev(1);
+//      _swapQuick();
+//      break;
+//    case _RPN_QUICK_PUSH_:
+//      _pushQuick();
+//      break;
+//    case _RPN_SQRT_CHECK_:
+//      if( _getSt(0) < 0.0){
+//        _rpn->setRPNLabel( 0, BAS_Message_Complex);
+//        _setSt(0, -_getSt(0));
+//      }      
+//      break;
+//    case _RPN_QUAD_SOLVER:
+//      quad(true);
+//      _setRedrawAndUpdateIOM( doUpdateIOM);
+//      return;
+//    case _RPN_GOFF2_SOLVER:
+//      goff2(true);
+//      _setRedrawAndUpdateIOM( doUpdateIOM);
+//      return;
+//    default:
+//      break;
+//  }
+//  return_ptr = _ep->mathFunctions.Compute( _ep->lastMathFunction, _ep->mathFunctions.rpnStack);
+//  if( _ep->lastMathFunction->nArgs > 0) _setSt(0, return_ptr[0]);
+//  if( doPopPartial && _ep->lastMathFunction->nArgs > 1) _popPartial();
+//  else setStackRedraw();
+//  _updateIOM(doUpdateIOM);
 }
 
 //
@@ -509,49 +478,49 @@ void BasicConsole::_evaluateString(){
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr prompt ", false)){
     _cl->copyToPrevious();
-    _rpn->setRPNLabel( 0, _cl->getInput(12));
+    _mb->setLabel(_cl->getInput(12));
     _cl->clearInput();
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr labelx ", false)){
     _cl->copyToPrevious();
-    _rpn->setRPNLabel( 1, _cl->getInput(12));
+    _rpn->setRPNLabel( 0, _cl->getInput(12));
     _cl->clearInput();
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr labely ", false)){
     _cl->copyToPrevious();
-    _rpn->setRPNLabel( 2, _cl->getInput(12));
+    _rpn->setRPNLabel( 1, _cl->getInput(12));
     _cl->clearInput();
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr labelz ", false)){
     _cl->copyToPrevious();
-    _rpn->setRPNLabel( 3, _cl->getInput(12));
+    _rpn->setRPNLabel( 2, _cl->getInput(12));
     _cl->clearInput();
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr off", false)){
-    Serial.println("LCD off");
+    _mb->report(MB_MESSAGE_LCD_Off);
     _lcd->sleepOn();
     _cl->clearInput();
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr on", false)){
-    Serial.println("LCD on");
+    _mb->report(MB_MESSAGE_LCD_On);
     _lcd->sleepOff();
     _cl->clearInput();
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr+", false)){
-    Serial.println("LCD up");
     _lcd->changeLED( 16);
+    _mb->report_LCDBrightness( _lcd->ledBrightness);
     _cl->clearInput();
     return;
   }
   if( IsToken( _ep->_getCurrentPosition(), "#scr-", false)){
-    Serial.println("LCD down");
     _lcd->changeLED( -16);
+    _mb->report_LCDBrightness( _lcd->ledBrightness);
     _cl->clearInput();
     return;
   }
@@ -573,7 +542,7 @@ void BasicConsole::_popQuick(byte start){
 }
 void BasicConsole::_popPartial() {
   _popQuick(2);
-  setStackRedraw();
+  _rpn->setStackRedraw();
 }
 void BasicConsole::_popPartial( double v) {
   _popPartial();
@@ -583,10 +552,4 @@ void BasicConsole::_swapQuick(){
   double tmp = _ep->mathFunctions.rpnStack[0];
   _ep->mathFunctions.rpnStack[0] = _ep->mathFunctions.rpnStack[1];
   _ep->mathFunctions.rpnStack[1] = tmp;
-}
-void BasicConsole::_checkSDStatus(){
-  if(_sdPrevMounted == _sd->SDMounted) return;
-  _sdPrevMounted = _sd->SDMounted;
-  Serial.println(_sdPrevMounted? BAS_Message_SD_Mounted: BAS_Message_SD_Removed);
-  //setRPNLabel( 0, _sdPrevMounted? BAS_Message_SD_Mounted: BAS_Message_SD_Removed);
 }

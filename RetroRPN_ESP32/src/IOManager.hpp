@@ -24,6 +24,8 @@
 #ifndef IOMANAGER_HPP
 #define IOMANAGER_HPP
 
+#include "Keywords.hpp"
+
 #define IO_RXD2 16
 #define IO_TXD2 17
 #define IO_PM_ACTIVE 35
@@ -37,10 +39,10 @@
 #define SERIAL_HARD_BAUD_RATE 115200
 #define SERIAL2_BAUD_RATE 38400
 #define CIRCULAR_BUFFER_LENGTH 32
-#define SERIALS_BOTH 3
-#define SERIAL_ONLY 1
-#define SERIAL2_ONLY 2
 #define SERIAL_DUMMY 0
+#define SERIAL_ONLY  1
+#define SERIAL2_ONLY 2
+#define SERIALS_BOTH 3
 
 #define MOUSE_MOVE_HORIZONTAL 1
 #define MOUSE_MOVE_VERTICAL   2

@@ -7,11 +7,10 @@
 //////////////////////////////////////////////////////////
 
 #include "FileManager.hpp"
-#include "./src/Utilities.hpp"
+#include "./src/Keywords.hpp"
 #include "./src/IOManager.hpp"
 #include "./src/LCDManager.hpp"
 #include "SDManager.hpp"
-//#include "Keywords.hpp"
 
 //#define __DEBUG
 
@@ -58,12 +57,13 @@
 //
 // Inits File Manager 
 //
-unsigned long FileManager::init(IOManager *iom, LCDManager *lcd, SDManager *sd, ExpressionParser *ep){
-  _io_buffer = iom->getIOBuffer();
-  _iom = iom;
-  _lcd = lcd;
-  _sd = sd;
-  _ep = ep;
+unsigned long FileManager::init(void *components[]){
+  _iom = (IOManager *)components[UI_COMP_IOManager];
+  _lcd = (LCDManager *)components[UI_COMP_LCDManager];
+  _sd = (SDManager *)components[UI_COMP_SDManager];
+  _ep = (ExpressionParser *)components[UI_COMP_ExpressionParser];
+  _io_buffer = _iom->getIOBuffer();
+
 //  _messages[0] = _messageBuffer;
 //  _messages[1] = _messages[0] + SCR_COLS;
 //  _messages[2] = _messages[1] + SCR_COLS;
