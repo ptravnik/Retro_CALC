@@ -20,8 +20,10 @@
 #include "./src/RPNStackBox.hpp"
 #include "./src/Parser.hpp"
 
-#define VIRTUAL_SCREEN_COLS  80
+#define VIRTUAL_SCREEN_COLS  81
 #define VIRTUAL_SCREEN_ROWS  40
+#define VIRTUAL_SCREEN_END1  3239
+#define VIRTUAL_SCREEN_END2  3158
 
 class TerminalBox{
   public:

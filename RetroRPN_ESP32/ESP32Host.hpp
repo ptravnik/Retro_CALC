@@ -44,7 +44,9 @@
 #define IO_MSG_POWER_BUTTON 0
 #define IO_MSG_INACTIVE     1
 #define IO_MSG_SHUTDOWN     2
-#define IO_BUFFER_LENGTH    256
+
+// deprecated, use INPUT_COLS and INPUT_LIMIT defined in Keywords.hpp
+//#define IO_BUFFER_LENGTH    256
 
 class ESP32Host{
   public:
@@ -57,7 +59,7 @@ class ESP32Host{
     void redraw();
     void deepSleep( byte msg = IO_MSG_SHUTDOWN);   
   private:
-    byte _io_buffer[IO_BUFFER_LENGTH];
+    byte _io_buffer[INPUT_COLS];
     void *_host_Components[UI_COMPONENTS_COUNT];
     void _checkSleepPin();
     inline void _waitUntilSleepPinHigh(){

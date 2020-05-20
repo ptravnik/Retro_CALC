@@ -23,6 +23,7 @@
 #include "./src/Keywords.hpp"
 #include "./src/IOManager.hpp"
 #include "./src/MessageBox.hpp"
+#include "./src/Parser.hpp"
 #include "FS.h"
 #include "SD.h"
 //#include "SPI.h"
@@ -56,6 +57,12 @@ class SDManager{
     void sleepOn();
     void sleepOff();
     void listDir();
+    void readFile( const char * path);
+    void writeFile( const char * path, const char * message);
+    void readRPNStatus( byte *inp, byte *last_inp, uint16_t *pos,
+      double *stack, double *prev);
+    void writeRPNStatus( byte *inp, byte *last_inp, uint16_t pos,
+      double *stack, double prev);
     const char *SD_Message();
     void checkSDStatus();
     bool setPrevMounted(){
@@ -67,10 +74,16 @@ class SDManager{
     byte *_io_buffer;
     IOManager *_iom;
     MessageBox *_mb;
+    ExpressionParser *_ep;
     void _checkSDPin();
     void _checkRoot();
     File _getCurrentDir();
     bool _detectSDCard();
+    void _readBuffer( void *f);
+    bool _readDouble( void *f, double *v);
+    bool _writeDouble( void *f, double v);
+    bool _readString( void *f, byte *buff, size_t limit);
+    bool _writeString( void *f, byte *v);
 };
 
 #endif // SDMANAGER_HPP

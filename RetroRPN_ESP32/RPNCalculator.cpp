@@ -68,7 +68,6 @@ void RPNCalculator::show(){
   _rsb->show();
   _mb->setLabel(RPN_StatusMessage, false);
   _mb->show();
-  _cl->clearInput();
   _cl->show();
 }
 
@@ -80,6 +79,7 @@ void RPNCalculator::redraw() {
   _rsb->redraw();
   _mb->redraw();
   _cl->redraw();
+  _lcd->redraw();
 }
 
 //
@@ -391,7 +391,11 @@ void RPNCalculator::loadState(){
   #ifdef __DEBUG
   Serial.println("loadState called");
   #endif
-  //for( byte i=0; i<RPN_STACK; i++) _setSt(i, double( i));
+  _sd->readRPNStatus(_cl->_input, _cl->_inputPrevious, &(_cl->cursor_column),
+    _ep->mathFunctions.rpnStack, &(_ep->mathFunctions.previous_X));
+  Serial.print("loaded: [");
+  Serial.print( (char*)_cl->_input);
+  Serial.println("]");
 }
 
 void RPNCalculator::saveState(){
@@ -399,6 +403,16 @@ void RPNCalculator::saveState(){
   #ifdef __DEBUG
   Serial.println("saveState called");
   #endif
+  _sd->writeRPNStatus(_cl->_input, _cl->_inputPrevious, _cl->cursor_column,
+    _ep->mathFunctions.rpnStack, _ep->mathFunctions.previous_X);
+  //writeFile( RPN_SaveStatusFile, "Hey, Bubba!");
+  //_ep->mathFunctions.previous_X;
+  //_ep->mathFunctions.rpnStack[i];  
+  //_cl->
+  //    uint16_t _cl->cursor_column = 0;
+  //  uint16_t _cl->display_starts = 0;
+  //  byte _cl->_input[INPUT_COLS];
+  //  byte _cl->_inputPrevious[INPUT_COLS];
 }
 
 //

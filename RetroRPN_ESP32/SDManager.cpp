@@ -7,9 +7,10 @@
 //////////////////////////////////////////////////////////
 
 #include "SDManager.hpp"
-//#include "./src/Utilities.hpp"
 
 //#define __DEBUG
+
+const char RPN_SaveStatusFile[] PROGMEM = "/_RPN_SaveStatus.txt";
 
 const char SD_Message0[] PROGMEM = "+ SD inserted";
 const char SD_Message1[] PROGMEM = "+ SD removed";
@@ -77,6 +78,7 @@ bool SDManager::_detectSDCard(){
 unsigned long SDManager::init(void *components[]){
   _iom = (IOManager *)components[UI_COMP_IOManager];
   _mb = (MessageBox *)components[UI_COMP_MessageBox];
+  _ep = (ExpressionParser *)components[UI_COMP_ExpressionParser];
   _io_buffer = _iom->getIOBuffer();
   pinMode(SD_DETECT_PIN, INPUT_PULLUP);   // sets the digital pin for SD check
   _detectSDCard();
@@ -189,39 +191,158 @@ void SDManager::listDir(){
 //        Serial.println("rmdir failed");
 //    }
 //}
+
+void SDManager::readFile(const char * path){
+  if(!SDInserted) return;
+  if(!SDMounted) return;
+  Serial.printf("Reading file: %s\n", path);
+  File file = SD.open(path);
+  if(!file){
+      Serial.println("Failed to open file for reading");
+      return;
+  }
+  Serial.print("Read from file: ");
+  while(file.available()){
+      Serial.write(file.read());
+  }
+  file.close();
+}
+
+void SDManager::writeFile( const char * path, const char * message){
+  if(!SDInserted) return;
+  if(!SDMounted) return;
+  Serial.print("Writing file: ");
+  Serial.println( path);
+  File file = SD.open(path, FILE_WRITE);
+  if(!file){
+    Serial.println("Failed to open file for writing");
+    return;
+  }
+  if(file.print(message)){
+    Serial.println("File written");
+  } else {
+    Serial.println("Write failed");
+  }
+  file.close();
+}
+
+void SDManager::readRPNStatus( byte *inp, byte *last_inp, uint16_t *pos, double *stack, double *prev){
+  if(!SDInserted) return;
+  if(!SDMounted) return;
+  File file = SD.open(RPN_SaveStatusFile);
+  if(!file){
+    #ifdef __DEBUG
+    Serial.println("Failed to open status file for reading");
+    #endif
+    return;
+  }
+  if( _readDouble( &file, prev)){
+    file.close();
+    return;
+  }
+  for( byte i=0; i<RPN_STACK; i++){
+    if( _readDouble( &file, stack+i)) break;
+  }
+  if( _readString( &file, last_inp, INPUT_COLS)){
+    file.close();
+    return;
+  }
+  if( _readString( &file, inp, INPUT_COLS)){
+    file.close();
+    return;
+  }
+  size_t inplen = strlen(inp);
+  if(inplen>0){ 
+    double tmp = 0.0;
+    _readDouble( &file, &tmp);
+    *pos = (uint16_t)tmp;
+    if( *pos > inplen) *pos = inplen; 
+  }
+  file.close();
+}
+
+void SDManager::writeRPNStatus(  byte *inp, byte *last_inp, uint16_t pos, double *stack, double prev){
+  if(!SDInserted) return;
+  if(!SDMounted) return;
+  File file = SD.open( RPN_SaveStatusFile, FILE_WRITE);
+  if(!file){
+    #ifdef __DEBUG
+    Serial.println("Failed to open status file for writing");
+    #endif
+    return;
+  }
+  if( _writeDouble( &file, prev)){
+    file.close();
+    return;
+  }
+  for( byte i=0; i<RPN_STACK; i++){
+    if( !_writeDouble( &file, stack[i])) continue;
+    file.close();
+    return;
+  }
+  if( _writeString( &file, last_inp)){
+    file.close();
+    return;
+  }
+  if( _writeString( &file, inp)){
+    file.close();
+    return;
+  }
+  _writeDouble( &file, (double)pos);
+  file.close();
+}
+
+void SDManager::_readBuffer( void *f){
+  File *file = (File *)f;
+  size_t pos = 0;
+  while(file->available()){
+    byte b = file->read();
+    if( b == _CR_) continue;
+    if( b == _LF_) break;
+    if( pos >= INPUT_LIMIT) continue;
+    _io_buffer[pos++] = b;
+  }
+  _io_buffer[pos] = _NUL_;
+}
+
+bool SDManager::_readDouble( void *f, double *v){
+  *v = 0.0;
+  _readBuffer( f);
+  _ep->parse(_io_buffer);
+  if(_ep->result == _NOT_A_NUMBER_) return true;
+  *v = _ep->numberParser.realValue();
+  return false;
+}
+
+bool SDManager::_writeDouble( void *f, double v){
+  File *file = (File *)f;
+  char *message = (char *)_ep->numberParser.stringValue( v);
+  if( !file->print(message)) return true;
+  return file->print("\r\n") != 2;
+}
+
 //
-//void readFile(fs::FS &fs, const char * path){
-//    Serial.printf("Reading file: %s\n", path);
+// Note CP1251 conversion on the fly
 //
-//    File file = fs.open(path);
-//    if(!file){
-//        Serial.println("Failed to open file for reading");
-//        return;
-//    }
+bool SDManager::_readString( void *f, byte *buff, size_t limit){
+  _readBuffer( f);
+  convertToCP1251( buff, (const char *)_io_buffer, limit);
+  return strlen(buff) == 0;
+}
+
 //
-//    Serial.print("Read from file: ");
-//    while(file.available()){
-//        Serial.write(file.read());
-//    }
-//    file.close();
-//}
+// Note UTF8 conversion on the fly
 //
-//void writeFile(fs::FS &fs, const char * path, const char * message){
-//  Serial.println("Writing file: %s\n", path);
-//
-//    File file = fs.open(path, FILE_WRITE);
-//    if(!file){
-//        Serial.println("Failed to open file for writing");
-//        return;
-//    }
-//    if(file.print(message)){
-//        Serial.println("File written");
-//    } else {
-//        Serial.println("Write failed");
-//    }
-//    file.close();
-//}
-//
+bool SDManager::_writeString( void *f, byte *v){
+  char buff[8]; 
+  File *file = (File *)f;
+  while(*v){
+    convertToUTF8( buff, *v++);
+    if( !file->print(buff)) break;
+  }
+  return file->print("\r\n") != 2;
+}
+
 //void appendFile(fs::FS &fs, const char * path, const char * message){
 //    Serial.printf("Appending to file: %s\n", path);
 //

@@ -43,7 +43,7 @@ void CommandLine::redraw() {
   _lcd->sendStringUTF8( CLI_Prompt);
   _lcd->sendString( getInputDisplay(), HSCROLL_LIMIT);
   _lcd->cursorTo( cursor_column - display_starts + 2, SCR_BOTTOM);
-  _lcd->redraw();
+  //_lcd->redraw();
 }
 
 //

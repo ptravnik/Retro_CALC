@@ -69,8 +69,8 @@ void BasicConsole::show(){
   _lcd->clearScreen( _SP_, false);
   _mb->setLabel(BAS_StatusMessage, false);
   _mb->show();
-  _cl->clearInput();
   _cl->show();
+  redraw();
 }
 
 //
@@ -97,6 +97,7 @@ void BasicConsole::redraw() {
 //  }
   _mb->redraw();
   _cl->redraw();
+  _lcd->redraw();
 }
 
 //

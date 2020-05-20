@@ -61,11 +61,11 @@ void NumberParser::negate(){
 
 //
 // Converts double or int properly
-// Note that the buffer length must be sufficient to acommodate at least 
+// Note that the buffer length must be sufficient to accommodate at least 
 // the sign, 9 characters of the number, 6 characters of the exponent and 
 // the final zero. That is 17 characters.
 // For the long int, it can be up to 20 decimals, sign and _NUL_
-// Returns a ponter to the end of converted string.
+// Returns a pinter to the end of converted string.
 //
 byte *NumberParser::stringValue( byte *ptr, byte max_len){
   // use internal
@@ -89,6 +89,8 @@ byte *NumberParser::stringValue( double n, byte *ptr, byte max_len){
   if(ptr == NULL){
     ptr = _numString;
     max_len = _NUMBER_LENGTH_;
+    _convertDouble(n, ptr, max_len);
+    return _numString;
   }
   return _convertDouble(n, ptr, max_len);
 }
@@ -233,7 +235,7 @@ byte *NumberParser::parse( byte *str){
   }
 
   // a number may end on a decimal point, E,
-  // an engineering mulitiplier, or number end
+  // an engineering multiplier, or number end
   switch(*ptr){
     case _NUL_:
       result = _INTEGER_;
@@ -258,7 +260,7 @@ byte *NumberParser::parse( byte *str){
 
   // process decimals;
   // the allowed are digits, E,
-  // an engineering mulitiplier, or number end
+  // an engineering multiplier, or number end
   // the second decimal point causes an error
   double mult = 0.1;
   while( logical_position == 1){

@@ -27,11 +27,28 @@ class CommandLine{
   public:
     uint16_t cursor_column = 0;
     uint16_t display_starts = 0;
+    byte _input[INPUT_COLS];
+    byte _inputPrevious[INPUT_COLS];
+
     unsigned long init(void *components[]);
     unsigned long tick();
     void show();
     void redraw();
     void sendChar( byte c);
+    void copyFromPrevious();
+    void clearInput();
+    void updateIOM(bool refresh=true);
+    void showPrompt();
+    void processEntry(byte c);
+    void processDEL();
+    void processBS();
+    void processESC();
+    void processLEFT();
+    void processRIGHT();
+    void processHOME();
+    void processEND();
+    bool isMagnitudeEntry();
+
     byte *getInput( size_t offset=0){
       return _input + offset;
     };
@@ -50,25 +67,10 @@ class CommandLine{
     inline bool isInputEmpty(){
       return *_input == _NUL_;
     };
-    void copyFromPrevious();
-    void clearInput();
-    void updateIOM(bool refresh=true);
-    void showPrompt();
-    void processEntry(byte c);
-    void processDEL();
-    void processBS();
-    void processESC();
-    void processLEFT();
-    void processRIGHT();
-    void processHOME();
-    void processEND();
-    bool isMagnitudeEntry();
   private:
     byte *_io_buffer;
     IOManager *_iom;
     LCDManager *_lcd;
-    byte _input[INPUT_COLS];
-    byte _inputPrevious[INPUT_COLS];
 };
 
 #endif //COMMANDLINE_HPP
