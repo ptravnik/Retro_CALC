@@ -32,7 +32,7 @@ The code is partially ported and tested on the ESP-32 platform. Production PCBs 
 1. Select the board as **Arduino Mega or Mega 2560**, processor **ATMega 2560**, compile and upload as usual.
 
 ## To build for ESP32 Dev Board
-1. Tested on Arduino IDE 1.18.10. and 1.18.12.
+1. Tested on Arduino IDE 1.18.10. and 1.18.12 (VSCode IDE also can be used if Arduino IDE is installed).
 1. Install 2 libraries: [U8g2](https://github.com/ptravnik/Retro_CALC/tree/master/U8g2) for the LCD and [HWKbd](https://github.com/ptravnik/Retro_CALC/tree/master/HWKbd) for the keyboard. Alternatively just copy the same into the Arduino libraries folder (will not install the examples).
 1. Copy the source, [RetroRPN_ESP32](https://github.com/ptravnik/Retro_CALC/tree/master/RetroRPN_ESP32), to any convenient folder and open with Arduino IDE.
 1. Validate which version of hardware keyboard is connected: the production layout uses different h file as the buttons\' position is different from the early mock-up.
