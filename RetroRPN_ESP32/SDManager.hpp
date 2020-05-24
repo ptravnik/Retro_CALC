@@ -21,6 +21,7 @@
 
 #include <Arduino.h>
 #include "./src/Keywords.hpp"
+#include "./src/Variables.hpp"
 #include "./src/IOManager.hpp"
 #include "./src/MessageBox.hpp"
 #include "./src/Parser.hpp"
@@ -38,7 +39,6 @@
 
 #define SD_CARD_OUT          255
 #define SD_CARD_NOT_MOUNTED  254
-#define CURRENT_DIR_LEN      256
 
 class SDManager{
   public:
@@ -46,7 +46,6 @@ class SDManager{
     volatile bool SDMounted = false;
     volatile bool SDPrevMounted = false;
     volatile uint64_t cardSize = 0;
-    char currentDir[CURRENT_DIR_LEN];
 
     unsigned long init(void *components[]);
     unsigned long tick();
@@ -56,13 +55,13 @@ class SDManager{
     };
     void sleepOn();
     void sleepOff();
+    void loadState();
+    void saveState();
     void listDir();
     void readFile( const char * path);
     void writeFile( const char * path, const char * message);
-    void readRPNStatus( byte *inp, byte *last_inp, uint16_t *pos,
-      double *stack, double *prev);
-    void writeRPNStatus( byte *inp, byte *last_inp, uint16_t pos,
-      double *stack, double prev);
+    void readRPNStatus( byte *inp, byte *last_inp, uint16_t *pos);
+    void writeRPNStatus( byte *inp, byte *last_inp, uint16_t pos);
     const char *SD_Message();
     void checkSDStatus();
     bool setPrevMounted(){
@@ -73,6 +72,7 @@ class SDManager{
   private:
     byte *_io_buffer;
     IOManager *_iom;
+    Variables *_vars;
     MessageBox *_mb;
     ExpressionParser *_ep;
     void _checkSDPin();

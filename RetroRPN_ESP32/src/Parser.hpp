@@ -17,8 +17,6 @@
 #define _INTEGER_       1
 #define _REAL_          2
 #define _STRING_        3
-#define _HUGE_POS_INTEGER_  8000000000000000000
-#define _HUGE_NEG_INTEGER_  -8000000000000000000
 
 #define _MAX_IDENTIFIER_  12
 #define _NUMBER_LENGTH_  22
@@ -98,13 +96,13 @@ class NameParser{
 class ExpressionParser{
   public:
     byte result = _NOT_A_NUMBER_;
-    inline void init(){
-      mathFunctions.init();
+    inline void init( void *components[]){
+      mathFunctions = (MathFunctions *)components[UI_COMP_MathFunctions];
     };
     byte *parse( byte *str);
     NumberParser numberParser;
     NameParser nameParser;
-    MathFunctions mathFunctions;
+    MathFunctions *mathFunctions;
     MathFunction *lastMathFunction;
     inline byte *_getCurrentPosition(){
       return _parser_position;

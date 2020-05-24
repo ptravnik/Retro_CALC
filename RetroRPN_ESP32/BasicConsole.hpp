@@ -44,12 +44,11 @@ class BasicConsole{
     void signchange( bool refresh=true);
     void quad( bool refresh=true);
     void goff2( bool refresh=true);
-    void loadState();
-    void saveState();
     void updateIOM(bool refresh=true);
   private:
     byte *_io_buffer;
     IOManager *_iom;
+    Variables *_vars;
     LCDManager *_lcd;
     SDManager *_sd;
     ExpressionParser *_ep;
@@ -67,27 +66,12 @@ class BasicConsole{
     void _pushQuick();
     void _pushQuick(double v);
     void _popQuick(byte start=1);
-    inline void _savePrev( byte i=0){
-      _ep->mathFunctions.previous_X = _ep->mathFunctions.rpnStack[i];
-    };
-    inline void _restorePrev(){
-      _ep->mathFunctions.rpnStack[0] = _ep->mathFunctions.previous_X;
-    };
-    inline double _getSt( byte i){
-      return _ep->mathFunctions.rpnStack[i];
-    };
-    inline void _setSt( byte i, double v){
-      _ep->mathFunctions.rpnStack[i] = v;
-    };
-    inline bool _isStZero( byte i){
-      return _ep->mathFunctions.rpnStack[i] == 0.0;
-    };
     inline void _setRedrawAndUpdateIOM( bool refresh){    
       _rpn->setStackRedraw();
       updateIOM(refresh);
     };
     inline void _savePopAndUpdate( double v, bool refresh) {
-      _savePrev();
+      _vars->rpnSavePreviousX();
       _popPartial(v);
       updateIOM(refresh);
     };

@@ -11,11 +11,11 @@
 //#define __DEBUG
 
 const byte _hexadigits[] PROGMEM = 
-   { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'x'};
+  { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'x'};
 const byte _multiplier_Prefixes[] PROGMEM = 
-   { 'f', 'p', 'n', 'u', 'm', 'c', 'd', 'k', 'M', 'G', 'T', 'P'};
+  { 'f', 'p', 'n', 'u', 'm', 'c', 'd', 'k', 'M', 'G', 'T', 'P'};
 const int8_t _multiplier_Values[] PROGMEM = 
-   { -15, -12,  -9,  -6,  -3,  -2,  -1,   3,   6,   9,  12,  15};
+  { -15, -12,  -9,  -6,  -3,  -2,  -1,   3,   6,   9,  12,  15};
 const char _not_a_Number[] PROGMEM = "Not a number";
 
 //
@@ -786,7 +786,7 @@ byte *ExpressionParser::_parse_Expression_Value(){
     Serial.print("Found keyword: ");
     Serial.println((char *)nameParser.Name());
     #endif
-    lastMathFunction = mathFunctions.getFunction(nameParser.Name());
+    lastMathFunction = mathFunctions->getFunction(nameParser.Name());
     if( lastMathFunction == NULL){
       #ifdef __DEBUG
       Serial.println("This name is indefined!");
@@ -812,7 +812,7 @@ byte *ExpressionParser::_parse_Expression_Value(){
       Serial.print(_args[i]);
     }
     #endif    
-    double *tmp = mathFunctions.Compute( mfptr, _args);
+    double *tmp = mathFunctions->Compute( mfptr, _args);
     #ifdef __DEBUG
     Serial.print("Computation returned: ");
     Serial.println(*tmp);

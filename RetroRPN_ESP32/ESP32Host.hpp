@@ -30,6 +30,9 @@
 #define POWER_OFF_PERIOD  720000
 
 #include "./src/Keywords.hpp"
+#include "./src/Variables.hpp"
+#include "./src/MathFunctions.hpp"
+#include "./src/Parser.hpp"
 #include "./src/IOManager.hpp"
 #include "./src/LCDManager.hpp"
 #include "./src/MessageBox.hpp"

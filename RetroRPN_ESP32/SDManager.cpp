@@ -8,9 +8,10 @@
 
 #include "SDManager.hpp"
 
-//#define __DEBUG
+#define __DEBUG
 
 const char RPN_SaveStatusFile[] PROGMEM = "/_RPN_SaveStatus.txt";
+const char RPN_SaveStatusFile2[] PROGMEM = "/_RPN_SaveStatus.bin";
 
 const char SD_Message0[] PROGMEM = "+ SD inserted";
 const char SD_Message1[] PROGMEM = "+ SD removed";
@@ -77,6 +78,7 @@ bool SDManager::_detectSDCard(){
 //
 unsigned long SDManager::init(void *components[]){
   _iom = (IOManager *)components[UI_COMP_IOManager];
+  _vars = (Variables *)components[UI_COMP_Variables];
   _mb = (MessageBox *)components[UI_COMP_MessageBox];
   _ep = (ExpressionParser *)components[UI_COMP_ExpressionParser];
   _io_buffer = _iom->getIOBuffer();
@@ -115,26 +117,26 @@ uint8_t SDManager::cardType(){
 void SDManager::_checkRoot(){
   if(!SDInserted) return;
   if(!SDMounted) return;
-  File root = SD.open(currentDir);
+  File root = SD.open(_vars->currentDir);
   if(!root){
     #ifdef __DEBUG
     Serial.println("Failed to open directory, reset to root");
     #endif
-    strncpy( currentDir, SD_root, CURRENT_DIR_LEN);
+    strncpy( _vars->currentDir, SD_root, CURRENT_DIR_LEN);
     return;
   }
   if(!root.isDirectory()){
     #ifdef __DEBUG
     Serial.println("Not a directory, reset to root");
     #endif
-    strncpy( currentDir, SD_root, CURRENT_DIR_LEN);
+    strncpy( _vars->currentDir, SD_root, CURRENT_DIR_LEN);
   }
   root.close();
 }
 
 File SDManager::_getCurrentDir(){
   _checkRoot();
-  return SD.open(currentDir);
+  return SD.open(_vars->currentDir);
 }
 
 void SDManager::sleepOn(){
@@ -149,11 +151,59 @@ void SDManager::sleepOff(){
   _detectSDCard();
 }
 
+//
+// TODO: load and save functionality here
+//
+void SDManager::loadState(){
+  if(!SDInserted) return;
+  if(!SDMounted) return;
+  File file = SD.open( RPN_SaveStatusFile2);
+  if(!file){
+    #ifdef __DEBUG
+    Serial.println("Failed to open status file for reading");
+    #endif
+    return;
+  }
+  size_t tmpsize = file.size();
+  if( tmpsize > VARIABLE_SPACE) tmpsize = VARIABLE_SPACE;
+  file.read( _vars->_buffer, tmpsize);
+  file.close();
+  _vars->_var_bottom = tmpsize;
+  #ifdef __DEBUG
+  Serial.print("Loaded status: ");
+  Serial.print(_vars->_var_bottom);
+  Serial.println(" bytes");
+  #endif
+}
+
+void SDManager::saveState(){
+  if(!SDInserted) return;
+  if(!SDMounted) return;
+  File file = SD.open( RPN_SaveStatusFile2, FILE_WRITE);
+  if(!file){
+    #ifdef __DEBUG
+    Serial.println("Failed to open status file for writing");
+    #endif
+    return;
+  }
+  #ifdef __DEBUG
+    Serial.print("Wrote ");
+    Serial.print(file.write( _vars->_buffer, _vars->_var_bottom));
+    Serial.println(" bytes of status");
+    Serial.print("Variable bottom at ");
+    Serial.print(_vars->_var_bottom);
+    Serial.println(" bytes");
+  #else
+  file.write( _vars->_buffer, _vars->_var_bottom);
+  #endif
+  file.close();
+}
+
 void SDManager::listDir(){
     if(!SDInserted) return;
     if(!SDMounted) return;
     Serial.print("Listing directory: ");
-    Serial.println(currentDir);
+    Serial.println(_vars->currentDir);
 
     File root = _getCurrentDir();
     if(!root) return;
@@ -226,7 +276,7 @@ void SDManager::writeFile( const char * path, const char * message){
   file.close();
 }
 
-void SDManager::readRPNStatus( byte *inp, byte *last_inp, uint16_t *pos, double *stack, double *prev){
+void SDManager::readRPNStatus( byte *inp, byte *last_inp, uint16_t *pos){
   if(!SDInserted) return;
   if(!SDMounted) return;
   File file = SD.open(RPN_SaveStatusFile);
@@ -235,13 +285,6 @@ void SDManager::readRPNStatus( byte *inp, byte *last_inp, uint16_t *pos, double 
     Serial.println("Failed to open status file for reading");
     #endif
     return;
-  }
-  if( _readDouble( &file, prev)){
-    file.close();
-    return;
-  }
-  for( byte i=0; i<RPN_STACK; i++){
-    if( _readDouble( &file, stack+i)) break;
   }
   if( _readString( &file, last_inp, INPUT_COLS)){
     file.close();
@@ -261,7 +304,7 @@ void SDManager::readRPNStatus( byte *inp, byte *last_inp, uint16_t *pos, double 
   file.close();
 }
 
-void SDManager::writeRPNStatus(  byte *inp, byte *last_inp, uint16_t pos, double *stack, double prev){
+void SDManager::writeRPNStatus(  byte *inp, byte *last_inp, uint16_t pos){
   if(!SDInserted) return;
   if(!SDMounted) return;
   File file = SD.open( RPN_SaveStatusFile, FILE_WRITE);
@@ -269,15 +312,6 @@ void SDManager::writeRPNStatus(  byte *inp, byte *last_inp, uint16_t pos, double
     #ifdef __DEBUG
     Serial.println("Failed to open status file for writing");
     #endif
-    return;
-  }
-  if( _writeDouble( &file, prev)){
-    file.close();
-    return;
-  }
-  for( byte i=0; i<RPN_STACK; i++){
-    if( !_writeDouble( &file, stack[i])) continue;
-    file.close();
     return;
   }
   if( _writeString( &file, last_inp)){

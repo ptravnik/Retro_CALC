@@ -50,15 +50,12 @@ class RPNStackBox{
   private:
     byte *_io_buffer;
     IOManager *_iom;
+    Variables *_vars;
     LCDManager *_lcd;
     ExpressionParser *_ep;
-    byte _messageBuffer[SCR_COLS * 3];
     bool _messageRedrawRequired[ 3];
     bool _stackRedrawRequired[ 3];
     byte *_messages[ 3];
-    inline double _getSt( byte i){
-      return _ep->mathFunctions.rpnStack[i];
-    };
 };
 
 #endif //RPNSTACKBOX_HPP

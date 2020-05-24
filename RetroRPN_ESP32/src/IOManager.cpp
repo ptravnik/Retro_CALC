@@ -257,14 +257,14 @@ void IOManager::sendChar( byte c, byte dest, bool wait_for_host){
 void IOManager::sendString( const char *str, size_t limit, byte dest){
   if(limit == 0) limit = strlen(str);
   if(limit == 0) return;
-  if(limit > 255) limit = 255;
+  if(limit > INPUT_LIMIT) limit = INPUT_LIMIT;
   convertToUTF8( (char *)_io_buffer, (byte *)str, limit);
   sendStringUTF8( (const char *)_io_buffer, dest);
 }
 void IOManager::sendStringLn( const char *str, size_t limit, byte dest){
   if(limit == 0) limit = strlen(str);
   if(limit == 0) return;
-  if(limit > 255) limit = 255;
+  if(limit > INPUT_LIMIT) limit = INPUT_LIMIT;
   convertToUTF8( (char *)_io_buffer, (byte *)str, limit);
   sendStringUTF8Ln( (const char *)_io_buffer, dest);
 }

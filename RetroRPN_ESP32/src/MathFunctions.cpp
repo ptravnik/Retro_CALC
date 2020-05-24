@@ -10,8 +10,6 @@
 
 //#define __DEBUG
 
-const double _angleConversions[] PROGMEM = {1.74532925199e-2, 1.0, 1.5707963268e-2};
-
 //#define _MF_AMODE_KW_ 0
 const char _MF_amode[] PROGMEM = "amode";
 const char _MF_AMODE[] PROGMEM = "AMODE";
@@ -124,8 +122,8 @@ const char _MF_STACK[] PROGMEM = "STACK";
 const char _MF_lin2[] PROGMEM = "lin2";
 const char _MF_LIN2[] PROGMEM = "LIN2";
 
-void MathFunctions::init( byte amod){
-  angleMode = amod;
+void MathFunctions::init( void *components[]){
+  _vars = (Variables *)components[UI_COMP_Variables];
   _addFunction( _MF_amode, _MF_AMODE, 1, 0, _RPN_AMODE_); // 0
   _addFunction( _MF_deg, _MF_DEG, 0, 1); // 1
   _addFunction( _MF_rad, _MF_RAD, 0, 1); // 2
@@ -167,7 +165,7 @@ void MathFunctions::init( byte amod){
 
 void MathFunctions::setAngleMode(byte m){
   if(m != _MODE_RADIAN_ && m != _MODE_GRADIAN_) m = _MODE_DEGREES_;
-  angleMode = m;
+  _vars->setAngleMode (m);
 }
 
 MathFunction *MathFunctions::getFunction(byte *str){
@@ -212,26 +210,26 @@ double *MathFunctions::Compute( MathFunction *mf, double *args){
       Serial.print("Computing sin(");
       Serial.print(args[0]);
       Serial.print("), which is sin(");
-      Serial.print(getConvertedAngle(args[0]));
+      Serial.print(_vars->getConvertedAngle(args[0]));
       Serial.print(" radian) = ");
-      Serial.println(sin( getConvertedAngle(args[0])));
+      Serial.println(sin( _vars->getConvertedAngle(args[0])));
       #endif
-      _rets[0] = sin( getConvertedAngle(args[0]));
+      _rets[0] = sin( _vars->getConvertedAngle(args[0]));
       break;
     case _MF_ASIN_KW_:
-      _rets[0] = getUnconvertedAngle(asin(args[0]));
+      _rets[0] = _vars->getUnconvertedAngle(asin(args[0]));
       break;
     case _MF_COS_KW_:
-      _rets[0] = cos( getConvertedAngle(args[0]));
+      _rets[0] = cos( _vars->getConvertedAngle(args[0]));
       break;
     case _MF_ACOS_KW_:
-      _rets[0] = getUnconvertedAngle(acos(args[0]));
+      _rets[0] = _vars->getUnconvertedAngle(acos(args[0]));
       break;
     case _MF_TAN_KW_:
-      _rets[0] = tan( getConvertedAngle(args[0]));
+      _rets[0] = tan( _vars->getConvertedAngle(args[0]));
       break;
     case _MF_ATAN_KW_:
-      _rets[0] = getUnconvertedAngle(atan(args[0]));
+      _rets[0] = _vars->getUnconvertedAngle(atan(args[0]));
       break;
     case _MF_POW_KW_: 
       _rets[0] = pow(args[0], args[1]);
@@ -285,7 +283,7 @@ double *MathFunctions::Compute( MathFunction *mf, double *args){
       quad( args);
       break;
     case _MF_PREV_KW_:
-      _rets[0] = previous_X;
+      _rets[0] = _vars->rpnGetPreviousX();
       break;
     case _MF_SWAP_KW_:
       _rets[0] = args[1];
@@ -295,7 +293,7 @@ double *MathFunctions::Compute( MathFunction *mf, double *args){
       iStack = (int)floor(args[0]);
       if( iStack<0) iStack = 0;
       if( iStack>=RPN_STACK) iStack = RPN_STACK-1;
-      _rets[0] = rpnStack[iStack];
+      _rets[0] = _vars->rpnGetStack(iStack);
       break;
     case _MF_LCIRC_KW_:
       _rets[0] = _MATH_PI_ * 2.0 * args[0];
@@ -351,63 +349,54 @@ void MathFunctions::_addFunction( const char *name0, const char *name1, byte nAr
   #endif
 }
 
-double MathFunctions::getConvertedAngle( double a){
-  return a * _angleConversions[angleMode];
-}
-
-double MathFunctions::getUnconvertedAngle( double a){
-  if( isnan(a)) return a;
-  return a / _angleConversions[angleMode];
-}
-
 //
 // Solves a quadratic equation
 //
-double *MathFunctions::quad( double *rpnStack) {
+double *MathFunctions::quad( double *stack) {
   // Trivial solution or no roots
   _clearRets();
-  if( rpnStack[2] == 0.0 && rpnStack[1] == 0.0)
+  if( stack[2] == 0.0 && stack[1] == 0.0)
     return _rets;
-  double a = rpnStack[2] * 2.0;
+  double a = stack[2] * 2.0;
   // Linear single root
   if( a == 0.0){
-    _rets[0] = -rpnStack[0] / rpnStack[1];
+    _rets[0] = -stack[0] / stack[1];
     _rets[1] = _rets[0];
     return _rets;
   }
   // Discriminant
-  _rets[2] = rpnStack[1] * rpnStack[1] - 4.0 * rpnStack[0] * rpnStack[2];
+  _rets[2] = stack[1] * stack[1] - 4.0 * stack[0] * stack[2];
   // Quad single root
   if( -1e-300 < _rets[2] && _rets[2] < 1e-300){
     _rets[2] = 0.0;
-    _rets[0] = -rpnStack[1] / a;
+    _rets[0] = -stack[1] / a;
     _rets[1] = _rets[0];
     return _rets;
   }
   // Quad two roots
   if( _rets[2] > 0.0){
     _rets[0] = sqrt(_rets[2]);
-    _rets[1] = -(rpnStack[1] +_rets[0]) / a;
-    _rets[0] -= rpnStack[1];
+    _rets[1] = -(stack[1] +_rets[0]) / a;
+    _rets[0] -= stack[1];
     _rets[0] /= a;
     return _rets;
   }
   // Complex roots
   _rets[1] = sqrt(-_rets[2]) / a;
-  _rets[0] -= rpnStack[1] / a;
+  _rets[0] -= stack[1] / a;
   return _rets;
 }
 
 //
 // Solves gain-offset
 //
-double *MathFunctions::goff2( double *rpnStack) {
+double *MathFunctions::goff2( double *stack) {
   // Trivial solution with the same X1, X2
   _clearRets();
-  double dx = rpnStack[3] - rpnStack[1];
+  double dx = stack[3] - stack[1];
   if( dx == 0.0) return _rets;
-  _rets[1] = (rpnStack[2] - rpnStack[0])/dx;
-  _rets[0] = rpnStack[0] - _rets[1]*rpnStack[1];
+  _rets[1] = (stack[2] - stack[0])/dx;
+  _rets[0] = stack[0] - _rets[1]*stack[1];
   _gain = _rets[1];
   _offset = _rets[0];
   return _rets;

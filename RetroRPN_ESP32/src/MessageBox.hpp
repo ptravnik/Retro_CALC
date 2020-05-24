@@ -18,6 +18,7 @@
 #define MESSAGEBOX_HPP
 
 #include "Keywords.hpp"
+#include "Variables.hpp"
 #include "IOManager.hpp"
 #include "LCDManager.hpp"
 
@@ -44,8 +45,9 @@ class MessageBox{
     };
   private:
     IOManager *_iom;
+    Variables *_vars;
     LCDManager *_lcd;
-    byte _messageBuffer[SCR_COLS];
+    byte *_messageBuffer;
     bool _messageRedrawRequired = false;
 };
 

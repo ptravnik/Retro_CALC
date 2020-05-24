@@ -22,6 +22,7 @@
 
 #include <Arduino.h>
 #include "./src/Keywords.hpp"
+#include "./src/Variables.hpp"
 #include "./src/IOManager.hpp"
 #include "./src/LCDManager.hpp"
 #include "./src/RPNStackBox.hpp"
@@ -36,7 +37,6 @@
 
 // Move must be one less than RPN_STACK times sizeof( double)
 #define RPN_MOVE   (RPN_STACK-1)*sizeof( double)
-#define RPN_PI        3.14159265359
 
 class RPNCalculator{
   public:
@@ -78,12 +78,13 @@ class RPNCalculator{
   private:
     byte *_io_buffer;
     IOManager *_iom;
+    Variables *_vars;
     LCDManager *_lcd;
     SDManager *_sd;
     ExpressionParser *_ep;
     RPNStackBox *_rsb;
     MessageBox *_mb;
-    CommandLine *_cl;    
+    CommandLine *_cl;
     void _processCommand(byte c);
     void _evaluateCommand();
     void _evaluateString();
@@ -94,27 +95,12 @@ class RPNCalculator{
     void _pushQuick();
     void _pushQuick(double v);
     void _popQuick(byte start=1);
-    inline void _savePrev( byte i=0){
-      _ep->mathFunctions.previous_X = _ep->mathFunctions.rpnStack[i];
-    };
-    inline void _restorePrev(){
-      _ep->mathFunctions.rpnStack[0] = _ep->mathFunctions.previous_X;
-    };
-    inline double _getSt( byte i){
-      return _ep->mathFunctions.rpnStack[i];
-    };
-    inline void _setSt( byte i, double v){
-      _ep->mathFunctions.rpnStack[i] = v;
-    };
-    inline bool _isStZero( byte i){
-      return _ep->mathFunctions.rpnStack[i] == 0.0;
-    };
     inline void _setRedrawAndUpdateIOM( bool refresh){    
       setStackRedraw();
       updateIOM(refresh);
     };
     inline void _savePopAndUpdate( double v, bool refresh) {
-      _savePrev();
+      _vars->rpnSavePreviousX();
       _popPartial(v);
       updateIOM(refresh);
     };

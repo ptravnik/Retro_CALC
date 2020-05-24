@@ -14,23 +14,46 @@
 #include "CP1251_mod.h"
 #include "Utilities.hpp"
 
+#define _HUGE_POS_INTEGER_  8000000000000000000L
+#define _HUGE_NEG_INTEGER_  -8000000000000000000L
+
 #define INPUT_COLS    256
 #define INPUT_LIMIT   255
 #define HSCROLL_LIMIT  18
 
-#define UI_COMP_IOManager         0
-#define UI_COMP_LCDManager        1
-#define UI_COMP_SDManager         2
-#define UI_COMP_ExpressionParser  3
-#define UI_COMP_MessageBox        4
-#define UI_COMP_CommandLine       5
-#define UI_COMP_RPNBox            6
-#define UI_COMP_RPNCalculator     7
-#define UI_COMP_TerminalBox       8
-#define UI_COMP_BasicConsole      9
-#define UI_COMP_FileManager      10
-#define UI_COMPONENTS_COUNT      11
+// screen geometry
+#define SCR_MARGIN_X  127
+#define SCR_MARGIN_Y  63
+#define SCR_COLS      22
+#define SCR_ROWS      8
+#define SCR_TOP       0
+#define SCR_BOTTOM    7
+#define SCR_RIGHT     21
+#define SCR_TABSTOP   2
+#define SYMBOL_WIDTH  6
+#define SYMBOL_HEIGHT 8
+#define ROW_STEP      8
+#define ROW_OFFSET    0
+#define COL_OFFSET    0
+#define SCR_SIZE (SCR_COLS * SCR_ROWS)
 
+// UI components
+#define UI_COMP_IOManager         0
+#define UI_COMP_Variables         1
+#define UI_COMP_MathFunctions     2
+#define UI_COMP_LCDManager        3
+#define UI_COMP_SDManager         4
+#define UI_COMP_ExpressionParser  5
+#define UI_COMP_MessageBox        6
+#define UI_COMP_CommandLine       7
+#define UI_COMP_RPNBox            8
+#define UI_COMP_RPNCalculator     9
+#define UI_COMP_TerminalBox      10
+#define UI_COMP_BasicConsole     11
+#define UI_COMP_FileManager      12
+#define UI_COMPONENTS_COUNT      13
+
+// Current interface
 #define UI_UNDEFINED        0
 #define UI_RPNCALC          1
 #define UI_FILEMAN          2

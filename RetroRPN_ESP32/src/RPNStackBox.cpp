@@ -24,12 +24,13 @@ const char *const RPN_Message_Table[] PROGMEM = {
 //
 unsigned long RPNStackBox::init(void *components[]){
   _iom = (IOManager *)components[UI_COMP_IOManager];
+  _vars = (Variables *)components[UI_COMP_Variables];
   _lcd = (LCDManager *)components[UI_COMP_LCDManager];
   _ep = (ExpressionParser *)components[UI_COMP_ExpressionParser];
   _io_buffer = _iom->getIOBuffer();
-  _messages[0] = _messageBuffer;
-  _messages[1] = _messages[0] + SCR_COLS;
-  _messages[2] = _messages[1] + SCR_COLS;
+  _messages[0] = _vars->rpnLabelX;
+  _messages[1] = _vars->rpnLabelY;
+  _messages[2] = _vars->rpnLabelZ;
   resetRPNLabels();
   setStackRedraw();
   return _iom->keepAwake();
@@ -59,7 +60,7 @@ void RPNStackBox::redraw() {
     if( _stackRedrawRequired[i]){
       _stackRedrawRequired[i] = false;
       _lcd->clearLine( rpnNums[i]);
-      size_t len = _ep->numberParser.stringValue(_getSt(i), _io_buffer)-_io_buffer;
+      size_t len = _ep->numberParser.stringValue(_vars->rpnGetStack(i), _io_buffer)-_io_buffer;
       if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
       _lcd->cursorTo( SCR_RIGHT-len, rpnNums[i]);
       _lcd->sendString( _io_buffer);
@@ -75,7 +76,7 @@ void RPNStackBox::updateIOM( bool refresh) {
   _iom->sendLn();
   for( int8_t i=2; i>=0; i--){
     _iom->sendStringLn( _messages[i]);
-    size_t len = _ep->numberParser.stringValue( _getSt(i), _io_buffer)-_io_buffer;
+    size_t len = _ep->numberParser.stringValue( _vars->rpnGetStack(i), _io_buffer)-_io_buffer;
     if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
     for( byte j=0; j<SCR_RIGHT-len; j++) _iom->sendChar( ' ');
     _iom->sendStringUTF8Ln();

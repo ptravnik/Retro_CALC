@@ -12,6 +12,8 @@
 
 static volatile bool PowerOffRequested = false;
 static IOManager myIO;
+static Variables myVar;
+static MathFunctions myMFun;
 static SDManager mySD;
 static LCDManager myLCD;
 static ExpressionParser myEP;
@@ -23,8 +25,10 @@ static RPNCalculator myRPN;
 static BasicConsole myBAS;
 static FileManager myFM;
 
+// Damn VSCode does not understand UTF8 !
 const char IO_WelcomeMessage0[] PROGMEM = "***********************";
-const char IO_WelcomeMessage1[] PROGMEM = "* ЭЛЕКТРОНИКА МК-2090 *";
+//const char IO_WelcomeMessage1[] PROGMEM = "* ЭЛЕКТРОНИКА МК-2090 *";
+const char IO_WelcomeMessage1[] PROGMEM = "* ЭЛEKTPOHИKA MK-2090 *";
 const char IO_WelcomeMessage2[] PROGMEM = "*  Retro  Calculator  *";
 const char IO_WelcomeMessage3[] PROGMEM = "+ ESP32 connected via Serial";
 const char IO_WelcomeMessage4[] PROGMEM = "+ Pro Micro appears to be off";
@@ -59,6 +63,8 @@ unsigned long ESP32Host::init() {
   
   // In order of initialization
   _host_Components[UI_COMP_IOManager] = &myIO;
+  _host_Components[UI_COMP_Variables] = &myVar;
+  _host_Components[UI_COMP_MathFunctions] = &myMFun;
   _host_Components[UI_COMP_LCDManager] = &myLCD;
   _host_Components[UI_COMP_SDManager] = &mySD;
   _host_Components[UI_COMP_ExpressionParser] = &myEP;
@@ -71,7 +77,7 @@ unsigned long ESP32Host::init() {
   _host_Components[UI_COMP_FileManager] = &myFM;
 
   // Warm-up LCD, show splash, while showing splash, do the rest
-  myLCD.init( _host_Components);
+  myLCD.init(_host_Components);
   
   // Show ASCII graphics
   for(byte i=0; i<3; i++) myIO.sendLn();
@@ -93,7 +99,9 @@ unsigned long ESP32Host::init() {
   }
 
   // Init SD and check hardware
-  mySD.init( _host_Components);
+  myVar.init();
+  myMFun.init(_host_Components);
+  mySD.init(_host_Components);
   myIO.flashKBDLEDs();
 
   // Power management up
@@ -103,7 +111,7 @@ unsigned long ESP32Host::init() {
   attachInterrupt( POWER_DETECT_PIN, isrPower, RISING);
 
   // Other UI components
-  myEP.init();
+  myEP.init(_host_Components);
   myMB.init(_host_Components);
   myCL.init(_host_Components);
   myRPNBox.init(_host_Components);
@@ -111,6 +119,7 @@ unsigned long ESP32Host::init() {
   myTerminalBox.init(_host_Components);
   myBAS.init(_host_Components);
   myFM.init(_host_Components);
+  mySD.loadState();
   myLCD.waitForEndSplash( initStarted);
 
   // TODO: remember selector here
@@ -225,6 +234,7 @@ void ESP32Host::deepSleep( byte msg){
   delay(500);
   myLCD.sleepOn();
   // TODO add calls for saving the system state
+  mySD.saveState();
   myRPN.saveState();
   delay(1000); // finish card activity
   mySD.sleepOn();

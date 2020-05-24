@@ -140,7 +140,7 @@ class IOManager{
       return (dest & 2) && digitalRead(IO_PM_ACTIVE);
     };
     inline void _wait_for_transmission( size_t sent){
-      delayMicroseconds(sent*400);
+      delayMicroseconds(sent*500);
     };
 };
 

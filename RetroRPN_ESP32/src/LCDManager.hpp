@@ -48,22 +48,6 @@
 #define LCD_LEDC_MAX_DUTY      8191
 #define LCD_LEDC_BASE_FREQ     5000
 
-// screen geometry
-#define SCR_MARGIN_X  127
-#define SCR_MARGIN_Y  63
-#define SCR_COLS      22
-#define SCR_ROWS      8
-#define SCR_TOP       0
-#define SCR_BOTTOM    7
-#define SCR_RIGHT     21
-#define SCR_TABSTOP   2
-#define SYMBOL_WIDTH  6
-#define SYMBOL_HEIGHT 8
-#define ROW_STEP      8
-#define ROW_OFFSET    0
-#define COL_OFFSET    0
-#define SCR_SIZE (SCR_COLS * SCR_ROWS)
-
 // must be less than IO_BUFFER_LENGTH (256)
 #define SCR_MAX_UTF (SCR_COLS + SCR_COLS + 1)
 #define SCR_BUFFER_SIZE 1024

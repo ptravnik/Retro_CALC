@@ -25,7 +25,9 @@ const char *const MB_Message_Table[] PROGMEM = {
 //
 unsigned long MessageBox::init(void *components[]){
   _iom = (IOManager *)components[UI_COMP_IOManager];
+  _vars = (Variables *)components[UI_COMP_Variables];
   _lcd = (LCDManager *)components[UI_COMP_LCDManager];
+  _messageBuffer = _vars->scrMessage;
   setLabel( (byte *)NULL, false);
   return _iom->keepAwake();
 }

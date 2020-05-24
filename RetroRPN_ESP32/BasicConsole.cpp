@@ -44,6 +44,7 @@ const char *const BAS_AMOD_Table[] PROGMEM = {
 //
 unsigned long BasicConsole::init(void *components[]){
   _iom = (IOManager *)components[UI_COMP_IOManager];
+  _vars = (Variables *)components[UI_COMP_Variables];
   _lcd = (LCDManager *)components[UI_COMP_LCDManager];
   _sd = (SDManager *)components[UI_COMP_SDManager];
   _ep = (ExpressionParser *)components[UI_COMP_ExpressionParser];
@@ -52,7 +53,6 @@ unsigned long BasicConsole::init(void *components[]){
   _rpn = (RPNCalculator *)components[UI_COMP_RPNCalculator];
   _trm = (TerminalBox *)components[UI_COMP_TerminalBox];
   _io_buffer = _iom->getIOBuffer();
-  loadState();
   return _iom->keepAwake();
 }
 
@@ -90,7 +90,7 @@ void BasicConsole::redraw() {
 //    if( !_stackRedrawRequired[i]) continue;
 //    _stackRedrawRequired[i] = false;
 //    _lcd->clearLine( j);
-//    size_t len = _ep->numberParser.stringValue(_getSt(i), _io_buffer)-_io_buffer;
+//    size_t len = _ep->numberParser.stringValue(_vars->rpnStack(i), _io_buffer)-_io_buffer;
 //    if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
 //    _lcd->cursorTo( SCR_RIGHT-len, j);
 //    _lcd->sendString( _io_buffer);
@@ -108,7 +108,7 @@ void BasicConsole::updateIOM( bool refresh) {
 //  _iom->sendLn();
 //  for( byte i=3; i>0; i--){
 //    _iom->sendStringLn( _messages[i]);
-//    size_t len = _ep->numberParser.stringValue(_getSt(i-1), _io_buffer)-_io_buffer;
+//    size_t len = _ep->numberParser.stringValue(_vars->rpnStack(i-1), _io_buffer)-_io_buffer;
 //    if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
 //    for( byte j=0; j<SCR_RIGHT-len; j++) _iom->sendChar( ' ');
 //    _iom->sendStringUTF8Ln();
@@ -231,12 +231,12 @@ void BasicConsole::processInput( bool silent) {
 // Stack operations
 // 
 void BasicConsole::push(bool refresh) {
-  _savePrev();
+  _vars->rpnSavePreviousX();
   _pushQuick();
   _setRedrawAndUpdateIOM( refresh);
 }
 void BasicConsole::pop(bool refresh) {
-  _savePrev();
+  _vars->rpnSavePreviousX();
   _popQuick();
   _setRedrawAndUpdateIOM( refresh);
 }
@@ -245,58 +245,58 @@ void BasicConsole::swap(bool refresh) {
   updateIOM(refresh);
 }
 void BasicConsole::roll(bool refresh) {
-  _pushQuick(_getSt(RPN_STACK-1));
+  _pushQuick(_vars->rpnGetStack(RPN_STACK-1));
   _setRedrawAndUpdateIOM( refresh);
 }
 void BasicConsole::prev(bool refresh) {
-  _pushQuick(_ep->mathFunctions.previous_X);
+  _pushQuick(_vars->rpnGetPreviousX());
   _setRedrawAndUpdateIOM( refresh);
 }
 void BasicConsole::add(bool refresh) {
-  _savePopAndUpdate( _getSt(1) + _getSt(0), refresh);
+  _savePopAndUpdate( _vars->rpnGetStack(1) + _vars->rpnGetStack(), refresh);
 }
 void BasicConsole::subtract(bool refresh) {
-  _savePopAndUpdate( _getSt(1) - _getSt(0), refresh);
+  _savePopAndUpdate( _vars->rpnGetStack(1) - _vars->rpnGetStack(), refresh);
 }
 void BasicConsole::multiply(bool refresh) {
-  _savePopAndUpdate( _getSt(1) * _getSt(0), refresh);
+  _savePopAndUpdate( _vars->rpnGetStack(1) * _vars->rpnGetStack(), refresh);
 }
 void BasicConsole::divide(bool refresh) {
-  if( abs(_getSt(0)) < 1e-300){
+  if( abs(_vars->rpnGetStack()) < 1e-300){
     _mb->setLabel(BAS_Error_DivZero);
     _setRedrawAndUpdateIOM( refresh);
     return;    
   }
-  _savePopAndUpdate( _getSt(1) / _getSt(0), refresh);
+  _savePopAndUpdate( _vars->rpnGetStack(1) / _vars->rpnGetStack(), refresh);
 }
 void BasicConsole::signchange(bool refresh) {
-  _savePrev();
-  _setSt(0, -_getSt(0));
+  _vars->rpnSavePreviousX();
+  _vars->rpnSetStack( -_vars->rpnGetStack());
   _setRedrawAndUpdateIOM( refresh);
 }
 void BasicConsole::power(bool refresh) {
-  _savePrev(1);
+  _vars->rpnSavePreviousX(1);
   //_messages
   // power zero: using "1 convention"  
-  if( _getSt(0) == 0.0){
+  if( _vars->rpnGetStack() == 0.0){
     _mb->setLabel( BAS_Warning_ZeroPowerZero);
     _popPartial( 1.0);
     updateIOM(refresh);
     return;
   }
   // positive power of zero: zero
-  if( _getSt(0) > 0.0 && _getSt(1) == 0.0){
+  if( _vars->rpnGetStack() > 0.0 && _vars->rpnGetStack(1) == 0.0){
     _popPartial( 0.0);
     updateIOM(refresh);
     return;
   }
   // negative power of zero: div by zero
-  if( _getSt(0) < 0.0 && _isStZero(1)){
+  if( _vars->rpnGetStack() < 0.0 && _vars->rpnIsZero(1)){
     _mb->setLabel(BAS_Error_DivZero);
     _setRedrawAndUpdateIOM( refresh);
     return;
   }
-  double tmp = pow( _getSt(1), _getSt(0));
+  double tmp = pow( _vars->rpnGetStack(1), _vars->rpnGetStack());
   if( isnan(tmp)){
     _mb->setLabel( BAS_Error_NAN);
     _setRedrawAndUpdateIOM( refresh);
@@ -310,7 +310,7 @@ void BasicConsole::power(bool refresh) {
 // If the number is large, periodic functions are useless
 //
 void BasicConsole::_checkTrigAccuracy(){
-  double tmp = abs( _ep->mathFunctions.getConvertedAngle(_getSt(0)));
+  double tmp = abs( _vars->getConvertedAngle());
   if( tmp <= 1e+16) return;
   _mb->setLabel( BAS_Warning_Accuracy);
   Serial.println(BAS_Warning_Accuracy);
@@ -331,23 +331,6 @@ void BasicConsole::goff2(bool refresh) {
 }
 
 //
-// TODO: load and save functionality here
-//
-void BasicConsole::loadState(){
-  if( !_sd->SDMounted) return;
-  #ifdef __DEBUG
-  Serial.println("loadState called");
-  #endif
-}
-
-void BasicConsole::saveState(){
-  if( !_sd->SDMounted) return;
-  #ifdef __DEBUG
-  Serial.println("saveState called");
-  #endif
-}
-
-//
 // Process a command, such as "sin" without parameters 
 //
 void BasicConsole::_evaluateCommand(){
@@ -357,18 +340,18 @@ void BasicConsole::_evaluateCommand(){
 //  bool doPopPartial = true;
 //  bool doUpdateIOM = true;
 //  double *return_ptr;
-//  _savePrev();
+//  _vars->savePrevRPN();
 //  switch(_ep->lastMathFunction->RPNtag){
 //    case _RPN_AMODE_:
-//      _ep->mathFunctions.Compute( _ep->lastMathFunction, _ep->mathFunctions.rpnStack);
-//      _rpn->setRPNLabel( 0, BAS_AMOD_Table[_ep->mathFunctions.angleMode]);
+//      _ep->mathFunctions->Compute( _ep->lastMathFunction, _ep->mathFunctions->rpnStack);
+//      _rpn->setRPNLabel( 0, BAS_AMOD_Table[_ep->mathFunctions->angleMode]);
 //      pop(true);
 //      return;
 //    case _RPN_CHECK_TRIG_:
 //      _checkTrigAccuracy();
 //      break;
 //    case _RPN_INVTRIG_:
-//      if( abs(_getSt(0)) > 1.0){
+//      if( abs(_vars->rpnStack()) > 1.0){
 //        _rpn->setRPNLabel( 0, BAS_Error_Trig);
 //        _stackRedrawRequired[ 0] = true;
 //        _updateIOM(doUpdateIOM);
@@ -387,7 +370,7 @@ void BasicConsole::_evaluateCommand(){
 //        doPopPartial = false;
 //        break;
 //      }
-//      _setSt(0, 1.0 / _getSt(0));
+//      _vars->setStack( 1.0 / _vars->rpnStack());
 //      // fall-through!
 //    case _RPN_POWER_:
 //      power(true);
@@ -396,16 +379,16 @@ void BasicConsole::_evaluateCommand(){
 //      swap(true);
 //      return;
 //    case _RPN_SWAP_XY_:
-//      _savePrev(1);
+//      _vars->savePrevRPN(1);
 //      _swapQuick();
 //      break;
 //    case _RPN_QUICK_PUSH_:
 //      _pushQuick();
 //      break;
 //    case _RPN_SQRT_CHECK_:
-//      if( _getSt(0) < 0.0){
+//      if( _vars->rpnStack() < 0.0){
 //        _rpn->setRPNLabel( 0, BAS_Message_Complex);
-//        _setSt(0, -_getSt(0));
+//        _vars->setStack( -_vars->rpnStack());
 //      }      
 //      break;
 //    case _RPN_QUAD_SOLVER:
@@ -419,8 +402,8 @@ void BasicConsole::_evaluateCommand(){
 //    default:
 //      break;
 //  }
-//  return_ptr = _ep->mathFunctions.Compute( _ep->lastMathFunction, _ep->mathFunctions.rpnStack);
-//  if( _ep->lastMathFunction->nArgs > 0) _setSt(0, return_ptr[0]);
+//  return_ptr = _ep->mathFunctions->Compute( _ep->lastMathFunction, _ep->mathFunctions->rpnStack);
+//  if( _ep->lastMathFunction->nArgs > 0) _vars->setStack(return_ptr[0]);
 //  if( doPopPartial && _ep->lastMathFunction->nArgs > 1) _popPartial();
 //  else setStackRedraw();
 //  _updateIOM(doUpdateIOM);
@@ -454,13 +437,13 @@ void BasicConsole::_evaluateString(){
   }
   if( IsToken( _ep->nameParser.Name(), "hex", false)){
     ptr = _cl->getInput();
-    _ep->numberParser.stringHex( _getSt(0), ptr);
+    _ep->numberParser.stringHex( _vars->rpnGetStack(), ptr);
     _cl->processEND();
     _iom->sendStringLn( ptr);
     return;
   }
   if( IsToken( _ep->nameParser.Name(), "inj", false)){
-    _ep->numberParser.stringValue( _getSt(0), _io_buffer);
+    _ep->numberParser.stringValue( _vars->rpnGetStack(), _io_buffer);
     _iom->injectKeyboard();
     _cl->clearInput();
     return;
@@ -531,15 +514,15 @@ void BasicConsole::_evaluateString(){
 
 void BasicConsole::_pushQuick(){
   for(byte i=RPN_STACK-1; i>0; i--)
-    _ep->mathFunctions.rpnStack[i] = _ep->mathFunctions.rpnStack[i-1];
+    _vars->rpnSetStack(_vars->rpnGetStack(i-1), i);
 }
 void BasicConsole::_pushQuick(double v){
   _pushQuick();
-  _ep->mathFunctions.rpnStack[0] = v;
+  _vars->rpnSetStack(v);
 }
 void BasicConsole::_popQuick(byte start){
   for(byte i=start; i<RPN_STACK; i++)
-    _ep->mathFunctions.rpnStack[i-1] = _ep->mathFunctions.rpnStack[i];
+    _vars->rpnSetStack(_vars->rpnGetStack(i), i-1);
 }
 void BasicConsole::_popPartial() {
   _popQuick(2);
@@ -547,10 +530,8 @@ void BasicConsole::_popPartial() {
 }
 void BasicConsole::_popPartial( double v) {
   _popPartial();
-  _ep->mathFunctions.rpnStack[0] = v;
+  _vars->rpnSetStack(v);
 }
 void BasicConsole::_swapQuick(){
-  double tmp = _ep->mathFunctions.rpnStack[0];
-  _ep->mathFunctions.rpnStack[0] = _ep->mathFunctions.rpnStack[1];
-  _ep->mathFunctions.rpnStack[1] = tmp;
+  _vars->rpnSWAP();
 }
