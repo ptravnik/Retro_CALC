@@ -67,6 +67,14 @@ void MessageBox::setLabel( byte *message, bool refresh) {
   _messageRedrawRequired = true;
   updateIOM(refresh);
 }
+void MessageBox::appendLabel( byte *message, bool refresh) {
+  if( !message) return;
+  size_t i = strlen( _messageBuffer);
+  if( i>= HSCROLL_LIMIT) return; 
+  strncpy( (char *)(_messageBuffer+i), (char *)message, HSCROLL_LIMIT-i);  
+  _messageRedrawRequired = true;
+  updateIOM(refresh);
+}
 
 //
 // Sends one of the pre-coded messages

@@ -85,6 +85,8 @@ class Variables{
 
     VariableToken removeVariable( const char *name);
     VariableToken removeConstant( const char *name);
+    inline void removeVariables(){ _var_bottom = _standard_bottom;};
+    inline void removeConstants(){ _const_top = _standard_top;};
 
     VariableToken getVariable( const char *name);
     inline VariableToken getVariable( byte *name){

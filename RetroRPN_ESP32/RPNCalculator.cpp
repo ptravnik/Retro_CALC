@@ -14,6 +14,8 @@ const char RPN_StatusMessage[] PROGMEM = "RPN Ready";
 const char RPN_Error_DivZero[] PROGMEM = "Err: div 0";
 const char RPN_Error_NAN[] PROGMEM = "Err: NaN";
 const char RPN_Error_Trig[] PROGMEM = "Err: |X|>1";
+const char RPN_Error_Unknown[] PROGMEM = "Unknown:";
+const char RPN_Error_OutOfMemory[] PROGMEM = "Out of memory:";
 const char RPN_Warning_ZeroPowerZero[] PROGMEM = "Warn: 0^0";
 const char RPN_Warning_Accuracy[] PROGMEM = "Warn: Inaccurate!";
 const char RPN_Mode_Degrees[] PROGMEM = "Mode: Degrees";
@@ -33,6 +35,10 @@ const char RPN_Message_RealPart[] PROGMEM = "Real part";
 const char RPN_Message_Gain[] PROGMEM = "Gain";
 const char RPN_Message_Offset[] PROGMEM = "Offset";
 const char RPN_Message_Goff_Solution[] PROGMEM = "Y=Gain*X+Offset";
+const char RPN_Message_Stored[] PROGMEM = "Stored: ";
+const char RPN_Message_NewStored[] PROGMEM = "New: ";
+const char RPN_Message_Clear[] PROGMEM = "Clear: ";
+const char RPN_Message_ClearAll[] PROGMEM = "Cleared all";
 const char *const RPN_AMOD_Table[] PROGMEM = {
   RPN_Mode_Degrees,
   RPN_Mode_Radians,
@@ -143,6 +149,7 @@ void RPNCalculator::sendChar( byte c) {
       return;
     case _ESC_:
       _cl->processESC();
+      _mb->setLabel(RPN_StatusMessage, false);
       resetRPNLabels(true);
       return;
     default: // other chars go to command line
@@ -222,9 +229,8 @@ void RPNCalculator::processInput( bool silent) {
       _evaluateCommand();
       break;
     case _NOT_A_NUMBER_:
-      // TODO: Message
-      Serial.println("RPN: Result is NAN");
-      break;
+      _mb->setLabel( RPN_Error_NAN, true);
+      return;
     default:
       _pushQuick(_ep->numberParser.realValue());
       if( !silent){
@@ -498,6 +504,14 @@ void RPNCalculator::_evaluateString(){
     updateIOM();
     return;
   }
+  v = _vars->getConstant( _ep->nameParser.Name());
+  if( v > 0){
+    _pushQuick( _vars->realValue( v));
+    _cl->clearInput();
+    setStackRedraw();
+    updateIOM();
+    return;
+  }
   if( IsToken( _ep->nameParser.Name(), "cls", false)){
     resetRPNLabels();
     _cl->clearInput();
@@ -593,22 +607,44 @@ void RPNCalculator::_evaluateString(){
   }
   if( IsToken( _ep->_getCurrentPosition(), "#sto ", false)){
     VariableToken vt = _vars->getVariable( _cl->getInput(5));
-    if( vt == 0)
+    if( vt == 0){
       vt = _vars->placeNewVariable( _cl->getInput(5), VARTYPE_NUMBER);
+      if( vt == 0){
+        _mb->setLabel( RPN_Error_OutOfMemory);
+        return;
+      }
+      _mb->setLabel( RPN_Message_NewStored, false);
+    }
+    else{
+      _mb->setLabel( RPN_Message_Stored, false);
+    }
     _vars->setValue( vt, _vars->rpnGetStack());
+    _mb->appendLabel( _cl->getInput(5));
     _cl->clearInput();
     return;
   }
-  if( IsToken( _ep->_getCurrentPosition(), "#kill ", false)){
-    _vars->removeVariable( (char *)_cl->getInput(6));
+  if( IsToken( _ep->_getCurrentPosition(), "#clr #VARS", false)){
+    _vars->removeVariables();
+    _mb->setLabel( RPN_Message_ClearAll);
     _cl->clearInput();
     return;
   }
-  // TODO: proper message
-  if( strlen(_ep->_getCurrentPosition())>0){
-  Serial.println("Unknown command:");
-  Serial.println((char *)_ep->_getCurrentPosition());
+  if( IsToken( _ep->_getCurrentPosition(), "#clr #STACK", false)){
+    _vars->setVector( _vars->getFirstVar(), 0.0);
+    _mb->setLabel( RPN_StatusMessage, false);
+    _cl->clearInput();
+    setStackRedraw();
+    updateIOM();
+    return;
   }
+  if( IsToken( _ep->_getCurrentPosition(), "#clr ", false)){
+    _vars->removeVariable( (char *)_cl->getInput(5));
+    _mb->setLabel( RPN_Message_Clear, false);
+    _mb->appendLabel( _cl->getInput(5));
+    _cl->clearInput();
+    return;
+  }
+  _mb->setLabel( RPN_Error_Unknown, true);  
 }
 
 void RPNCalculator::_pushQuick(){

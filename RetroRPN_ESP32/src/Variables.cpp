@@ -20,17 +20,17 @@ const char _VAR_scrMessage[] PROGMEM = "scrMessage$";
 const char _VAR_rpnLabelX[] PROGMEM = "rpnLabelX$";
 const char _VAR_rpnLabelY[] PROGMEM = "rpnLabelY$";
 const char _VAR_rpnLabelZ[] PROGMEM = "rpnLabelZ$";
-const char _CON_deg[] PROGMEM = "deg";
+const char _CON_deg[] PROGMEM = "deg2";
 const char _CON_DEG[] PROGMEM = "DEG";
-const char _CON_rad[] PROGMEM = "rad";
+const char _CON_rad[] PROGMEM = "rad2";
 const char _CON_RAD[] PROGMEM = "RAD";
-const char _CON_grad[] PROGMEM = "grad";
+const char _CON_grad[] PROGMEM = "grad2";
 const char _CON_GRAD[] PROGMEM = "GRAD";
-const char _CON_pi[] PROGMEM = "pi";
+const char _CON_pi[] PROGMEM = "pi2";
 const char _CON_PI[] PROGMEM = "PI";
-const char _CON_True[] PROGMEM = "True";
+const char _CON_True[] PROGMEM = "True2";
 const char _CON_TRUE[] PROGMEM = "TRUE";
-const char _CON_False[] PROGMEM = "False";
+const char _CON_False[] PROGMEM = "False2";
 const char _CON_FALSE[] PROGMEM = "FALSE";
 
 const char SD_root2[] PROGMEM = "/";
@@ -61,27 +61,27 @@ void Variables::init(){
   rpnLabelZ = _getDataPtr( vt);
   *rpnLabelZ = _NUL_;
   _standard_bottom = _var_bottom;
+  #ifdef __DEBUG
   Serial.print( "Placed all standard variables, standard bottom: ");
   Serial.println( _standard_bottom);
-  #ifdef __DEBUG
   for( int i=0; i<_standard_bottom; i++){
     Serial.print(i);   
     Serial.print(" ");   
     Serial.println(_buffer[i], HEX);   
   }
   #endif
-  // placeNewConstantValue( _CON_True, 1.0);
-  // placeNewConstantValue( _CON_TRUE, 1.0);
-  // placeNewConstantValue( _CON_False, 0.0);
-  // placeNewConstantValue( _CON_FALSE, 0.0);
-  // placeNewConstantValue( _CON_pi, RPN_PI);
-  // placeNewConstantValue( _CON_PI, RPN_PI);
-  // placeNewConstantValue( _CON_deg, 0.0);
-  // placeNewConstantValue( _CON_DEG, 0.0);
-  // placeNewConstantValue( _CON_rad, 1.0);
-  // placeNewConstantValue( _CON_RAD, 1.0);
-  // placeNewConstantValue( _CON_grad, 2.0);
-  // placeNewConstantValue( _CON_GRAD, 2.0);
+  placeNewConstantValue( _CON_True, 1.0);
+  placeNewConstantValue( _CON_TRUE, 1.0);
+  placeNewConstantValue( _CON_False, 0.0);
+  placeNewConstantValue( _CON_FALSE, 0.0);
+  placeNewConstantValue( _CON_pi, RPN_PI);
+  placeNewConstantValue( _CON_PI, RPN_PI);
+  placeNewConstantValue( _CON_deg, 0.0);
+  placeNewConstantValue( _CON_DEG, 0.0);
+  placeNewConstantValue( _CON_rad, 1.0);
+  placeNewConstantValue( _CON_RAD, 1.0);
+  placeNewConstantValue( _CON_grad, 2.0);
+  placeNewConstantValue( _CON_GRAD, 2.0);
   _standard_top = _const_top;
 }
 

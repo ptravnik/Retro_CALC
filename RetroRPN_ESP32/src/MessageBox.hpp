@@ -31,6 +31,7 @@ class MessageBox{
     void show();
     void redraw();
     void setLabel( byte *message, bool refresh=true);
+    void appendLabel( byte *message, bool refresh=true);
     void updateIOM( bool refresh=true);
     void report( size_t message, bool refresh=true);
     void report_LCDBrightness( byte val, bool refresh=true);
@@ -39,6 +40,12 @@ class MessageBox{
     };
     inline void setLabel( const char *message, bool refresh=true){
       setLabel( (byte *)message, refresh);
+    };
+    inline void appendLabel( char *message, bool refresh=true){
+      appendLabel( (byte *)message, refresh);
+    };
+    inline void appendLabel( const char *message, bool refresh=true){
+      appendLabel( (byte *)message, refresh);
     };
     inline char *getMessageBuffer(){
       return (char *)_messageBuffer;

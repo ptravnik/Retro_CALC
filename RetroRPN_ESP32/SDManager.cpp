@@ -8,7 +8,7 @@
 
 #include "SDManager.hpp"
 
-#define __DEBUG
+//#define __DEBUG
 
 const char RPN_SaveStatusFile[] PROGMEM = "/_RPN_SaveStatus.txt";
 const char RPN_SaveStatusFile2[] PROGMEM = "/_RPN_SaveStatus.bin";
