@@ -25,12 +25,20 @@ inline bool IsSpacer(char b){
 };
 
 //
+// Returns true if an operator terminator
+//
+bool IsOperatorTerm(byte b);
+inline bool IsOperatorTerm(char b){
+  return IsOperatorTerm((byte)b);
+};
+
+//
 // Skips any blanks in the input
 //
 inline byte *ignore_Blanks( byte * ptr){
   while( IsSpacer(*ptr)) ptr++;
   return ptr;
-}
+};
 
 //
 // Returns true if a digit
@@ -47,7 +55,7 @@ inline bool IsDigit(char b){
 //
 inline bool IsKeyword(byte *str, const char *keyword){
   return strcmp((char *)str, keyword) == 0;
-}
+};
 inline bool IsOneOfKeywords(byte *str, const char **keywords, byte nkw=1);
 
 //
@@ -91,7 +99,7 @@ inline bool IsNameCharacter(byte b){
   if(IsNameStarter( b)) return true;
   if(IsDigit(b)) return true;
   return (b == _PERCENT_) || (b ==_DOLLAR_);
-}
+};
 inline bool IsNameCharacter(char b){
   if(IsNameStarter( (byte)b)) return true;
   if(IsDigit(b)) return true;
@@ -124,7 +132,7 @@ inline bool IsListTerm(char b){
 bool IsEndStatement( byte b);
 inline bool IsEndStatement( char b){
   return IsEndStatement((byte)b);
-}
+};
 
 //
 // Compares a token

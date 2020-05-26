@@ -7,10 +7,6 @@
 //////////////////////////////////////////////////////////
 
 #include "FileManager.hpp"
-#include "./src/Keywords.hpp"
-#include "./src/IOManager.hpp"
-#include "./src/LCDManager.hpp"
-#include "SDManager.hpp"
 
 //#define __DEBUG
 
@@ -60,8 +56,8 @@
 unsigned long FileManager::init(void *components[]){
   _iom = (IOManager *)components[UI_COMP_IOManager];
   _lcd = (LCDManager *)components[UI_COMP_LCDManager];
-  _sd = (SDManager *)components[UI_COMP_SDManager];
-  _ep = (ExpressionParser *)components[UI_COMP_ExpressionParser];
+  _sdm = (SDManager *)components[UI_COMP_SDManager];
+  _epar = (ExpressionParser *)components[UI_COMP_ExpressionParser];
   _io_buffer = _iom->getIOBuffer();
 
 //  _messages[0] = _messageBuffer;
@@ -97,7 +93,7 @@ void FileManager::show(){
   _iom->sendLn();
   _iom->sendStringLn( "File Manager here");
   _lcd->redraw();
-  _sd->listDir();
+  _sdm->listDir();
   delay(2000);
   nextUI = UI_RPNCALC;
 }
@@ -118,7 +114,7 @@ void FileManager::redraw() {
 //    if( !_stackRedrawRequired[i]) continue;
 //    _stackRedrawRequired[i] = false;
 //    _lcd->clearLine( j);
-//    size_t len = _ep->numberParser.stringValue(rpnStack[i], _io_buffer)-_io_buffer;
+//    size_t len = _epar->numberParser.stringValue(rpnStack[i], _io_buffer)-_io_buffer;
 //    if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
 //    _lcd->cursorTo( SCR_RIGHT-len, j);
 //    _lcd->sendString( _io_buffer);

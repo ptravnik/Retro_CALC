@@ -6,7 +6,10 @@
 //
 //////////////////////////////////////////////////////////
 
+#include <U8g2lib.h>
 #include "LCDManager.hpp"
+#include "CP1251_font.h"
+static U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, LCD_CLOCK, LCD_DATA, LCD_CS, LCD_RESET);
 
 //#define __DEBUG
 
@@ -17,8 +20,6 @@ const char *const LCD_Message_Table[] PROGMEM = {
   LCD_WelcomeMessage2
   };
 
-#include "CP1251_font.h"
-static U8G2_ST7920_128X64_F_SW_SPI u8g2(U8G2_R0, LCD_CLOCK, LCD_DATA, LCD_CS, LCD_RESET);
 
 //
 // Inits LCD display

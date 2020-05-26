@@ -7,7 +7,6 @@
 //////////////////////////////////////////////////////////
 
 #include "Utilities.hpp"
-#include "CP1251_mod.h"
 
 //#define __DEBUG
 
@@ -15,6 +14,12 @@ bool IsSpacer(byte b){
   if( b == _SP_) return true;
   if( b == _TAB_) return true;
   return false;
+}
+
+bool IsOperatorTerm(byte b){
+  const char list[] = ":";
+  if( b == _NUL_) return true;
+  return strchr(list, (char)b) != NULL;
 }
 
 bool IsNumberTerm(byte b){

@@ -9,3 +9,10 @@
 #include "Keywords.hpp"
 
 //#define __DEBUG
+
+const char _KEYWORD_REM[] PROGMEM = "REM";
+const char _KEYWORD_rem[] PROGMEM = "rem";
+
+void Keywords::init(){
+    return;
+};

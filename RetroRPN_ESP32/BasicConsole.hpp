@@ -19,7 +19,7 @@
 #define BASICCONSOLE_HPP
 
 #include "RPNCalculator.hpp"
-#include "TerminalBox.hpp"
+#include "./src/TerminalBox.hpp"
 
 class BasicConsole{
   public:
@@ -49,25 +49,23 @@ class BasicConsole{
     byte *_io_buffer;
     IOManager *_iom;
     Variables *_vars;
+    Functions *_funs;
     LCDManager *_lcd;
-    SDManager *_sd;
-    ExpressionParser *_ep;
-    CommandLine *_cl;
-    MessageBox *_mb;
+    SDManager *_sdm;
+    ExpressionParser *_epar;
+    CommandLine *_clb;
+    RPNStackBox *_rsb;
+    MessageBox *_mbox;
     RPNCalculator *_rpn;
     TerminalBox *_trm;
     void processCommand(byte c);
     void _evaluateCommand();
     void _evaluateString();
     void _checkTrigAccuracy();
-    void _swapQuick();
     void _popPartial();
     void _popPartial( double v);
-    void _pushQuick();
-    void _pushQuick(double v);
-    void _popQuick(byte start=1);
     inline void _setRedrawAndUpdateIOM( bool refresh){    
-      _rpn->setStackRedraw();
+      _rsb->setStackRedrawAll();
       updateIOM(refresh);
     };
     inline void _savePopAndUpdate( double v, bool refresh) {

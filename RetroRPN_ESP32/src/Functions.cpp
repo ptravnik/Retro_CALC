@@ -6,7 +6,7 @@
 //
 //////////////////////////////////////////////////////////
 
-#include "MathFunctions.hpp"
+#include "Functions.hpp"
 
 //#define __DEBUG
 
@@ -101,10 +101,10 @@ const char _MF_STACK[] PROGMEM = "STACK";
 const char _MF_lin2[] PROGMEM = "lin2";
 const char _MF_LIN2[] PROGMEM = "LIN2";
 
-static MathFunction VariableFunction;
-static MathFunction ConstantFunction;
+static Function VariableFunction;
+static Function ConstantFunction;
 
-void MathFunctions::init( void *components[]){
+void Functions::init( void *components[]){
   _vars = (Variables *)components[UI_COMP_Variables];
   VariableFunction.id = -1;
   ConstantFunction.id = -2;
@@ -140,15 +140,10 @@ void MathFunctions::init( void *components[]){
   _addFunction( _MF_lin2, _MF_LIN2, 1, 1); // 29
 }
 
-void MathFunctions::setAngleMode(byte m){
-  if(m != _MODE_RADIAN_ && m != _MODE_GRADIAN_) m = _MODE_DEGREES_;
-  _vars->setAngleMode (m);
-}
-
-MathFunction *MathFunctions::getFunction(byte *str){
-  MathFunction *ptr;
+Function *Functions::getFunction(byte *str){
+  Function *ptr;
   for(size_t i=0; i<NMATH_FUNCTIONS; i++){
-    ptr = _mf + i;
+    ptr = _functions + i;
     if( IsKeyword(str, ptr->name0)) return ptr;
     if( IsKeyword(str, ptr->name1)) return ptr;
   }
@@ -159,7 +154,7 @@ MathFunction *MathFunctions::getFunction(byte *str){
   return NULL; // not found
 }
 
-double *MathFunctions::Compute( MathFunction *mf, double *args){
+double *Functions::Compute( Function *mf, double *args){
   byte a = _MODE_DEGREES_;
   int iStack = 0;
   switch(mf->id){
@@ -175,10 +170,10 @@ double *MathFunctions::Compute( MathFunction *mf, double *args){
       #endif
       _rets[0] = _vars->realValue( mf->VarTag);
       break;
-    case _MF_AMODE_KW_: // amode (temporary)
-     if( 0.5 <= args[0] && args[0] < 1.5) a = _MODE_RADIAN_; 
+    case _MF_AMODE_KW_: // amode (TODO: temporary)
+      if( 0.5 <= args[0] && args[0] < 1.5) a = _MODE_RADIAN_; 
       if( 1.5 <= args[0] && args[0] < 2.5) a = _MODE_GRADIAN_; 
-      setAngleMode( a);
+      _vars->setAngleMode( a);
       break;
     case _MF_SIN_KW_:
       #ifdef __DEBUG
@@ -283,24 +278,24 @@ double *MathFunctions::Compute( MathFunction *mf, double *args){
       goff2( args);
       break;
     case _MF_LIN2_KW_:
-      _rets[0] = _gain * args[0] + _offset;
+      _rets[0] = _vars->gain[0] * args[0] + _vars->offset[0];
       break;
     default:
       break;
   }
   return _rets;
 }
-double *MathFunctions::Compute( MathFunction *mf, double arg){
+double *Functions::Compute( Function *mf, double arg){
   return Compute( mf, &arg);  
 }
-double *MathFunctions::Compute( MathFunction *mf){
+double *Functions::Compute( Function *mf){
   double arg = 0.0;
   return Compute( mf, &arg);  
 }
 
-void MathFunctions::_addFunction( const char *name0, const char *name1, byte nArgs, byte nRets, byte RPNtag){
+void Functions::_addFunction( const char *name0, const char *name1, byte nArgs, byte nRets, byte RPNtag){
   if( _id >= NMATH_FUNCTIONS) return;
-  MathFunction *tmp = _mf+_id;
+  Function *tmp = _functions+_id;
   tmp->id = _id++;
   tmp->name0 = name0;
   tmp->name1 = name1;
@@ -324,7 +319,7 @@ void MathFunctions::_addFunction( const char *name0, const char *name1, byte nAr
 //
 // Solves a quadratic equation
 //
-double *MathFunctions::quad( double *stack) {
+double *Functions::quad( double *stack) {
   // Trivial solution or no roots
   _clearRets();
   if( stack[2] == 0.0 && stack[1] == 0.0)
@@ -362,22 +357,22 @@ double *MathFunctions::quad( double *stack) {
 //
 // Solves gain-offset
 //
-double *MathFunctions::goff2( double *stack) {
+double *Functions::goff2( double *stack) {
   // Trivial solution with the same X1, X2
   _clearRets();
   double dx = stack[3] - stack[1];
   if( dx == 0.0) return _rets;
   _rets[1] = (stack[2] - stack[0])/dx;
   _rets[0] = stack[0] - _rets[1]*stack[1];
-  _gain = _rets[1];
-  _offset = _rets[0];
+  _vars->gain[0] = _rets[1];
+  _vars->offset[0] = _rets[0];
   return _rets;
 }
 
 //
 // Sets constant o variable
 //
-MathFunction *MathFunctions::_setVariable( MathFunction *f, VariableToken vt) {
+Function *Functions::_setVariable( Function *f, VariableToken vt) {
     f->name0 = _vars->getVarName( vt);
     f->name1 = f->name0;
     f->nArgs = 0;

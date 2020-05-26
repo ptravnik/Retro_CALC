@@ -27,7 +27,7 @@ unsigned long MessageBox::init(void *components[]){
   _iom = (IOManager *)components[UI_COMP_IOManager];
   _vars = (Variables *)components[UI_COMP_Variables];
   _lcd = (LCDManager *)components[UI_COMP_LCDManager];
-  _messageBuffer = _vars->scrMessage;
+  _message = _vars->scrMessage;
   setLabel( (byte *)NULL, false);
   return _iom->keepAwake();
 }
@@ -44,7 +44,7 @@ void MessageBox::redraw() {
   if( !_messageRedrawRequired) return;
   _messageRedrawRequired = false;
   _lcd->cursorTo( 1, 6);
-  _lcd->sendString( _messageBuffer);
+  _lcd->sendString( _message);
   _lcd->clearToEOL();
 }
 
@@ -53,7 +53,7 @@ void MessageBox::redraw() {
 //
 void MessageBox::updateIOM( bool refresh) {
   if( !refresh) return;
-  _iom->sendStringLn( _messageBuffer);
+  _iom->sendStringLn( _message);
 }
 
 //
@@ -61,17 +61,17 @@ void MessageBox::updateIOM( bool refresh) {
 //
 void MessageBox::setLabel( byte *message, bool refresh) {
   if( message)
-    strncpy( (char *)_messageBuffer, (char *)message, HSCROLL_LIMIT);  
+    strncpy( (char *)_message, (char *)message, HSCROLL_LIMIT);  
   else
-    convertToCP1251( _messageBuffer, MB_StatusMessage, HSCROLL_LIMIT);
+    convertToCP1251( _message, MB_StatusMessage, HSCROLL_LIMIT);
   _messageRedrawRequired = true;
   updateIOM(refresh);
 }
 void MessageBox::appendLabel( byte *message, bool refresh) {
   if( !message) return;
-  size_t i = strlen( _messageBuffer);
+  size_t i = strlen( _message);
   if( i>= HSCROLL_LIMIT) return; 
-  strncpy( (char *)(_messageBuffer+i), (char *)message, HSCROLL_LIMIT-i);  
+  strncpy( (char *)(_message+i), (char *)message, HSCROLL_LIMIT-i);  
   _messageRedrawRequired = true;
   updateIOM(refresh);
 }
@@ -87,7 +87,7 @@ void MessageBox::report( size_t message, bool refresh){
 // Reports LCD LED PWM
 //
 void MessageBox::report_LCDBrightness( byte val, bool refresh){
-  char *ptr = (char *)convertToCP1251( _messageBuffer, MB_LCDBrightness_Message, HSCROLL_LIMIT);
+  char *ptr = (char *)convertToCP1251( _message, MB_LCDBrightness_Message, HSCROLL_LIMIT);
   sprintf (ptr-1, "%d", val);
   _messageRedrawRequired = true;
   updateIOM(refresh);

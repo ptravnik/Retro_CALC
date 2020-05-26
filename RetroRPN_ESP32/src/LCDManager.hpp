@@ -27,9 +27,7 @@
 #ifndef LCDMANAGER_HPP
 #define LCDMANAGER_HPP
 
-#include "Keywords.hpp"
 #include "IOManager.hpp"
-#include <U8g2lib.h>
 
 // fade LED PIN (replace with LED_BUILTIN=2 constant for built-in LED)
 // LCD PIN controls power for LCD

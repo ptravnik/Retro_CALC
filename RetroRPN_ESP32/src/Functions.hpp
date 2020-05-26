@@ -6,20 +6,15 @@
 //
 //////////////////////////////////////////////////////////
 
-#ifndef _MATHFUNCTIONS_HPP
-#define _MATHFUNCTIONS_HPP
+#ifndef _FUNCTIONS_HPP
+#define _FUNCTIONS_HPP
 
-#include "Keywords.hpp"
 #include "Variables.hpp"
-
-#define _MODE_DEGREES_  0
-#define _MODE_RADIAN_   1 
-#define _MODE_GRADIAN_  2
 
 #define NMATH_RETURNS   3
 #define _MATH_PI_       3.14159265359
 
-struct MathFunction{
+struct Function{
   int16_t id = 0;
   const char *name0;
   const char *name1;
@@ -29,30 +24,25 @@ struct MathFunction{
   size_t VarTag = 2;
 };
 
-class MathFunctions{
+class Functions{
   public:
-    //byte angleMode = _MODE_DEGREES_;
-
     void init( void *components[]);
-    void setAngleMode(byte m);
-    MathFunction *getFunction(byte *str);
-    double *Compute( MathFunction *mf, double *args);
-    double *Compute( MathFunction *mf, double arg);
-    double *Compute( MathFunction *mf);
+    Function *getFunction(byte *str);
+    double *Compute( Function *mf, double *args);
+    double *Compute( Function *mf, double arg);
+    double *Compute( Function *mf);
     double *quad( double *args);
     double *goff2( double *args);
   private:
     Variables *_vars;
     size_t _id;
     double _rets[NMATH_RETURNS];
-    MathFunction _mf[NMATH_FUNCTIONS];
-    double _gain = 1;
-    double _offset = 0;
+    Function _functions[NMATH_FUNCTIONS];
     void _addFunction( const char *name0, const char *name1, byte nArgs, byte nRets, byte RPNtag=_RPN_COMMON_);
-    MathFunction *_setVariable( MathFunction *f, VariableToken vt);
+    Function *_setVariable( Function *f, VariableToken vt);
     inline void _clearRets(){
       for(byte i=0; i<NMATH_RETURNS; i++)_rets[i] = 0.0; 
     };
 };
 
-#endif // _MATHFUNCTIONS_HPP
+#endif // _FUNCTIONS_HPP

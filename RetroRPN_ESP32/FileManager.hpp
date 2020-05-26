@@ -9,12 +9,8 @@
 #ifndef FILEMANAGER_HPP
 #define FILEMANAGER_HPP
 
-#include <Arduino.h>
-#include "./src/Keywords.hpp"
-#include "./src/IOManager.hpp"
 #include "./src/LCDManager.hpp"
-#include "SDManager.hpp"
-#include "./src/Parser.hpp"
+#include "./src/SDManager.hpp"
 
 class FileManager{
   public:
@@ -28,8 +24,8 @@ class FileManager{
     byte *_io_buffer;
     IOManager *_iom;
     LCDManager *_lcd;
-    SDManager *_sd;
-    ExpressionParser *_ep;
+    SDManager *_sdm;
+    ExpressionParser *_epar;
 };
 
 #endif // FILEMANAGER_HPP

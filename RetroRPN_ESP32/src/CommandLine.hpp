@@ -19,8 +19,6 @@
 #ifndef COMMANDLINE_HPP
 #define COMMANDLINE_HPP
 
-#include "Keywords.hpp"
-#include "IOManager.hpp"
 #include "LCDManager.hpp"
 
 class CommandLine{

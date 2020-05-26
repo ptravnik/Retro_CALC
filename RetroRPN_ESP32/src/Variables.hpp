@@ -52,22 +52,9 @@ class Variables{
     byte *rpnLabelX;
     byte *rpnLabelY;
     byte *rpnLabelZ;
+    double *gain;
+    double *offset;
     
-    // used for quick access from the program
-    inline double rpnGetStack( byte i=0){ return _rpnStack[i];};
-    inline void rpnSetStack( double v, byte i=0){ _rpnStack[i]=v;};
-    inline double *rpnGetStackPtr(){ return _rpnStack;};
-    inline double rpnGetPreviousX(){ return *_prev;};
-    inline void rpnSetPreviousX( double v){ *_prev = v;};
-    inline byte getAngleMode(){ return *_amode;};
-    inline void setAngleMode( byte v){
-      if( v > 2) v = 0;
-      *_amode = (int64_t)v;
-    };
-    inline void rpnSavePreviousX( byte i=0){ *_prev = _rpnStack[i];};
-    inline void rpnRestorePreviousX(){ _rpnStack[0] = *_prev;};
-    inline bool rpnIsZero( byte i=0){ return _rpnStack[i] == 0.0;};
-
     void init();
     VariableToken placeNewVariable( const char *name, byte type=VARTYPE_NUMBER,
             size_t row_size = 1, size_t column_size = 1);
@@ -82,7 +69,7 @@ class Variables{
       return placeNewConstant( (const char *)name, type, row_size, column_size);
     };
     VariableToken placeNewConstantValue( const char *name, double v);
-
+    
     VariableToken removeVariable( const char *name);
     VariableToken removeConstant( const char *name);
     inline void removeVariables(){ _var_bottom = _standard_bottom;};
@@ -124,6 +111,31 @@ class Variables{
     double getConvertedAngle( double a); // converts argument to radians
     double getUnconvertedAngle( double a); // converts argument to current angle representation
     inline double getConvertedAngle(){return getConvertedAngle( _rpnStack[0]);};
+
+    // used for quick access from the program
+    inline double rpnGetStack( byte i=0){ return _rpnStack[i];};
+    inline void rpnSetStack( double v, byte i=0){ _rpnStack[i] = v;};
+    inline double *rpnGetStackPtr(){ return _rpnStack;};
+    inline double rpnGetPreviousX(){ return *_prev;};
+    inline void rpnSetPreviousX( double v){ *_prev = v;};
+    inline byte getAngleMode(){ return *_amode;};
+    inline void setAngleMode( byte m){
+      if(m != _MODE_RADIAN_ && m != _MODE_GRADIAN_) m = _MODE_DEGREES_;
+      *_amode = (int64_t)m;
+    };
+    inline void rpnSavePreviousX( byte i=0){ *_prev = _rpnStack[i];};
+    inline void rpnRestorePreviousX(){ _rpnStack[0] = *_prev;};
+    inline bool rpnIsZero( byte i=0){ return _rpnStack[i] == 0.0;};
+    inline void rpnPOP(byte start=1){
+      for(byte i=start; i<RPN_STACK; i++) _rpnStack[i-1] = _rpnStack[i];
+    };
+    inline void rpnPUSH(){
+      for(byte i=RPN_STACK-1; i>0; i--) _rpnStack[i] = _rpnStack[i-1];
+    };
+    inline void rpnPUSH( double v){
+      rpnPUSH();
+      *_rpnStack = v;
+    };
 
   private:
     double *_rpnStack = NULL;

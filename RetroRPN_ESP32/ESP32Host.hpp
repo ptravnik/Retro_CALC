@@ -29,27 +29,16 @@
 #define SCREEN_OFF_PERIOD 480000
 #define POWER_OFF_PERIOD  720000
 
-#include "./src/Keywords.hpp"
-#include "./src/Variables.hpp"
-#include "./src/MathFunctions.hpp"
-#include "./src/Parser.hpp"
-#include "./src/IOManager.hpp"
-#include "./src/LCDManager.hpp"
-#include "./src/MessageBox.hpp"
+#include "./src/Lexer.hpp"
 #include "./src/CommandLine.hpp"
-#include "./src/RPNStackBox.hpp"
-#include "TerminalBox.hpp"
-#include "SDManager.hpp"
-#include "RPNCalculator.hpp"
-#include "BasicConsole.hpp"
+#include "./src/TerminalBox.hpp"
 #include "FileManager.hpp"
+// #include "RPNCalculator.hpp"
+#include "BasicConsole.hpp"
 
 #define IO_MSG_POWER_BUTTON 0
 #define IO_MSG_INACTIVE     1
 #define IO_MSG_SHUTDOWN     2
-
-// deprecated, use INPUT_COLS and INPUT_LIMIT defined in Keywords.hpp
-//#define IO_BUFFER_LENGTH    256
 
 class ESP32Host{
   public:
@@ -64,6 +53,7 @@ class ESP32Host{
   private:
     byte _io_buffer[INPUT_COLS];
     void *_host_Components[UI_COMPONENTS_COUNT];
+    void _showAsciiSplash();
     void _checkSleepPin();
     inline void _waitUntilSleepPinHigh(){
       while( !digitalRead(POWER_DETECT_PIN))

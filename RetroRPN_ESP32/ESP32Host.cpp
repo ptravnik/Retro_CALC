@@ -11,19 +11,23 @@
 //#define __DEBUG
 
 static volatile bool PowerOffRequested = false;
-static IOManager myIO;
-static Variables myVar;
-static MathFunctions myMFun;
-static SDManager mySD;
-static LCDManager myLCD;
-static ExpressionParser myEP;
-static MessageBox myMB;
-static CommandLine myCL;
-static RPNStackBox myRPNBox;
+
+static IOManager myIOManager;
+static LCDManager myLCDManager;
+static Keywords myKeywords;
+static Variables myVariables;
+static Functions myFunctions;
+static ExpressionParser myExpressionParser;
+static Lexer myLexer;
+static SDManager mySDManager;
+static MessageBox myMessageBox;
+static CommandLine myCommandLine;
+static RPNStackBox myRPNStackBox;
 static TerminalBox myTerminalBox;
-static RPNCalculator myRPN;
-static BasicConsole myBAS;
-static FileManager myFM;
+static FileManager myFileManager;
+static RPNCalculator myRPNCalculator;
+static BasicConsole myBasicConsole;
+
 
 // Damn VSCode does not understand UTF8 !
 const char IO_WelcomeMessage0[] PROGMEM = "***********************";
@@ -59,50 +63,39 @@ void IRAM_ATTR isrPower() {
 
 unsigned long ESP32Host::init() {
   // Take timestamp
-  unsigned long initStarted = myIO.init( _io_buffer);
+  unsigned long initStarted = myIOManager.init( _io_buffer);
   
   // In order of initialization
-  _host_Components[UI_COMP_IOManager] = &myIO;
-  _host_Components[UI_COMP_Variables] = &myVar;
-  _host_Components[UI_COMP_MathFunctions] = &myMFun;
-  _host_Components[UI_COMP_LCDManager] = &myLCD;
-  _host_Components[UI_COMP_SDManager] = &mySD;
-  _host_Components[UI_COMP_ExpressionParser] = &myEP;
-  _host_Components[UI_COMP_MessageBox] = &myMB;
-  _host_Components[UI_COMP_CommandLine] = &myCL;
-  _host_Components[UI_COMP_RPNBox] = &myRPNBox;
-  _host_Components[UI_COMP_RPNCalculator] = &myRPN;
+  _host_Components[UI_COMP_IOManager] = &myIOManager;
+  _host_Components[UI_COMP_LCDManager] = &myLCDManager;
+  _host_Components[UI_COMP_Keywords] = &myKeywords;
+  _host_Components[UI_COMP_Variables] = &myVariables;
+  _host_Components[UI_COMP_Functions] = &myFunctions;
+  _host_Components[UI_COMP_ExpressionParser] = &myExpressionParser;
+  _host_Components[UI_COMP_Lexer] = &myLexer;
+  _host_Components[UI_COMP_SDManager] = &mySDManager;
+  _host_Components[UI_COMP_MessageBox] = &myMessageBox;
+  _host_Components[UI_COMP_CommandLine] = &myCommandLine;
+  _host_Components[UI_COMP_RPNBox] = &myRPNStackBox;
   _host_Components[UI_COMP_TerminalBox] = &myTerminalBox;
-  _host_Components[UI_COMP_BasicConsole] = &myBAS;
-  _host_Components[UI_COMP_FileManager] = &myFM;
+  _host_Components[UI_COMP_FileManager] = &myFileManager;
+  _host_Components[UI_COMP_RPNCalculator] = &myRPNCalculator;
+  _host_Components[UI_COMP_BasicConsole] = &myBasicConsole;
 
   // Warm-up LCD, show splash, while showing splash, do the rest
-  myLCD.init(_host_Components);
-  
-  // Show ASCII graphics
-  for(byte i=0; i<3; i++) myIO.sendLn();
-  for(byte i=0; i<3; i++)
-    myIO.sendStringUTF8Ln(IO_Message_Table[i]);
-  myIO.sendStringUTF8Ln(IO_Message_Table[0]);
-  for(byte i=0; i<3; i++) myIO.sendLn();
+  myLCDManager.init(_host_Components);
+  _showAsciiSplash();
 
-  // Captain Obvious reports the serial ports into the serial ports!
-  myIO.sendStringUTF8Ln(IO_Message_Table[3], SERIAL_ONLY);
-  if( myIO.PM_active())
-    myIO.sendStringUTF8Ln(IO_Message_Table[5], SERIAL2_ONLY);
-  else
-    myIO.sendStringUTF8Ln(IO_Message_Table[4], SERIAL_ONLY);
-
-  // Report HW keyboard
-  if(myIO.HWKeyboardConnected){
-    myIO.sendStringUTF8Ln( IO_Message_Table[6]);
-  }
+  // init BASIC components
+  myKeywords.init();
+  myVariables.init();
+  myFunctions.init(_host_Components);
+  myExpressionParser.init(_host_Components);
+  myLexer.init(_host_Components);
 
   // Init SD and check hardware
-  myVar.init();
-  myMFun.init(_host_Components);
-  mySD.init(_host_Components);
-  myIO.flashKBDLEDs();
+  mySDManager.init(_host_Components);
+  myIOManager.flashKBDLEDs();
 
   // Power management up
   pinMode(POWER_DETECT_PIN, INPUT);    // sets the digital pin for power check
@@ -111,70 +104,70 @@ unsigned long ESP32Host::init() {
   attachInterrupt( POWER_DETECT_PIN, isrPower, RISING);
 
   // Other UI components
-  myEP.init(_host_Components);
-  myMB.init(_host_Components);
-  myCL.init(_host_Components);
-  myRPNBox.init(_host_Components);
-  myRPN.init(_host_Components);
+  myMessageBox.init(_host_Components);
+  myCommandLine.init(_host_Components);
+  myRPNStackBox.init(_host_Components);
   myTerminalBox.init(_host_Components);
-  myBAS.init(_host_Components);
-  myFM.init(_host_Components);
-  mySD.loadState();
-  myLCD.waitForEndSplash( initStarted);
+  myFileManager.init(_host_Components);
+  myBasicConsole.init(_host_Components);
+  myRPNCalculator.init(_host_Components);
+  mySDManager.loadState();
+  
+  myLCDManager.waitForEndSplash( initStarted);
 
   // TODO: remember selector here
   selectUI(UI_RPNCALC);
   redraw();
-  return myIO.keepAwake(); 
+  return myIOManager.keepAwake();
 }
 
 unsigned long ESP32Host::tick() {
   _checkSleepPin();
-  mySD.tick();
-  myIO.tick();
-  myLCD.tick();
+  mySDManager.tick();
+  myIOManager.tick();
+  myLCDManager.tick();
   byte *uiRequest = NULL;
   switch(currentUI){
     case UI_RPNCALC:
-      myRPN.tick();
-      uiRequest = &(myRPN.nextUI); 
+      myRPNCalculator.tick();
+      uiRequest = &(myRPNCalculator.nextUI); 
       break;
     case UI_FILEMAN:
-      myFM.tick();
-      uiRequest = &(myFM.nextUI); 
+      myFileManager.tick();
+      uiRequest = &(myFileManager.nextUI); 
       break;
     case UI_EDITOR:
     case UI_CONSOLE:
-      myBAS.tick();
-      uiRequest = &(myBAS.nextUI); 
+      myBasicConsole.tick();
+      uiRequest = &(myBasicConsole.nextUI); 
     default:
       break; 
   }   
-  unsigned long dt = millis() - myIO.lastInput;
+  unsigned long dt = millis() - myIOManager.lastInput;
   if(dt > POWER_OFF_PERIOD){
     deepSleep( IO_MSG_INACTIVE);
-    return myIO.lastInput;
+    return myIOManager.lastInput;
   }
   if(dt > SCREEN_OFF_PERIOD){
-    myLCD.sleepOn();
-    return myIO.lastInput;
+    myLCDManager.sleepOn();
+    return myIOManager.lastInput;
   }
   if(dt > SCREEN_LED_PERIOD){
-    myLCD.LEDOff();
-    return myIO.lastInput;
+    myLCDManager.LEDOff();
+    return myIOManager.lastInput;
   }
-  if( myLCD.isAsleep){
-    myLCD.sleepOff();
+  if( myLCDManager.isAsleep){
+    myLCDManager.sleepOff();
     show();
     redraw();
-    return myIO.lastInput;
+    return myIOManager.lastInput;
   }
-  myLCD.LEDOn();
+  myLCDManager.LEDOn();
   if( uiRequest != NULL && *uiRequest != UI_UNDEFINED)
     selectUI(uiRequest);
   else
     redraw();
-  return myIO.lastInput;
+  return myIOManager.lastInput;
 }
 
 void ESP32Host::selectUI(byte *ui){
@@ -193,14 +186,14 @@ void ESP32Host::selectUI(byte ui){
 void ESP32Host::show(){
   switch(currentUI){
     case UI_RPNCALC:
-      myRPN.show();
+      myRPNCalculator.show();
       break;
     case UI_FILEMAN:
-      myFM.show();
+      myFileManager.show();
       break;
     case UI_EDITOR:
     case UI_CONSOLE:
-      myBAS.show();
+      myBasicConsole.show();
       break;
     default:
       Serial.println("UI undefined");
@@ -211,14 +204,14 @@ void ESP32Host::show(){
 void ESP32Host::redraw(){
   switch(currentUI){
     case UI_RPNCALC:
-      myRPN.redraw();
+      myRPNCalculator.redraw();
       break;
     case UI_FILEMAN:
-      myFM.redraw();
+      myFileManager.redraw();
       break;
     case UI_EDITOR:
     case UI_CONSOLE:
-      myBAS.redraw();
+      myBasicConsole.redraw();
     default:
       break; 
   }   
@@ -230,18 +223,40 @@ void ESP32Host::_checkSleepPin(){
 }
 
 void ESP32Host::deepSleep( byte msg){
-  if( msg > 0) myIO.sendStringUTF8Ln( IO_Sleep_Table[msg]);
+  if( msg > 0) myIOManager.sendStringUTF8Ln( IO_Sleep_Table[msg]);
   delay(500);
-  myLCD.sleepOn();
+  myLCDManager.sleepOn();
   // TODO add calls for saving the system state
-  mySD.saveState();
-  myRPN.saveState();
+  mySDManager.saveState();
+  myRPNCalculator.saveState();
   delay(1000); // finish card activity
-  mySD.sleepOn();
-  myIO.sleepOn(); // consoles quit the last!
+  mySDManager.sleepOn();
+  myIOManager.sleepOn(); // consoles quit the last!
   _waitUntilSleepPinHigh(); // prevent jitter
   esp_sleep_enable_ext0_wakeup( (gpio_num_t)(POWER_DETECT_PIN), 0); //1 = High, 0 = Low
-  esp_deep_sleep_start();
-  
+  esp_deep_sleep_start();  
   // it never exits from here
 }
+
+//
+// Show ASCII graphics at startup
+//
+void ESP32Host::_showAsciiSplash(){
+  for(byte i=0; i<3; i++) myIOManager.sendLn();
+  for(byte i=0; i<3; i++)
+     myIOManager.sendStringUTF8Ln(IO_Message_Table[i]);
+  myIOManager.sendStringUTF8Ln(IO_Message_Table[0]);
+  for(byte i=0; i<3; i++) myIOManager.sendLn();
+
+  // Captain Obvious reports the serial ports into the serial ports!
+  myIOManager.sendStringUTF8Ln(IO_Message_Table[3], SERIAL_ONLY);
+  if( myIOManager.PM_active())
+    myIOManager.sendStringUTF8Ln(IO_Message_Table[5], SERIAL2_ONLY);
+  else
+    myIOManager.sendStringUTF8Ln(IO_Message_Table[4], SERIAL_ONLY);
+
+  // Report HW keyboard
+  if(myIOManager.HWKeyboardConnected){
+    myIOManager.sendStringUTF8Ln( IO_Message_Table[6]);
+  }
+};

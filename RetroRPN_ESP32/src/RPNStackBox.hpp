@@ -14,15 +14,8 @@
 #ifndef RPNSTACKBOX_HPP
 #define RPNSTACKBOX_HPP
 
-#include <Arduino.h>
-#include "Keywords.hpp"
-#include "IOManager.hpp"
+#include "Parsers.hpp"
 #include "LCDManager.hpp"
-#include "Parser.hpp"
-
-#define INPUT_COLS    256
-#define INPUT_LIMIT   255
-#define HSCROLL_LIMIT  18
 
 class RPNStackBox{
   public:
@@ -38,11 +31,11 @@ class RPNStackBox{
     inline void setRPNLabel( byte label, const char *message){
       setRPNLabel( label, (byte *)message);
     };
-    inline void setStackRedraw(){
-      memset( _stackRedrawRequired, true, 3);
+    inline void setStackRedrawAll(){
+      memset( _stackRedrawRequired, true, RPNBOX_NLEVELS);
     };
-    inline void setMessageRedraw(){
-      memset( _messageRedrawRequired, true, 3);
+    inline void setLabelRedrawAll(){
+      memset( _labelRedrawRequired, true, RPNBOX_NLEVELS);
     };
     inline void setStackRedrawRequired( byte n=0){
       _stackRedrawRequired[ n] = true;
@@ -52,10 +45,10 @@ class RPNStackBox{
     IOManager *_iom;
     Variables *_vars;
     LCDManager *_lcd;
-    ExpressionParser *_ep;
-    bool _messageRedrawRequired[ 3];
-    bool _stackRedrawRequired[ 3];
-    byte *_messages[ 3];
+    ExpressionParser *_epar;
+    bool _labelRedrawRequired[ RPNBOX_NLEVELS];
+    bool _stackRedrawRequired[ RPNBOX_NLEVELS];
+    byte *_labels[ 3];
 };
 
 #endif //RPNSTACKBOX_HPP

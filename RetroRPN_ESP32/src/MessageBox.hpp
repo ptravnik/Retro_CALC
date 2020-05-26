@@ -17,9 +17,7 @@
 #ifndef MESSAGEBOX_HPP
 #define MESSAGEBOX_HPP
 
-#include "Keywords.hpp"
 #include "Variables.hpp"
-#include "IOManager.hpp"
 #include "LCDManager.hpp"
 
 #define MB_MESSAGE_LCD_On  0
@@ -48,13 +46,13 @@ class MessageBox{
       appendLabel( (byte *)message, refresh);
     };
     inline char *getMessageBuffer(){
-      return (char *)_messageBuffer;
+      return (char *)_message;
     };
   private:
     IOManager *_iom;
     Variables *_vars;
     LCDManager *_lcd;
-    byte *_messageBuffer;
+    byte *_message;
     bool _messageRedrawRequired = false;
 };
 

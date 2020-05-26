@@ -20,16 +20,10 @@
 #ifndef RPNCALCULATOR_HPP
 #define RPNCALCULATOR_HPP
 
-#include <Arduino.h>
-#include "./src/Keywords.hpp"
-#include "./src/Variables.hpp"
-#include "./src/IOManager.hpp"
-#include "./src/LCDManager.hpp"
+#include "./src/Lexer.hpp"
 #include "./src/RPNStackBox.hpp"
-#include "./src/MessageBox.hpp"
 #include "./src/CommandLine.hpp"
-#include "SDManager.hpp"
-#include "./src/Parser.hpp"
+#include "./src/SDManager.hpp"
 
 #define INPUT_COLS    256
 #define INPUT_LIMIT   255
@@ -72,31 +66,25 @@ class RPNCalculator{
     inline void setRPNLabel( byte label, const char *message, bool refresh=true){
       setRPNLabel( label, (byte *)message, refresh);
     };
-    inline void setStackRedraw(){
-      _rsb->setStackRedraw();
-    };
   private:
     byte *_io_buffer;
     IOManager *_iom;
     Variables *_vars;
+    Functions *_funs;
     LCDManager *_lcd;
-    SDManager *_sd;
-    ExpressionParser *_ep;
+    SDManager *_sdm;
+    ExpressionParser *_epar;
     RPNStackBox *_rsb;
-    MessageBox *_mb;
-    CommandLine *_cl;
+    MessageBox *_mbox;
+    CommandLine *_clb;
     void _processCommand(byte c);
     void _evaluateCommand();
     void _evaluateString();
     void _checkTrigAccuracy();
-    void _swapQuick();
     void _popPartial();
     void _popPartial( double v);
-    void _pushQuick();
-    void _pushQuick(double v);
-    void _popQuick(byte start=1);
     inline void _setRedrawAndUpdateIOM( bool refresh){    
-      setStackRedraw();
+      _rsb->setStackRedrawAll();
       updateIOM(refresh);
     };
     inline void _savePopAndUpdate( double v, bool refresh) {

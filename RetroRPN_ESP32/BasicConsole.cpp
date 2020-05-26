@@ -45,11 +45,13 @@ const char *const BAS_AMOD_Table[] PROGMEM = {
 unsigned long BasicConsole::init(void *components[]){
   _iom = (IOManager *)components[UI_COMP_IOManager];
   _vars = (Variables *)components[UI_COMP_Variables];
+  _funs = (Functions *)components[UI_COMP_Functions];
   _lcd = (LCDManager *)components[UI_COMP_LCDManager];
-  _sd = (SDManager *)components[UI_COMP_SDManager];
-  _ep = (ExpressionParser *)components[UI_COMP_ExpressionParser];
-  _cl = (CommandLine *)components[UI_COMP_CommandLine];
-  _mb = (MessageBox *)components[UI_COMP_MessageBox];
+  _sdm = (SDManager *)components[UI_COMP_SDManager];
+  _epar = (ExpressionParser *)components[UI_COMP_ExpressionParser];
+  _rsb = (RPNStackBox *)components[UI_COMP_RPNBox];
+  _clb = (CommandLine *)components[UI_COMP_CommandLine];
+  _mbox = (MessageBox *)components[UI_COMP_MessageBox];
   _rpn = (RPNCalculator *)components[UI_COMP_RPNCalculator];
   _trm = (TerminalBox *)components[UI_COMP_TerminalBox];
   _io_buffer = _iom->getIOBuffer();
@@ -67,9 +69,9 @@ void BasicConsole::show(){
   _lcd->wordWrap = false;
   _lcd->scrollLock = true;
   _lcd->clearScreen( _SP_, false);
-  _mb->setLabel(BAS_StatusMessage, false);
-  _mb->show();
-  _cl->show();
+  _mbox->setLabel(BAS_StatusMessage, false);
+  _mbox->show();
+  _clb->show();
   redraw();
 }
 
@@ -78,7 +80,7 @@ void BasicConsole::show(){
 //
 void BasicConsole::redraw() {
 //  byte lineNums[] = {6, 4, 2, 0};
-  _sd->checkSDStatus();
+  _sdm->checkSDStatus();
 //  for(byte i=0; i<4; i++){
 //    if( !_messageRedrawRequired[i]) continue;
 //    _messageRedrawRequired[i] = false;
@@ -90,13 +92,13 @@ void BasicConsole::redraw() {
 //    if( !_stackRedrawRequired[i]) continue;
 //    _stackRedrawRequired[i] = false;
 //    _lcd->clearLine( j);
-//    size_t len = _ep->numberParser.stringValue(_vars->rpnStack(i), _io_buffer)-_io_buffer;
+//    size_t len = _epar->numberParser.stringValue(_vars->rpnStack(i), _io_buffer)-_io_buffer;
 //    if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
 //    _lcd->cursorTo( SCR_RIGHT-len, j);
 //    _lcd->sendString( _io_buffer);
 //  }
-  _mb->redraw();
-  _cl->redraw();
+  _mbox->redraw();
+  _clb->redraw();
   _lcd->redraw();
 }
 
@@ -108,13 +110,13 @@ void BasicConsole::updateIOM( bool refresh) {
 //  _iom->sendLn();
 //  for( byte i=3; i>0; i--){
 //    _iom->sendStringLn( _messages[i]);
-//    size_t len = _ep->numberParser.stringValue(_vars->rpnStack(i-1), _io_buffer)-_io_buffer;
+//    size_t len = _epar->numberParser.stringValue(_vars->rpnStack(i-1), _io_buffer)-_io_buffer;
 //    if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
 //    for( byte j=0; j<SCR_RIGHT-len; j++) _iom->sendChar( ' ');
 //    _iom->sendStringUTF8Ln();
 //  }
 //  _iom->sendStringLn( _messages[0]);
-  _cl->updateIOM();
+  _clb->updateIOM();
 }
 
 //
@@ -134,8 +136,8 @@ void BasicConsole::sendChar( byte c) {
       processInput(false);
       return;
     case _UP_:
-      _cl->copyFromPrevious();
-      _cl->updateIOM();
+      _clb->copyFromPrevious();
+      _clb->updateIOM();
       return;
     case _DOWN_:
       swap();
@@ -147,11 +149,10 @@ void BasicConsole::sendChar( byte c) {
       roll();
       return;
     case _ESC_:
-      _rpn->resetRPNLabels(false);
-      _cl->processESC();
+      _clb->processESC();
       return;
     default: // other chars go to command line
-      _cl->sendChar(c);
+      _clb->sendChar(c);
       break;
   }
 }
@@ -160,7 +161,7 @@ void BasicConsole::sendChar( byte c) {
 // Silent command execution
 //
 void BasicConsole::processCommand(byte c){
-  if(_cl->isInputEmpty()){
+  if(_clb->isInputEmpty()){
     switch(c){
       case '-':
         subtract();
@@ -178,15 +179,15 @@ void BasicConsole::processCommand(byte c){
         signchange();
         return;
     default:
-      _cl->processEntry(c);
+      _clb->processEntry(c);
       break;
     }
     return;
   }
-  _ep->parse(_cl->getInput());  
-  if( _ep->result != _NOT_A_NUMBER_)
-    _pushQuick(_ep->numberParser.realValue());
-  _cl->clearInput();
+  _epar->parse(_clb->getInput());  
+  if( _epar->result != _NOT_A_NUMBER_)
+    _vars->rpnPUSH(_epar->numberParser.realValue());
+  _clb->clearInput();
   expectCommand = false;
   processCommand( c);
 }
@@ -197,16 +198,16 @@ void BasicConsole::processCommand(byte c){
 void BasicConsole::processInput( bool silent) {
   #ifdef __DEBUG
   Serial.print("Processing Input: [");
-  Serial.print( (char *)_cl->getInput());
+  Serial.print( (char *)_clb->getInput());
   Serial.println("]");
   #else
   _iom->sendLn();
   #endif
-  _cl->copyToPrevious();
-  _ep->parse(_cl->getInput()); 
-  switch(_ep->result){
+  _clb->copyToPrevious();
+  _epar->parse(_clb->getInput()); 
+  switch(_epar->result){
     case _STRING_:
-      if( _ep->lastMathFunction == NULL){
+      if( _epar->lastMathFunction == NULL){
         _evaluateString();
         return; 
       }
@@ -217,14 +218,14 @@ void BasicConsole::processInput( bool silent) {
       Serial.println("Console: Result is NAN");
       break;
     default:
-      _pushQuick(_ep->numberParser.realValue());
+      _vars->rpnPUSH(_epar->numberParser.realValue());
       if( !silent){
-        _rpn->setStackRedraw();
+        _rsb->setStackRedrawAll();
         updateIOM();
       }
       break;
   }
-  _cl->clearInput();
+  _clb->clearInput();
 }
 
 //
@@ -232,12 +233,12 @@ void BasicConsole::processInput( bool silent) {
 // 
 void BasicConsole::push(bool refresh) {
   _vars->rpnSavePreviousX();
-  _pushQuick();
+  _vars->rpnPUSH();
   _setRedrawAndUpdateIOM( refresh);
 }
 void BasicConsole::pop(bool refresh) {
   _vars->rpnSavePreviousX();
-  _popQuick();
+  _vars->rpnPOP();
   _setRedrawAndUpdateIOM( refresh);
 }
 void BasicConsole::swap(bool refresh) {
@@ -245,11 +246,11 @@ void BasicConsole::swap(bool refresh) {
   updateIOM(refresh);
 }
 void BasicConsole::roll(bool refresh) {
-  _pushQuick(_vars->rpnGetStack(RPN_STACK-1));
+  _vars->rpnPUSH(_vars->rpnGetStack(RPN_STACK-1));
   _setRedrawAndUpdateIOM( refresh);
 }
 void BasicConsole::prev(bool refresh) {
-  _pushQuick(_vars->rpnGetPreviousX());
+  _vars->rpnPUSH(_vars->rpnGetPreviousX());
   _setRedrawAndUpdateIOM( refresh);
 }
 void BasicConsole::add(bool refresh) {
@@ -263,7 +264,7 @@ void BasicConsole::multiply(bool refresh) {
 }
 void BasicConsole::divide(bool refresh) {
   if( abs(_vars->rpnGetStack()) < 1e-300){
-    _mb->setLabel(BAS_Error_DivZero);
+    _mbox->setLabel(BAS_Error_DivZero);
     _setRedrawAndUpdateIOM( refresh);
     return;    
   }
@@ -279,7 +280,7 @@ void BasicConsole::power(bool refresh) {
   //_messages
   // power zero: using "1 convention"  
   if( _vars->rpnGetStack() == 0.0){
-    _mb->setLabel( BAS_Warning_ZeroPowerZero);
+    _mbox->setLabel( BAS_Warning_ZeroPowerZero);
     _popPartial( 1.0);
     updateIOM(refresh);
     return;
@@ -292,13 +293,13 @@ void BasicConsole::power(bool refresh) {
   }
   // negative power of zero: div by zero
   if( _vars->rpnGetStack() < 0.0 && _vars->rpnIsZero(1)){
-    _mb->setLabel(BAS_Error_DivZero);
+    _mbox->setLabel(BAS_Error_DivZero);
     _setRedrawAndUpdateIOM( refresh);
     return;
   }
   double tmp = pow( _vars->rpnGetStack(1), _vars->rpnGetStack());
   if( isnan(tmp)){
-    _mb->setLabel( BAS_Error_NAN);
+    _mbox->setLabel( BAS_Error_NAN);
     _setRedrawAndUpdateIOM( refresh);
     return;    
   }
@@ -312,7 +313,7 @@ void BasicConsole::power(bool refresh) {
 void BasicConsole::_checkTrigAccuracy(){
   double tmp = abs( _vars->getConvertedAngle());
   if( tmp <= 1e+16) return;
-  _mb->setLabel( BAS_Warning_Accuracy);
+  _mbox->setLabel( BAS_Warning_Accuracy);
   Serial.println(BAS_Warning_Accuracy);
 }
 
@@ -335,16 +336,16 @@ void BasicConsole::goff2(bool refresh) {
 //
 void BasicConsole::_evaluateCommand(){
 //  #ifdef __DEBUG
-//  Serial.println((char *)_ep->lastMathFunction->name0);
+//  Serial.println((char *)_epar->lastMathFunction->name0);
 //  #endif
 //  bool doPopPartial = true;
 //  bool doUpdateIOM = true;
 //  double *return_ptr;
 //  _vars->savePrevRPN();
-//  switch(_ep->lastMathFunction->RPNtag){
+//  switch(_epar->lastMathFunction->RPNtag){
 //    case _RPN_AMODE_:
-//      _ep->mathFunctions->Compute( _ep->lastMathFunction, _ep->mathFunctions->rpnStack);
-//      _rpn->setRPNLabel( 0, BAS_AMOD_Table[_ep->mathFunctions->angleMode]);
+//      _funs->Compute( _epar->lastMathFunction, _funs->rpnStack);
+//      _rpn->setRPNLabel( 0, BAS_AMOD_Table[_funs->angleMode]);
 //      pop(true);
 //      return;
 //    case _RPN_CHECK_TRIG_:
@@ -380,10 +381,10 @@ void BasicConsole::_evaluateCommand(){
 //      return;
 //    case _RPN_SWAP_XY_:
 //      _vars->savePrevRPN(1);
-//      _swapQuick();
+//      _vars->rpnSWAP();
 //      break;
 //    case _RPN_QUICK_PUSH_:
-//      _pushQuick();
+//      _vars->rpnPUSH();
 //      break;
 //    case _RPN_SQRT_CHECK_:
 //      if( _vars->rpnStack() < 0.0){
@@ -402,10 +403,10 @@ void BasicConsole::_evaluateCommand(){
 //    default:
 //      break;
 //  }
-//  return_ptr = _ep->mathFunctions->Compute( _ep->lastMathFunction, _ep->mathFunctions->rpnStack);
-//  if( _ep->lastMathFunction->nArgs > 0) _vars->setStack(return_ptr[0]);
-//  if( doPopPartial && _ep->lastMathFunction->nArgs > 1) _popPartial();
-//  else setStackRedraw();
+//  return_ptr = _funs->Compute( _epar->lastMathFunction, _funs->rpnStack);
+//  if( _epar->lastMathFunction->nArgs > 0) _vars->setStack(return_ptr[0]);
+//  if( doPopPartial && _epar->lastMathFunction->nArgs > 1) _popPartial();
+//  else _rsb->setStackRedraw();
 //  _updateIOM(doUpdateIOM);
 }
 
@@ -414,124 +415,108 @@ void BasicConsole::_evaluateCommand(){
 //
 void BasicConsole::_evaluateString(){
   byte *ptr;
-  if( IsToken( _ep->nameParser.Name(), "cls", false)){
+  if( IsToken( _epar->nameParser.Name(), "cls", false)){
     // TODO: add screen clear
-    _rpn->resetRPNLabels( false);
-    _cl->clearInput();
+    _clb->clearInput();
     return;
   }
-  if( IsToken( _ep->nameParser.Name(), "push", false)){
+  if( IsToken( _epar->nameParser.Name(), "push", false)){
     push();
-    _cl->clearInput();
+    _clb->clearInput();
     return;
   }
-  if( IsToken( _ep->nameParser.Name(), "pop", false)){
+  if( IsToken( _epar->nameParser.Name(), "pop", false)){
     pop();
-    _cl->clearInput();
+    _clb->clearInput();
     return;
   }
-  if( IsToken( _ep->nameParser.Name(), "roll", false)){
+  if( IsToken( _epar->nameParser.Name(), "roll", false)){
     roll();
-    _cl->clearInput();
+    _clb->clearInput();
     return;
   }
-  if( IsToken( _ep->nameParser.Name(), "hex", false)){
-    ptr = _cl->getInput();
-    _ep->numberParser.stringHex( _vars->rpnGetStack(), ptr);
-    _cl->processEND();
+  if( IsToken( _epar->nameParser.Name(), "hex", false)){
+    ptr = _clb->getInput();
+    _epar->numberParser.stringHex( _vars->rpnGetStack(), ptr);
+    _clb->processEND();
     _iom->sendStringLn( ptr);
     return;
   }
-  if( IsToken( _ep->nameParser.Name(), "inj", false)){
-    _ep->numberParser.stringValue( _vars->rpnGetStack(), _io_buffer);
+  if( IsToken( _epar->nameParser.Name(), "inj", false)){
+    _epar->numberParser.stringValue( _vars->rpnGetStack(), _io_buffer);
     _iom->injectKeyboard();
-    _cl->clearInput();
+    _clb->clearInput();
     return;
   }
-  if( IsToken( _ep->nameParser.Name(), "rpn", false)){
-    _cl->copyToPrevious();
-    _cl->clearInput();
+  if( IsToken( _epar->nameParser.Name(), "rpn", false)){
+    _clb->copyToPrevious();
+    _clb->clearInput();
     nextUI = UI_RPNCALC;
     return;
   }
-  if( IsToken( _ep->nameParser.Name(), "fman", false)){
-    _cl->copyToPrevious();
-    _cl->clearInput();
+  if( IsToken( _epar->nameParser.Name(), "fman", false)){
+    _clb->copyToPrevious();
+    _clb->clearInput();
     nextUI = UI_FILEMAN;
     return;
   }
-  if( IsToken( _ep->_getCurrentPosition(), "#scr prompt ", false)){
-    _cl->copyToPrevious();
-    _mb->setLabel(_cl->getInput(12));
-    _cl->clearInput();
+  if( IsToken( _epar->_getCurrentPosition(), "#scr prompt ", false)){
+    _clb->copyToPrevious();
+    _mbox->setLabel(_clb->getInput(12));
+    _clb->clearInput();
     return;
   }
-  if( IsToken( _ep->_getCurrentPosition(), "#scr labelx ", false)){
-    _cl->copyToPrevious();
-    _rpn->setRPNLabel( 0, _cl->getInput(12));
-    _cl->clearInput();
+  if( IsToken( _epar->_getCurrentPosition(), "#scr labelx ", false)){
+    _clb->copyToPrevious();
+    _rpn->setRPNLabel( 0, _clb->getInput(12));
+    _clb->clearInput();
     return;
   }
-  if( IsToken( _ep->_getCurrentPosition(), "#scr labely ", false)){
-    _cl->copyToPrevious();
-    _rpn->setRPNLabel( 1, _cl->getInput(12));
-    _cl->clearInput();
+  if( IsToken( _epar->_getCurrentPosition(), "#scr labely ", false)){
+    _clb->copyToPrevious();
+    _rpn->setRPNLabel( 1, _clb->getInput(12));
+    _clb->clearInput();
     return;
   }
-  if( IsToken( _ep->_getCurrentPosition(), "#scr labelz ", false)){
-    _cl->copyToPrevious();
-    _rpn->setRPNLabel( 2, _cl->getInput(12));
-    _cl->clearInput();
+  if( IsToken( _epar->_getCurrentPosition(), "#scr labelz ", false)){
+    _clb->copyToPrevious();
+    _rpn->setRPNLabel( 2, _clb->getInput(12));
+    _clb->clearInput();
     return;
   }
-  if( IsToken( _ep->_getCurrentPosition(), "#scr off", false)){
-    _mb->report(MB_MESSAGE_LCD_Off);
+  if( IsToken( _epar->_getCurrentPosition(), "#scr off", false)){
+    _mbox->report(MB_MESSAGE_LCD_Off);
     _lcd->sleepOn();
-    _cl->clearInput();
+    _clb->clearInput();
     return;
   }
-  if( IsToken( _ep->_getCurrentPosition(), "#scr on", false)){
-    _mb->report(MB_MESSAGE_LCD_On);
+  if( IsToken( _epar->_getCurrentPosition(), "#scr on", false)){
+    _mbox->report(MB_MESSAGE_LCD_On);
     _lcd->sleepOff();
-    _cl->clearInput();
+    _clb->clearInput();
     return;
   }
-  if( IsToken( _ep->_getCurrentPosition(), "#scr+", false)){
+  if( IsToken( _epar->_getCurrentPosition(), "#scr+", false)){
     _lcd->changeLED( 16);
-    _mb->report_LCDBrightness( _lcd->ledBrightness);
-    _cl->clearInput();
+    _mbox->report_LCDBrightness( _lcd->ledBrightness);
+    _clb->clearInput();
     return;
   }
-  if( IsToken( _ep->_getCurrentPosition(), "#scr-", false)){
+  if( IsToken( _epar->_getCurrentPosition(), "#scr-", false)){
     _lcd->changeLED( -16);
-    _mb->report_LCDBrightness( _lcd->ledBrightness);
-    _cl->clearInput();
+    _mbox->report_LCDBrightness( _lcd->ledBrightness);
+    _clb->clearInput();
     return;
   }
   Serial.println("Unknown command:");
-  Serial.println((char *)_ep->_getCurrentPosition());
+  Serial.println((char *)_epar->_getCurrentPosition());
 }
 
-void BasicConsole::_pushQuick(){
-  for(byte i=RPN_STACK-1; i>0; i--)
-    _vars->rpnSetStack(_vars->rpnGetStack(i-1), i);
-}
-void BasicConsole::_pushQuick(double v){
-  _pushQuick();
-  _vars->rpnSetStack(v);
-}
-void BasicConsole::_popQuick(byte start){
-  for(byte i=start; i<RPN_STACK; i++)
-    _vars->rpnSetStack(_vars->rpnGetStack(i), i-1);
-}
 void BasicConsole::_popPartial() {
-  _popQuick(2);
-  _rpn->setStackRedraw();
+  _vars->rpnPOP(2);
+  _rsb->setStackRedrawAll();
 }
 void BasicConsole::_popPartial( double v) {
   _popPartial();
   _vars->rpnSetStack(v);
-}
-void BasicConsole::_swapQuick(){
-  _vars->rpnSWAP();
 }

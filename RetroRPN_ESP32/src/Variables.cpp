@@ -20,18 +20,22 @@ const char _VAR_scrMessage[] PROGMEM = "scrMessage$";
 const char _VAR_rpnLabelX[] PROGMEM = "rpnLabelX$";
 const char _VAR_rpnLabelY[] PROGMEM = "rpnLabelY$";
 const char _VAR_rpnLabelZ[] PROGMEM = "rpnLabelZ$";
-const char _CON_deg[] PROGMEM = "deg2";
+const char _VAR_Gain[] PROGMEM = "Gain";
+const char _VAR_Offset[] PROGMEM = "Offset";
+const char _CON_deg[] PROGMEM = "deg";
 const char _CON_DEG[] PROGMEM = "DEG";
-const char _CON_rad[] PROGMEM = "rad2";
+const char _CON_rad[] PROGMEM = "rad";
 const char _CON_RAD[] PROGMEM = "RAD";
-const char _CON_grad[] PROGMEM = "grad2";
+const char _CON_grad[] PROGMEM = "grad";
 const char _CON_GRAD[] PROGMEM = "GRAD";
-const char _CON_pi[] PROGMEM = "pi2";
+const char _CON_pi[] PROGMEM = "pi";
 const char _CON_PI[] PROGMEM = "PI";
-const char _CON_True[] PROGMEM = "True2";
+const char _CON_True[] PROGMEM = "True";
 const char _CON_TRUE[] PROGMEM = "TRUE";
-const char _CON_False[] PROGMEM = "False2";
+const char _CON_False[] PROGMEM = "False";
 const char _CON_FALSE[] PROGMEM = "FALSE";
+const char _CON_High[] PROGMEM = "High%";
+const char _CON_Low[] PROGMEM = "Low%";
 
 const char SD_root2[] PROGMEM = "/";
 
@@ -43,7 +47,7 @@ void Variables::init(){
   setValue( vt, 0.0);   
   _prev = (double *)_getDataPtr( vt);   
   vt = placeNewVariable( _VAR_amode, VARTYPE_NUMBER);
-  setValue( vt, 0.0);  
+  setValue( vt, _MODE_DEGREES_); 
   _amode = (int64_t *)_getDataPtr( vt);
   vt = placeNewVariable( _VAR_current_dir, VARTYPE_STRING, CURRENT_DIR_LEN+1);
   setValue( vt, SD_root2);  
@@ -60,6 +64,12 @@ void Variables::init(){
   vt = placeNewVariable( _VAR_rpnLabelZ, VARTYPE_STRING, SCR_COLS);
   rpnLabelZ = _getDataPtr( vt);
   *rpnLabelZ = _NUL_;
+  vt = placeNewVariable( _VAR_Gain, VARTYPE_NUMBER);
+  gain = (double *)_getDataPtr( vt);
+  *gain = 1.0;  
+  vt = placeNewVariable( _VAR_Offset, VARTYPE_NUMBER);
+  offset = (double *)_getDataPtr( vt);
+  *offset = 0.0;
   _standard_bottom = _var_bottom;
   #ifdef __DEBUG
   Serial.print( "Placed all standard variables, standard bottom: ");
@@ -82,6 +92,8 @@ void Variables::init(){
   placeNewConstantValue( _CON_RAD, 1.0);
   placeNewConstantValue( _CON_grad, 2.0);
   placeNewConstantValue( _CON_GRAD, 2.0);
+  placeNewConstantValue( _CON_High, 1);
+  placeNewConstantValue( _CON_Low, 0);
   _standard_top = _const_top;
 }
 
