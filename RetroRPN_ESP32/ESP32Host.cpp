@@ -88,7 +88,7 @@ unsigned long ESP32Host::init() {
 
   // init BASIC components
   myKeywords.init();
-  myVariables.init();
+  myVariables.init(_host_Components);
   myFunctions.init(_host_Components);
   myExpressionParser.init(_host_Components);
   myLexer.init(_host_Components);
@@ -149,6 +149,9 @@ unsigned long ESP32Host::tick() {
     return myIOManager.lastInput;
   }
   if(dt > SCREEN_OFF_PERIOD){
+    // TODO: check here if saving is needed
+    mySDManager.saveState();
+    myRPNCalculator.saveState();
     myLCDManager.sleepOn();
     return myIOManager.lastInput;
   }

@@ -185,7 +185,7 @@ void BasicConsole::processCommand(byte c){
     return;
   }
   _epar->parse(_clb->getInput());  
-  if( _epar->result != _NOT_A_NUMBER_)
+  if( _epar->result != _RESULT_UNDEFINED_)
     _vars->rpnPUSH(_epar->numberParser.realValue());
   _clb->clearInput();
   expectCommand = false;
@@ -206,14 +206,14 @@ void BasicConsole::processInput( bool silent) {
   _clb->copyToPrevious();
   _epar->parse(_clb->getInput()); 
   switch(_epar->result){
-    case _STRING_:
+    case _RESULT_STRING_:
       if( _epar->lastMathFunction == NULL){
         _evaluateString();
         return; 
       }
       _evaluateCommand();
       break;
-    case _NOT_A_NUMBER_:
+    case _RESULT_UNDEFINED_:
       // TODO: Message
       Serial.println("Console: Result is NAN");
       break;

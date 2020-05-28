@@ -52,9 +52,10 @@ unsigned long RPNCalculator::init(void *components[]){
   _iom = (IOManager *)components[UI_COMP_IOManager];
   _vars = (Variables *)components[UI_COMP_Variables];
   _funs = (Functions *)components[UI_COMP_Functions];
+  _epar = (ExpressionParser *)components[UI_COMP_ExpressionParser];
+  _lex = (Lexer *)components[UI_COMP_Lexer];
   _lcd = (LCDManager *)components[UI_COMP_LCDManager];
   _sdm = (SDManager *)components[UI_COMP_SDManager];
-  _epar = (ExpressionParser *)components[UI_COMP_ExpressionParser];
   _rsb = (RPNStackBox *)components[UI_COMP_RPNBox];
   _mbox = (MessageBox *)components[UI_COMP_MessageBox];
   _clb = (CommandLine *)components[UI_COMP_CommandLine];
@@ -200,12 +201,16 @@ void RPNCalculator::_processCommand(byte c){
     default:
       break;
   }
-  _epar->parse(_clb->getInput());  
-  if( _epar->result != _NOT_A_NUMBER_)
-    _vars->rpnPUSH(_epar->numberParser.realValue());
-  _clb->clearInput();
-  expectCommand = false;
-  _processCommand( c);
+  _lex->parse(_clb->getInput());
+  switch(_lex->result){
+    case _RESULT_INTEGER_  :
+    case _RESULT_REAL_     :
+      _vars->rpnPUSH(_epar->numberParser.realValue());
+    default:
+      _clb->clearInput();
+      _processCommand( c);
+      break;
+  } 
 }
 
 //
@@ -220,27 +225,30 @@ void RPNCalculator::processInput( bool silent) {
   _iom->sendLn();
   #endif
   _clb->copyToPrevious();
-  _epar->parse(_clb->getInput()); 
-  switch(_epar->result){
-    case _STRING_:
+  _lex->parse(_clb->getInput()); 
+  switch(_lex->result){
+    case _RESULT_INTEGER_:
+    case _RESULT_REAL_:
+      _vars->rpnPUSH(_epar->numberParser.realValue());
+      break;
+    case _RESULT_STRING_:
       if( _epar->lastMathFunction == NULL){
         _evaluateString();
         return; 
       }
       _evaluateCommand();
       break;
-    case _NOT_A_NUMBER_:
+    case _RESULT_UNDEFINED_:
       _mbox->setLabel( RPN_Error_NAN, true);
       return;
     default:
-      _vars->rpnPUSH(_epar->numberParser.realValue());
-      if( !silent){
-        _rsb->setStackRedrawAll();
-        updateIOM();
-      }
       break;
   }
   _clb->clearInput();
+  if( !silent){
+    _rsb->setStackRedrawAll();
+    updateIOM();
+  }
 }
 
 //

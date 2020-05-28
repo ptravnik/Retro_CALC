@@ -71,9 +71,10 @@ class RPNCalculator{
     IOManager *_iom;
     Variables *_vars;
     Functions *_funs;
+    ExpressionParser *_epar;
+    Lexer *_lex;
     LCDManager *_lcd;
     SDManager *_sdm;
-    ExpressionParser *_epar;
     RPNStackBox *_rsb;
     MessageBox *_mbox;
     CommandLine *_clb;
