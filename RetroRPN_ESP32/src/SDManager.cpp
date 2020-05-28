@@ -346,7 +346,7 @@ bool SDManager::_readDouble( void *f, double *v){
   *v = 0.0;
   _readBuffer( f);
   _epar->parse(_io_buffer);
-  if(_epar->result == _NOT_A_NUMBER_) return true;
+  if(_epar->result == _RESULT_UNDEFINED_) return true;
   *v = _epar->numberParser.realValue();
   return false;
 }

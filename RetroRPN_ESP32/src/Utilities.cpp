@@ -23,13 +23,13 @@ bool IsOperatorTerm(byte b){
 }
 
 bool IsNumberTerm(byte b){
-  const char list[] = ":;,)*+-/<=>]^%!";
+  const char list[] = "#:;,)*+-/<=>]^!";
   if( IsSpacer(b)) return true;
   return strchr(list, (char)b) != NULL;
 }
 
 bool IsNameTerm(byte b){
-  const char list[] = ":;,()*+-/<=>[]^%!";
+  const char list[] = "#:;,()*+-/<=>[]^!";
   if( IsSpacer(b)) return true;
   return strchr(list, (char)b) != NULL;
 }
@@ -56,6 +56,7 @@ bool IsEndStatement( byte b){
   if( b == _CR_) return true;
   if( b == _LF_) return true;
   if( b == ':') return true;
+  if( b == '#') return true;
   return false;
 }
 

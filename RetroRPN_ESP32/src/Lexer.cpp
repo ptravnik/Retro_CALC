@@ -8,7 +8,18 @@
 
 #include "Lexer.hpp"
 
-#define __DEBUG
+//#define __DEBUG
+
+const char LEX_Error_OutOfMemory[] PROGMEM = "Err: Out of memory";
+const char LEX_Message_VariableList[] PROGMEM = "Variables:";
+const char LEX_Message_ConstantsList[] PROGMEM = "Constants:";
+
+// add operator includes here
+#include "operator_CLEAR.hpp"
+#include "operator_CONST.hpp"
+#include "operator_LET.hpp"
+#include "operator_LIST.hpp"
+#include "operator_REM.hpp"
 
 //
 // Inits Lexer
@@ -19,26 +30,171 @@ void Lexer::init(void *components[]){
   _vars = (Variables *)components[UI_COMP_Variables];
   _funs = (Functions *)components[UI_COMP_Functions];
   _epar = (ExpressionParser *)components[UI_COMP_ExpressionParser];
- 
   //_lcd = (LCDManager *)components[UI_COMP_LCDManager];
   //_sdm = (SDManager *)components[UI_COMP_SDManager];
   //_rsb = (RPNStackBox *)components[UI_COMP_RPNBox];
-  //_mbox = (MessageBox *)components[UI_COMP_MessageBox];
+  _mbox = (MessageBox *)components[UI_COMP_MessageBox];
   //_clb = (CommandLine *)components[UI_COMP_CommandLine];
   _io_buffer = _iom->getIOBuffer();
+  _kwds->getKeywordById( _OPR_CLEAR_KW)->method = (void *)_operator_CLEAR_;
+  _kwds->getKeywordById( _OPR_CONST_KW)->method = (void *)_operator_CONST_;
+  _kwds->getKeywordById( _OPR_LET_KW)->method = (void *)_operator_LET_;
+  _kwds->getKeywordById( _OPR_LIST_KW)->method = (void *)_operator_LIST_;
+  _kwds->getKeywordById( _OPR_REM_KW)->method = (void *)_operator_REM_;
+  _kwds->getKeywordById( _OPR_REMALT_KW)->method = (void *)_operator_REM_;
 }
 
-// //
-// // Checks if the value at text position is character c
-// // Used for finding commas, new lines and such
-// //
-// bool ExpressionParser::_validate_NextCharacter( byte c){
-//   _expression_error = _expression_error || (*_parser_position != c);
-//   if( _expression_error) return true;
-//   _parser_position++;
-//   _ignore_Blanks();
-//   return false;  
-// }
+//
+// Main parsing entry for parsing a line of command or code
+// It ignores comments and separates string into operators
+//
+byte *Lexer::parse(byte *str){
+  #ifdef __DEBUG
+  Serial.print("Parsing: [");
+  Serial.print((char*)str);
+  Serial.println("]");
+  #endif
+  
+  result = _RESULT_UNDEFINED_;
+  lastKeyword = NULL;
+  lastVariable = 0;
+  _lexer_position = str;
+
+  // Quirk of standard BASIC: strings like "10 REMComment" are treated like comments
+  // TODO: decide, if this is an excessive requirement;
+  // e.g. should the user fix the program into "10 REM Comment"?
+  if( IsToken( str, "REM", false)) return _skipToEOL( str);
+
+  // if the line is a comment, consider it processed
+  _ignore_Blanks();
+  if( IsToken( str, "#", false))  return _skipToEOL( str);
+
+  //
+  // Separate substrings and process one-by-one;
+  // the operators are separated by colons (:)
+  // everything after hash (#) is a comment
+  //
+  while( *_lexer_position && *_lexer_position != '#'){
+    _parseOperator();
+    if( result == _RESULT_UNDEFINED_) break;
+    _ignore_Blanks();
+    _check_NextToken( ':');
+    _ignore_Blanks();
+  }
+  return _lexer_position; 
+}
+
+//
+// Parses one operator
+//
+void Lexer::_parseOperator(){
+  lastKeyword = NULL;
+  lastVariable = 0;
+  byte *tmpptr = _lexer_position;
+  _lexer_position = _epar->nameParser.parse(_lexer_position); // starts with a name?
+  if(_epar->nameParser.result){
+    #ifdef __DEBUG
+    Serial.print("name found: ");
+    Serial.println((char*)_epar->nameParser.Name());
+    #endif
+    lastKeyword = _kwds->getKeyword(_epar->nameParser.Name());
+    if( lastKeyword != NULL && _processKeyword()) return; // name is a function?
+    if( lastKeyword == NULL && _processVariable()) return; // name is an assignment?
+  }
+
+  // direct expression evaluation
+  _lexer_position = tmpptr;
+  #ifdef __DEBUG
+  Serial.print("Direct eval here! |");
+  Serial.println((char *)_lexer_position);
+  #endif
+  _lexer_position = _epar->parse(_lexer_position);
+  result = _epar->result;
+}
+  
+//
+// Returns true if keyword is recognized and processed
+//
+bool Lexer::_processKeyword(){
+  if( lastKeyword == NULL) return false;
+  if( lastKeyword->method == NULL) return false;
+  bool (*myOperator)(Lexer *) = (bool (*)(Lexer *))(lastKeyword->method);
+  return myOperator( this);
+}
+
+//
+// Returns true if variable is recognized and assigned
+//
+bool Lexer::_processVariable( bool asConstant){
+  byte *ptr = _lexer_position;
+  if( !_findAssignment()){ // no assignment
+    _lexer_position = ptr;
+     return false;
+  }
+  lastVariable = _vars->getOrCreate( asConstant, _epar->nameParser.Name());
+  if( lastVariable == 0){
+    _mbox->setLabel(LEX_Error_OutOfMemory);
+    _skipToNextOperator( _lexer_position);
+    return true;
+  }
+
+  // parse from assignment
+  _lexer_position = _epar->parse(_lexer_position);
+  switch( _epar->result ){
+    case _RESULT_INTEGER_:
+    case _RESULT_REAL_:
+      _vars->setValue( lastVariable, _epar->numberParser.realValue());
+      break;
+    default:
+      _vars->setValue( lastVariable, 0.0);
+      break;
+  }
+  _skipToNextOperator( _lexer_position);
+  return true;
+}
+
+//
+// Locates assignment (=); if not found returns false
+// _lexer_position is set to the next symbol after the assignment
+//
+bool Lexer::_findAssignment(){
+  _ignore_Blanks();
+  #ifdef __DEBUG
+  Serial.print("looking for assignment: ");
+  Serial.println((char*)_lexer_position);
+  #endif
+  if(*_lexer_position == '=' && _lexer_position[1] != '='){
+    _lexer_position++;
+    return true;
+    }
+  return false;
+}
+
+byte *Lexer::_skipToEOL( byte *str){
+    if( result==_RESULT_UNDEFINED_) result = _RESULT_EXECUTED_;
+    _lexer_position = str + strlen(str);
+    return _lexer_position;
+}
+
+byte *Lexer::_skipToNextOperator( byte *str){
+    if( result==_RESULT_UNDEFINED_) result = _RESULT_EXECUTED_;
+    while( *str && *str != _COLON_) str++;
+    if( *str == _COLON_) str++;
+    _lexer_position = str;
+    return _lexer_position;
+}
+
+//
+// Checks if the value at text position is character c
+// Used for finding commas, new lines and such
+//
+bool Lexer::_validate_NextCharacter( byte c){
+  bool tmp = *_lexer_position != c;
+  if( tmp) return true;
+  _lexer_position++;
+  _ignore_Blanks();
+  return false;  
+}
 
 // //
 // // Checks if the value at text position is one of operations
@@ -73,46 +229,11 @@ void Lexer::init(void *components[]){
 // //
 // bool ExpressionParser::_parse_ListMember( byte terminator){
 //   _parse_Expression_Logic();
-//   if( numberParser.result == _NOT_A_NUMBER_) return true;
+//   if( numberParser.result == _RESULT_UNDEFINED_) return true;
 //   if( _validate_NextCharacter( terminator)) return true;
 //   _ignore_Blanks();
 //   return false;
 // }
-
-//
-// Main parsing entry for parsing a line of command or code
-// It ignores comments and separates string into operators
-//
-byte *Lexer::parse(byte *str){
-   #ifdef __DEBUG
-   Serial.print("Parsing: [");
-   Serial.print((char*)str);
-   Serial.println("]");
-   #endif
-
-  //  result = _NOT_A_NUMBER_;
-  //  _expression_error = false;
-  //  _parser_position = str;
-  //  _ignore_Blanks();
-  //  byte *ptr = _bracket_Check();
-  //  if( _expression_error) return ptr;
-
-  //  // this is a kludge to test RPN screen TODO: unkludge!
-  //  if( *_parser_position == '#'){
-  //    nameParser._reset_name();
-  //    result = _STRING_;
-  //    return _parser_position; 
-  //  }
-
-  //  _parse_Expression_Logic();
-//   //_parse_Expression_NOT();
-//   //_parse_Expression_Comparison();
-//   //_parse_Expression_Add_Sub();
-//   //_parse_Expression_Mult_Div();
-//   //_parse_Expression_Power();
-//   if( _expression_error) result = _NOT_A_NUMBER_;
-//   return _parser_position;
-}
 
 // //
 // // Processes logic left to right
@@ -373,88 +494,6 @@ byte *Lexer::parse(byte *str){
 //   return _parser_position;
 // }
 
-// //
-// // Processes expression for value
-// //
-// byte *ExpressionParser::_parse_Expression_Value(){
-//   // names evaluation
-//   _ignore_Blanks();
-//   if( IsNameStarter( *_parser_position) ){
-//     _parser_position = nameParser.parse(_parser_position);
-//     if(!nameParser.result) return _parser_position;
-//     #ifdef __DEBUG
-//     Serial.print("Found keyword: ");
-//     Serial.println((char *)nameParser.Name());
-//     #endif
-//     lastMathFunction = mathFunctions->getFunction(nameParser.Name());
-//     if( lastMathFunction == NULL){
-//       #ifdef __DEBUG
-//       Serial.println("This name is indefined!");
-//       #endif
-//       result = _STRING_;
-//       return _parser_position;
-//     }
-//     #ifdef __DEBUG
-//     Serial.print("Located function: ");
-//     Serial.println(lastMathFunction->name0);
-//     #endif
-//     Function *mfptr = lastMathFunction; // could be a recursive call!
-//     double _args[3]; // kept on system stack
-//     if(_parse_FunctionArguments(lastMathFunction, _args)){
-//       result = _STRING_;
-//       return _parser_position;
-//     }
-//     #ifdef __DEBUG
-//     Serial.print("Function: ");
-//     Serial.print(mfptr->name1);
-//     for( byte i=0; i<3; i++){
-//       Serial.print(" ");
-//       Serial.print(_args[i]);
-//     }
-//     #endif    
-//     double *tmp = mathFunctions->Compute( mfptr, _args);
-//     #ifdef __DEBUG
-//     Serial.print("Computation returned: ");
-//     Serial.println(*tmp);
-//     #endif
-//     numberParser.setValue(*tmp);
-//     result = numberParser.result;
-//     return _parser_position;
-//   }
-  
-//   // Unary + and unary - by recursive calls such as 5 * -2; not sure is this should be allowed
-//   if( _check_NextToken( '+')){
-//     //Serial.println("Arrived into unary plus:");
-//     //Serial.println((const char *)_parser_position);    
-//     _parse_Expression_Logic();
-//     if(_expression_error) return _parser_position;
-//     result = numberParser.result;
-//     return _parser_position;
-//   }
-//   if( _check_NextToken( '-')){
-//     //Serial.println("Arrived into negation:");
-//     //Serial.println((const char *)_parser_position);    
-//     _parse_Expression_Logic();
-//     if(_expression_error) return _parser_position;
-//     numberParser.negate();
-//     result = numberParser.result;
-//     return _parser_position;
-//   }
-
-//   // opening bracket - evaluate inside, get a pair braket
-//   if( _check_NextToken( '(')){
-//     //Serial.println("Arrived into brackets:");
-//     //Serial.println((const char *)_parser_position);    
-//     if( _parse_ListMember( ')')) return _parser_position;
-//     result = numberParser.result;
-//     return _parser_position;
-//   }
-  
-//   // not a bracket - leftovers
-//   _parser_position = numberParser.parse(_parser_position);
-//   result = numberParser.result;
-//   return _parser_position;
-// }
 
 // bool ExpressionParser::_parse_FunctionArguments(Function *mf, double *_args){
 //   _ignore_Blanks();

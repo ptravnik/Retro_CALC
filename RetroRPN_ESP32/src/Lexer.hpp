@@ -9,19 +9,35 @@
 #ifndef _LEXER_HPP
 #define _LEXER_HPP
 
-#include "Parsers.hpp"
 #include "IOManager.hpp"
-//#include "LCDManager.hpp"
-//#include "RPNStackBox.hpp"
-//#include "MessageBox.hpp"
+#include "RPNStackBox.hpp"
+#include "MessageBox.hpp"
 //#include "CommandLine.hpp"
 //#include "SDManager.hpp"
 
 class Lexer{
   public:
-    byte result = _NOT_A_NUMBER_;
+    Keyword *lastKeyword = NULL;
+    VariableToken lastVariable = 0;
+    byte result = _RESULT_UNDEFINED_;
     void init( void *components[]);
     byte *parse( byte *str);
+
+    // Operator declarations here
+    bool operator_CLEAR();
+    bool operator_CLEAR_Program();
+    bool operator_CLEAR_Vars( bool constants);
+
+    bool operator_CONST();
+
+    bool operator_LET();
+
+    bool operator_LIST();
+    bool operator_LIST_Program();
+    bool operator_LIST_Vars( bool constants);
+
+    bool operator_REM();
+
     inline byte *_getCurrentPosition(){
       return _lexer_position;
     };
@@ -34,13 +50,19 @@ class Lexer{
     ExpressionParser *_epar;
     //LCDManager *_lcd;
     //SDManager *_sdm;
-    //RPNStackBox *_rsb;
-    //MessageBox *_mbox;
+    RPNStackBox *_rsb;
+    MessageBox *_mbox;
     //CommandLine *_clb;
 
     bool _expression_error = false;
     byte *_lexer_position;
-    byte *_next_operator;
+    void _parseOperator();
+    bool _processKeyword();
+    bool _processVariable( bool asConstant=false);
+    bool _findAssignment();
+    byte *_skipToEOL( byte *str);
+    byte *_skipToNextOperator( byte *str);
+    bool _validate_NextCharacter( byte c);
     inline void _ignore_Blanks(){
       while(IsSpacer(*_lexer_position))
         _lexer_position++;
@@ -50,19 +72,6 @@ class Lexer{
       _lexer_position++;
       return true;
     };
-    //bool _validate_NextCharacter( byte c);
-    //bool _validate_NextOperation( const char *op1);
-    //bool _validate_NextOperation( const char *op1, const char *op2);
-    //bool _parse_ListMember( byte terminator);
-    //bool _parse_FunctionArguments(Function *f, double *_args);
-    //byte *_parse_Expression_Logic();
-    //byte *_parse_Expression_NOT();
-    //byte *_parse_Expression_Comparison();
-    //byte *_parse_Expression_Add_Sub();
-    //byte *_parse_Expression_Mult_Div();
-    //byte *_parse_Expression_Power();
-    //byte *_parse_Expression_Value();
-    //byte *_bracket_Check();
 };
 
 #endif // _LEXER_HPP

@@ -55,7 +55,7 @@ class Variables{
     double *gain;
     double *offset;
     
-    void init();
+    void init( void *components[]);
     VariableToken placeNewVariable( const char *name, byte type=VARTYPE_NUMBER,
             size_t row_size = 1, size_t column_size = 1);
     inline VariableToken placeNewVariable( byte *name, byte type=VARTYPE_NUMBER,
@@ -81,11 +81,20 @@ class Variables{
     VariableToken getConstant( const char *name);
     inline VariableToken getConstant( byte *name){
       return getConstant( (const char *)name);};
+    inline bool isStandardConstant( VariableToken vt){
+      return vt>_standard_top;};
+
+    VariableToken getOrCreate( bool asConstant, byte *name, byte type=VARTYPE_NUMBER,
+      size_t row_size=1, size_t column_size=1);
+    inline VariableToken getOrCreate( bool asConstant, const char *name, byte type=VARTYPE_NUMBER,
+      size_t row_size=1, size_t column_size=1){
+      return getOrCreate( asConstant, (byte *)name, type, row_size, column_size);
+    };
 
     inline VariableToken getFirstVar(){ return 2;};
     inline VariableToken getFirstConst(){ return _const_top+2;};
-
     VariableToken getNextVar( VariableToken vt);
+
     inline byte getVarType( VariableToken vt){ return _buffer[vt-2];};
     inline byte getVarNameLength( VariableToken vt){ return _buffer[vt-1];};
     inline const char *getVarName( VariableToken vt){ return (const char *)_buffer + vt;};
@@ -138,9 +147,11 @@ class Variables{
     };
 
   private:
+    Keywords *_kwds;
     double *_rpnStack = NULL;
     double *_prev = NULL;
     int64_t *_amode = NULL;    
+    VariableToken _getNextVar( VariableToken vt);
     size_t _getVarLength( size_t nameLen, byte type=VARTYPE_NONE,
                           size_t total_size=0);
     byte *_getVarBlockPtr( VariableToken vt);

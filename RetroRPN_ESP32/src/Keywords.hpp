@@ -17,10 +17,11 @@
 #define _HUGE_POS_INTEGER_  8000000000000000000L
 #define _HUGE_NEG_INTEGER_  -8000000000000000000L
 
-#define _NOT_A_NUMBER_  0 
-#define _INTEGER_       1
-#define _REAL_          2
-#define _STRING_        3
+#define _RESULT_UNDEFINED_  0 
+#define _RESULT_INTEGER_    1
+#define _RESULT_REAL_       2
+#define _RESULT_STRING_     3
+#define _RESULT_EXECUTED_   4
 
 #define _MODE_DEGREES_  0
 #define _MODE_RADIAN_   1 
@@ -95,63 +96,76 @@
 #define _RPN_GOFF2_SOLVER 12
 #define _RPN_STACK_GET    13
 
-#define _MF_AMODE_KW_     0
-#define _MF_SIN_KW_       1
-#define _MF_COS_KW_       2
-#define _MF_TAN_KW_       3
-#define _MF_POW_KW_       4
-#define _MF_NEG_KW_       5
-#define _MF_LN_KW_        6
-#define _MF_LG_KW_        7
-#define _MF_LOG_KW_       8
-#define _MF_EXP_KW_       9
-#define _MF_SQRT_KW_      10
-#define _MF_SQ_KW_        11
-#define _MF_ROOT_KW_      12
-#define _MF_SIGN_KW_      13
-#define _MF_ABS_KW_       14
-#define _MF_INV_KW_       15
-#define _MF_RADIUS_KW_    16
-#define _MF_QUAD_KW_      17
-#define _MF_SWAP_KW_      18
-#define _MF_LCIRC_KW_     19
-#define _MF_SCIRC_KW_     20
-#define _MF_VSPHERE_KW_   21
-#define _MF_SSPHERE_KW_   22
-#define _MF_ASIN_KW_      23
-#define _MF_ACOS_KW_      24
-#define _MF_ATAN_KW_      25
-#define _MF_GOFF2_KW_     26
-#define _MF_CATH_KW_      27
-#define _MF_STACK_KW_     28
-#define _MF_LIN2_KW_      29
+#define _FUN_AMODE_KW_     0
+#define _FUN_SIN_KW_       1
+#define _FUN_COS_KW_       2
+#define _FUN_TAN_KW_       3
+#define _FUN_POW_KW_       4
+#define _FUN_NEG_KW_       5
+#define _FUN_LN_KW_        6
+#define _FUN_LG_KW_        7
+#define _FUN_LOG_KW_       8
+#define _FUN_EXP_KW_       9
+#define _FUN_SQRT_KW_      10
+#define _FUN_SQ_KW_        11
+#define _FUN_ROOT_KW_      12
+#define _FUN_SIGN_KW_      13
+#define _FUN_ABS_KW_       14
+#define _FUN_INV_KW_       15
+#define _FUN_RADIUS_KW_    16
+#define _FUN_QUAD_KW_      17
+#define _FUN_SWAP_KW_      18
+#define _FUN_LCIRC_KW_     19
+#define _FUN_SCIRC_KW_     20
+#define _FUN_VSPHERE_KW_   21
+#define _FUN_SSPHERE_KW_   22
+#define _FUN_ASIN_KW_      23
+#define _FUN_ACOS_KW_      24
+#define _FUN_ATAN_KW_      25
+#define _FUN_GOFF2_KW_     26
+#define _FUN_CATH_KW_      27
+#define _FUN_STACK_KW_     28
+#define _FUN_LIN2_KW_      29
+#define _FUNCTION_COUNT    30
 
-#define NMATH_FUNCTIONS   30
-#define RPN_STACK         20
+#define _OPR_REM_KW        0
+#define _OPR_REMALT_KW     1
+#define _OPR_CONST_KW      2
+#define _OPR_LET_KW        3
+#define _OPR_CLEAR_KW      4
+#define _OPR_VARS_KW       5
+#define _OPR_STORE_KW      6
+#define _OPR_LIST_KW       7
+#define _OPR_RESTORE_KW    8
+#define _OPR_APPEND_KW     9
+#define _OPR_DIM_KW        10
+#define _OPR_VECTOR_KW     11
+#define _OPR_MATRIX_KW     12
+#define _OPR_PROGRAM_KW    13
+#define _OPERATOR_COUNT    14
+
+#define RPN_STACK          20
 
 struct Keyword{
   int16_t id = 0;
-  const char *name0;
-  const char *name1;
+  const char *name0 = NULL;
+  const char *name1 = NULL;
+  void *method = NULL;
 };
 
 class Keywords{
   public:
+    Keyword *lastKeywordFound = NULL;
     void init();
-  //   Function *getFunction(byte *str);
-  //   double *Compute( Function *mf, double *args);
-  //   double *Compute( Function *mf, double arg);
-  //   double *Compute( Function *mf);
-  //   double *quad( double *args);
-  //   double *goff2( double *args);
+    Keyword *getKeyword( byte *str);
+    inline Keyword *getKeywordById( int16_t id){
+      return _keywords + id; 
+    };
+    byte *parse( byte *);
   private:
     size_t _id;
-    Keyword _kw[NMATH_FUNCTIONS];
-  //   void _addFunction( const char *name0, const char *name1, byte nArgs, byte nRets, byte RPNtag=_RPN_COMMON_);
-  //   Function *_setVariable( Function *f, VariableToken vt);
-  //   inline void _clearRets(){
-  //     for(byte i=0; i<NMATH_RETURNS; i++)_rets[i] = 0.0; 
-  //   };
+    Keyword _keywords[_OPERATOR_COUNT];
+    void _addKeyword( const char *name0, const char *name1, void *method = NULL);
 };
 
 #endif // _KEYWORDS_HPP

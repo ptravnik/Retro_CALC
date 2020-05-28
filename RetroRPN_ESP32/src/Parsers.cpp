@@ -13,9 +13,9 @@
 const byte _hexadigits[] PROGMEM = 
   { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'x'};
 const byte _multiplier_Prefixes[] PROGMEM = 
-  { 'f', 'p', 'n', 'u', 'm', 'c', 'd', 'k', 'M', 'G', 'T', 'P'};
+  { 'f', 'p', 'n', 'u', 'm', 'c', '%', 'd', 'k', 'M', 'G', 'T', 'P'};
 const int8_t _multiplier_Values[] PROGMEM = 
-  { -15, -12,  -9,  -6,  -3,  -2,  -1,   3,   6,   9,  12,  15};
+  { -15, -12,  -9,  -6,  -3,  -2,  -2,  -1,   3,   6,   9,  12,  15};
 const char _not_a_Number[] PROGMEM = "Not a number";
 
 //
@@ -23,9 +23,9 @@ const char _not_a_Number[] PROGMEM = "Not a number";
 //
 double NumberParser::realValue(){
   switch(result){
-    case _REAL_:
+    case _RESULT_REAL_:
       return _dValue;
-    case _INTEGER_:
+    case _RESULT_INTEGER_:
       return (double)_iValue;
     default:
       break;
@@ -34,11 +34,11 @@ double NumberParser::realValue(){
 }
 int64_t NumberParser::integerValue(){
   switch(result){
-    case _REAL_:
+    case _RESULT_REAL_:
       if( _dValue >= 8e18) return _HUGE_POS_INTEGER_;
       if( _dValue <= -8e18) return _HUGE_NEG_INTEGER_;
       return (int64_t)round( _dValue);
-    case _INTEGER_:
+    case _RESULT_INTEGER_:
       return _iValue;
     default:
       break;
@@ -48,10 +48,10 @@ int64_t NumberParser::integerValue(){
 
 void NumberParser::negate(){
   switch(result){
-    case _REAL_:
+    case _RESULT_REAL_:
       _dValue = -_dValue;
       return;
-    case _INTEGER_:
+    case _RESULT_INTEGER_:
       _iValue = -_iValue;
       return;
     default:
@@ -74,9 +74,9 @@ byte *NumberParser::stringValue( byte *ptr, byte max_len){
     max_len = _NUMBER_LENGTH_;
   }
   switch(result){
-    case _INTEGER_ :
+    case _RESULT_INTEGER_ :
       return _convertInt(ptr, max_len);
-    case _REAL_    :
+    case _RESULT_REAL_    :
       return _convertDouble(_dValue, ptr, max_len);
     default:
       strncpy( (char *)ptr, _not_a_Number, max_len);
@@ -162,7 +162,7 @@ byte *NumberParser::_convertDouble( double n, byte *ptr, byte max_len){
 
 byte *NumberParser::stringHex( double n, byte *ptr, byte max_len){
   _dValue = n;
-  result = _REAL_;
+  result = _RESULT_REAL_;
   return stringHex( ptr, max_len);
 }
 
@@ -216,7 +216,7 @@ byte *NumberParser::parse( byte *str){
   Serial.println("]");
   #endif  
   byte logical_position = 0; // 0-whole, 1-decmal, 2-exponent, 3-exp number
-  result = _NOT_A_NUMBER_;
+  result = _RESULT_UNDEFINED_;
   byte *ptr = ignore_Blanks( str);
   if( !IsDigitOrDecimal(*ptr)) return ptr;
   str = ptr;
@@ -238,7 +238,7 @@ byte *NumberParser::parse( byte *str){
   // an engineering multiplier, or number end
   switch(*ptr){
     case _NUL_:
-      result = _INTEGER_;
+      result = _RESULT_INTEGER_;
       return ptr;
     case '.':
       _processMultiplier( ++ptr, _iValue, 0);
@@ -254,7 +254,7 @@ byte *NumberParser::parse( byte *str){
       if( nExp != 0)
         return _processMultiplier( ++ptr, _iValue, nExp);
       if( !IsNumberTerm(*ptr)) return str; // parsing failed!
-      result = _INTEGER_;
+      result = _RESULT_INTEGER_;
       return ptr;   
   }
 
@@ -266,10 +266,10 @@ byte *NumberParser::parse( byte *str){
   while( logical_position == 1){
     switch(*ptr){
       case _NUL_:
-        result = _REAL_;
+        result = _RESULT_REAL_;
         return ptr;
       case '.': // second decimal point is not allowed
-        result = _NOT_A_NUMBER_;
+        result = _RESULT_UNDEFINED_;
         _dValue = 0.0;           
         return str;
       case '0':
@@ -295,7 +295,7 @@ byte *NumberParser::parse( byte *str){
         if( nExp != 0)
           return _processMultiplier( ++ptr, _dValue, nExp);
         if( !IsNumberTerm(*ptr)){
-          result = _NOT_A_NUMBER_;
+          result = _RESULT_UNDEFINED_;
           _dValue = 0.0;
           return str; // parsing failed!
         }           
@@ -322,13 +322,13 @@ byte *NumberParser::parse( byte *str){
     case '+':
       ptr++;
       if( !IsDigit(*ptr)){
-        result = _NOT_A_NUMBER_;
+        result = _RESULT_UNDEFINED_;
         _dValue = 0.0;
         return str; // parsing failed!      
       }
       break;
     default:
-      result = _NOT_A_NUMBER_;
+      result = _RESULT_UNDEFINED_;
       _dValue = 0.0;
       return str; // parsing failed!
   }
@@ -358,18 +358,18 @@ byte *NumberParser::parse( byte *str){
 }
 
 byte *NumberParser::_processMultiplier(byte *ptr, double v, int8_t mult){
-  result = _REAL_;
+  result = _RESULT_REAL_;
   _dValue = pow( 10, mult) * v;
   return ptr;  
 }
 byte *NumberParser::_processMultiplier(byte *ptr, int64_t v, int8_t mult){
-  result = _REAL_;
+  result = _RESULT_REAL_;
   _dValue = pow( 10, mult) * v;
   _iValue = 0;
   return ptr;  
 }
 int8_t NumberParser::_locateMultiplier(byte b){
-  for( byte i=0; i<12; i++){
+  for( byte i=0; i<13; i++){
     if( _multiplier_Prefixes[i] == b)
         return _multiplier_Values[i];
   }
@@ -389,7 +389,7 @@ byte *NumberParser::_parseHex( byte *str){
     _iValue = 0;
     return str;
   }
-  result = _INTEGER_;
+  result = _RESULT_INTEGER_;
   return ptr;
 }
 
@@ -428,6 +428,12 @@ byte *NameParser::parse( byte *str){
   _reset_name();
   return str;
 }
+inline byte NameParser::VarType(){
+  if( _name_position==0) return VARTYPE_NONE;
+  byte lc = _name[ _name_position-1];
+  if( lc == _DOLLAR_) return VARTYPE_STRING;
+  return VARTYPE_NUMBER;
+}
 
 //
 // Inits ExpressionParser
@@ -435,7 +441,6 @@ byte *NameParser::parse( byte *str){
 void ExpressionParser::init(void *components[]){
   _vars = (Variables *)components[UI_COMP_Variables];
   _funs = (Functions *)components[UI_COMP_Functions];
-  //mathFunctions = _funs;
 }
 
 //
@@ -483,7 +488,7 @@ bool ExpressionParser::_validate_NextOperation( const char *op1, const char *op2
 //
 bool ExpressionParser::_parse_ListMember( byte terminator){
   _parse_Expression_Logic();
-  if( numberParser.result == _NOT_A_NUMBER_) return true;
+  if( numberParser.result == _RESULT_UNDEFINED_) return true;
   if( _validate_NextCharacter( terminator)) return true;
   _ignore_Blanks();
   return false;
@@ -499,7 +504,7 @@ byte *ExpressionParser::parse(byte *str){
   Serial.println("]");
   #endif
 
-  result = _NOT_A_NUMBER_;
+  result = _RESULT_UNDEFINED_;
   _expression_error = false;
   _parser_position = str;
   _ignore_Blanks();
@@ -509,7 +514,7 @@ byte *ExpressionParser::parse(byte *str){
   // this is a kludge to test RPN screen TODO: unkludge!
   if( *_parser_position == '#'){
     nameParser._reset_name();
-    result = _STRING_;
+    result = _RESULT_STRING_;
     return _parser_position; 
   }
 
@@ -520,7 +525,7 @@ byte *ExpressionParser::parse(byte *str){
   //_parse_Expression_Add_Sub();
   //_parse_Expression_Mult_Div();
   //_parse_Expression_Power();
-  if( _expression_error) result = _NOT_A_NUMBER_;
+  if( _expression_error) result = _RESULT_UNDEFINED_;
   return _parser_position;
 }
 
@@ -736,6 +741,15 @@ byte *ExpressionParser::_parse_Expression_Mult_Div(){
       a = (double)((int64_t)a / c);
       continue;
     }
+    if( !_validate_NextOperation( "/%")){
+      ptr = _parse_Expression_Power();
+      if(_expression_error) return ptr;
+      c = numberParser.integerValue();
+      _expression_error = (a > _HUGE_POS_INTEGER_) || (a < _HUGE_NEG_INTEGER_) || (c == 0);
+      if(_expression_error) return ptr;
+      a = (double)((int64_t)a % c);
+      continue;
+    }
     if(*_parser_position == '/' && _parser_position[1] != '/') {
       _parser_position++;
       ptr = _parse_Expression_Power();
@@ -744,15 +758,6 @@ byte *ExpressionParser::_parse_Expression_Mult_Div(){
       _expression_error = (b == 0.0);
       if(_expression_error) return ptr;
       a /= b;
-      continue;
-    }
-    if( !_validate_NextOperation( "%")){
-      ptr = _parse_Expression_Power();
-      if(_expression_error) return ptr;
-      c = numberParser.integerValue();
-      _expression_error = (a > _HUGE_POS_INTEGER_) || (a < _HUGE_NEG_INTEGER_) || (c == 0);
-      if(_expression_error) return ptr;
-      a = (double)((int64_t)a % c);
       continue;
     }
     break;
@@ -801,7 +806,7 @@ byte *ExpressionParser::_parse_Expression_Value(){
       #ifdef __DEBUG
       Serial.println("This name is indefined!");
       #endif
-      result = _STRING_;
+      result = _RESULT_STRING_;
       return _parser_position;
     }
     #ifdef __DEBUG
@@ -811,7 +816,7 @@ byte *ExpressionParser::_parse_Expression_Value(){
     Function *mfptr = lastMathFunction; // could be a recursive call!
     double _args[3]; // kept on system stack
     if(_parse_FunctionArguments(lastMathFunction, _args)){
-      result = _STRING_;
+      result = _RESULT_STRING_;
       return _parser_position;
     }
     #ifdef __DEBUG
@@ -849,8 +854,6 @@ byte *ExpressionParser::_parse_Expression_Value(){
 
   // opening bracket - evaluate inside, get a pair braket
   if( _check_NextToken( '(')){
-    //Serial.println("Arrived into brackets:");
-    //Serial.println((const char *)_parser_position);    
     if( _parse_ListMember( ')')) return _parser_position;
     result = numberParser.result;
     return _parser_position;

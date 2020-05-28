@@ -19,7 +19,7 @@
 //
 class NumberParser{
   public:
-    byte result = _NOT_A_NUMBER_;
+    byte result = _RESULT_UNDEFINED_;
     byte precision = 8;
     bool force_sci = false;
     double realValue();
@@ -31,15 +31,15 @@ class NumberParser{
     byte *parse( byte *str);
     void negate();
     inline void setValue( double v){
-      result = _REAL_;
+      result = _RESULT_REAL_;
       _dValue = v;
     }
     inline void setValue( int64_t v){
-      result = _INTEGER_;
+      result = _RESULT_INTEGER_;
       _iValue = v;
     }
     inline void setValue( byte v){
-      result = _INTEGER_;
+      result = _RESULT_INTEGER_;
       _iValue = (int64_t)v;
     }
 private:
@@ -69,6 +69,7 @@ class NameParser{
       *_name = _NUL_;
       _name_position = 0;
     };
+    byte VarType();
   private:
     byte _name[_MAX_IDENTIFIER_ + 2];
     byte _name_position;
@@ -80,12 +81,11 @@ class NameParser{
 
 class ExpressionParser{
   public:
-    byte result = _NOT_A_NUMBER_;
+    byte result = _RESULT_UNDEFINED_;
     void init( void *components[]);
     byte *parse( byte *str);
     NumberParser numberParser;
     NameParser nameParser;
-    //Functions *mathFunctions;
     Function *lastMathFunction;
     inline byte *_getCurrentPosition(){
       return _parser_position;

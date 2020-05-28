@@ -37,7 +37,7 @@ class Functions{
     Variables *_vars;
     size_t _id;
     double _rets[NMATH_RETURNS];
-    Function _functions[NMATH_FUNCTIONS];
+    Function _functions[_FUNCTION_COUNT];
     void _addFunction( const char *name0, const char *name1, byte nArgs, byte nRets, byte RPNtag=_RPN_COMMON_);
     Function *_setVariable( Function *f, VariableToken vt);
     inline void _clearRets(){

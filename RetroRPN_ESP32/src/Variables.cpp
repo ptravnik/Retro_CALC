@@ -39,7 +39,8 @@ const char _CON_Low[] PROGMEM = "Low%";
 
 const char SD_root2[] PROGMEM = "/";
 
-void Variables::init(){
+void Variables::init( void *components[]){
+  _kwds = (Keywords *)components[UI_COMP_Keywords];
   VariableToken vt = placeNewVariable( _VAR_stack, VARTYPE_VECTOR, RPN_STACK);
   setVector( vt, 0.0);
   _rpnStack = (double *)_getDataPtr( vt);
@@ -139,7 +140,7 @@ VariableToken Variables::placeNewConstantValue( const char *name, double v){
 VariableToken Variables::removeVariable( const char *name){
   VariableToken vt = getVariable(name);
   if(vt < _standard_bottom) return 0; // standard cannot be deleted
-  VariableToken vt2 = getNextVar( vt);  
+  VariableToken vt2 = _getNextVar( vt);  
   byte *dest = _buffer + vt - 2;
   byte *src = _buffer + vt2 - 2;
   for( size_t i=vt2-2; i<_var_bottom; i++)
@@ -150,7 +151,7 @@ VariableToken Variables::removeVariable( const char *name){
 VariableToken Variables::removeConstant( const char *name){
   VariableToken vt = getConstant(name);
   if(vt >= _standard_top) return 0; // standard cannot be deleted
-  VariableToken vt2 = getNextVar( vt);  
+  VariableToken vt2 = _getNextVar( vt);  
   byte *dest = _buffer + vt2 - 2;
   byte *src = _buffer + vt - 2;
   for( size_t i=vt-2; i>=_const_top; i--)
@@ -178,7 +179,7 @@ VariableToken Variables::getVariable( const char *name){
     Serial.println(ptr);
     #endif
     if( strcmp( name, ptr) == 0) return vt;
-    vt = getNextVar( vt);
+    vt = _getNextVar( vt);
     if( vt == 0 || vt>=_var_bottom) break; // no more variables
     ptr = (const char*)_buffer + vt;
   }
@@ -191,14 +192,38 @@ VariableToken Variables::getConstant( const char *name){
   const char *ptr = (const char*)_buffer + vt;
   while(true){
     if( strcmp( name, ptr) == 0) return vt;
-    vt = getNextVar( vt);
+    vt = _getNextVar( vt);
     if( vt == 0 || vt>=VARIABLE_SPACE) break; // no more constants
     ptr = (const char*)_buffer + vt;
   }
   return 0;
 }
 
+//
+// Creates a variable or a constant;
+// creation of runtime variables in which the name matches one of the
+// keywords is not allowed 
+//
+VariableToken Variables::getOrCreate( bool asConstant, byte *name,
+  byte type, size_t row_size, size_t column_size){
+  if( _kwds->getKeyword( name) != NULL) return 0;
+  VariableToken vt = asConstant?
+    getConstant( name):
+    getVariable( name);
+  if( vt != 0) return vt;
+  return asConstant?
+    placeNewConstant( name, type, row_size, column_size):
+    placeNewVariable( name, type, row_size, column_size);
+}
+
 VariableToken Variables::getNextVar( VariableToken vt){
+  vt = _getNextVar( vt);
+  if (vt >= VARIABLE_SPACE) return 0;
+  if (_var_bottom < vt && vt+1 < _const_top) return 0;
+  return vt;
+}
+
+VariableToken Variables::_getNextVar( VariableToken vt){
   if( vt < 2) return 0;
   if( vt >= VARIABLE_SPACE) return 0;
   byte vtype = _buffer[vt-2];

@@ -15,6 +15,7 @@
 #define UNKNOWN_UTF8 (byte)'*'
 #define DECIMAL_PLACES  9
 #define MAXIMUM_NUMBER_LENGTH 22
+#define MAX_LINE_NUMBER    10010
 
 //
 // Returns true if a spacer
@@ -189,5 +190,14 @@ byte *convertDouble( double n, byte *buff, byte precision=8, bool force_sci=true
 // Returns a ponter to the end of converted string
 //
 byte *convert0xH( double n, byte *buff);
+
+//
+// Converts large integers into a reasonable line number
+//
+inline size_t clipLineNumber( int64_t v, size_t bottom=0){
+  if( v<bottom) return bottom;
+  if( v>MAX_LINE_NUMBER) return MAX_LINE_NUMBER;
+  return (size_t)v;
+};
 
 #endif // UTILITIES_HPP
