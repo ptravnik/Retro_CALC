@@ -139,7 +139,11 @@ VariableToken Variables::placeNewConstantValue( const char *name, double v){
 //
 VariableToken Variables::removeVariable( const char *name){
   VariableToken vt = getVariable(name);
-  if(vt < _standard_bottom) return 0; // standard cannot be deleted
+  if(vt < 2) return 0;
+  if(vt < _standard_bottom){
+    //setValue( vt, 0.0); // TODO
+    return 0; // standard vars only cleared but not deleted
+  }
   VariableToken vt2 = _getNextVar( vt);  
   byte *dest = _buffer + vt - 2;
   byte *src = _buffer + vt2 - 2;
@@ -476,4 +480,30 @@ double Variables::getConvertedAngle( double a){
 double Variables::getUnconvertedAngle( double a){
   if( isnan(a)) return a;
   return a / _angleConversions[(size_t)(*_amode)];
+}
+
+size_t Variables::getTotalSize( VariableToken vt){
+  if( getVarType( vt) == VARTYPE_NUMBER) return 1;
+  size_t *ptr = (size_t *)_getVarBlockPtr( vt);
+  return *ptr;
+}
+
+size_t Variables::getRowSize( VariableToken vt){
+  switch( getVarType( vt)){
+    case VARTYPE_NUMBER:
+      return 1;
+    case VARTYPE_STRING:
+    case VARTYPE_VECTOR:
+      return getTotalSize( vt);
+    default:
+      break;
+  }
+  size_t *ptr = (size_t *)_getVarBlockPtr( vt);
+  return ptr[1];
+}
+
+size_t Variables::getColumnSize( VariableToken vt){
+  if( getVarType( vt) != VARTYPE_MATRIX) return 1;
+  size_t *ptr = (size_t *)_getVarBlockPtr( vt);
+  return ptr[0]/ptr[1];
 }

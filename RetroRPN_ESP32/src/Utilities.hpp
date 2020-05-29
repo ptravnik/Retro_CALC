@@ -182,7 +182,7 @@ inline bool startsWithC(byte *ptr, const char *val){
 // the final zero. That is 17 characters.
 // Returns a ponter to the end of converted string.
 //
-byte *convertDouble( double n, byte *buff, byte precision=8, bool force_sci=true);
+//byte *convertDouble( double n, byte *buff, byte precision=8, bool force_sci=true);
 
 //
 // Converts a hexadecimal

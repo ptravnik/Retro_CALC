@@ -28,6 +28,12 @@ bool Lexer::operator_CLEAR(){
   Serial.println((char *)_lexer_position);
   #endif
   _ignore_Blanks();
+  if( IsToken( _lexer_position, "STACK", true) || IsToken( _lexer_position, "stack", true)){
+    _vars->rpnClearStack();
+    _rsb->setStackRedrawAll();
+    _skipToEOL( _lexer_position);
+    return true;
+  }
   _lexer_position = _kwds->parse(_lexer_position);
   if( _kwds->lastKeywordFound == NULL){
     return operator_CLEAR_Vars( false); 

@@ -12,44 +12,44 @@
 //
 // Lists programs, variables or constants
 //
-static bool _operator_LIST_( Lexer *lex){
-  return lex->operator_LIST();
+static bool _operator_LOAD_( Lexer *lex){
+  return lex->operator_LOAD();
 }
-static void _listFake( size_t lFrom, size_t lTo=MAX_LINE_NUMBER){
+static void _loadFake( size_t lFrom, size_t lTo=MAX_LINE_NUMBER){
     Serial.print("listing program form ");
     Serial.print( lFrom);
     Serial.print(" to ");
     Serial.println( lTo); 
 }
-bool Lexer::operator_LIST(){
+bool Lexer::operator_LOAD(){
   #ifdef __DEBUG
-  Serial.println("LIST called");
+  Serial.println("LOAD called");
   Serial.print("Evaluating: |");
   Serial.println((char *)_lexer_position);
   #endif
   _ignore_Blanks();
   byte *tmpptr = _kwds->parse(_lexer_position);
   if( _kwds->lastKeywordFound == NULL){
-    return operator_LIST_Program(); 
+    return operator_LOAD_Program(); 
   }
   switch(_kwds->lastKeywordFound->id){
     case _OPR_VARS_KW:
-      return operator_LIST_Vars( false);
+      return operator_LOAD_Vars( false);
     case _OPR_CONST_KW:
-      return operator_LIST_Vars( true);
+      return operator_LOAD_Vars( true);
     default:
-      break;
+    break;
   }
-  return operator_LIST_Program(); 
+  return operator_LOAD_Program(); 
 }
 
-bool Lexer::operator_LIST_Program(){
+bool Lexer::operator_LOAD_Program(){
   // TODO
-  Serial.println("LIST PROGRAM not yet implemented (Program class undefined)");
+  Serial.println("LOAD PROGRAM not yet implemented (Program class undefined)");
   byte *ptr = _epar->parse( _lexer_position);
   size_t lFrom = 0;
   if( _epar->result != _RESULT_INTEGER_){
-    _listFake( lFrom);
+    _loadFake( lFrom);
     _skipToNextOperator( _lexer_position);
     return true;
   }
@@ -59,24 +59,24 @@ bool Lexer::operator_LIST_Program(){
     lFrom = clipLineNumber(_epar->numberParser.integerValue());
   }
   if( _validate_NextCharacter( _COMMA_)){
-    _listFake( lFrom);
+    _loadFake( lFrom);
     _skipToNextOperator( _lexer_position);
     return true;
   }
   ptr = _epar->parse( _lexer_position);
   if( _epar->result == _RESULT_INTEGER_){
-    _listFake( lFrom, clipLineNumber(_epar->numberParser.integerValue(), lFrom));
+    _loadFake( lFrom, clipLineNumber(_epar->numberParser.integerValue(), lFrom));
     _skipToNextOperator( ptr);
     return true;
   }
-  _listFake( lFrom);
+  _loadFake( lFrom);
   _skipToNextOperator( ptr);
   return true;
 }
 
-bool Lexer::operator_LIST_Vars(bool constants){
+bool Lexer::operator_LOAD_Vars(bool constants){
   // TODO
-  Serial.println("LIST VARS and LIST CONST for LCD are not yet implemented!");
+  Serial.println("LOAD VARS and LOAD CONST for LCD are not yet implemented!");
   _iom->sendLn();
   _iom->sendStringUTF8Ln( constants?
       LEX_Message_ConstantsList:

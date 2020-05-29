@@ -233,7 +233,7 @@ char IOManager::_sendToHost(){
 //
 void IOManager::sendChar( byte c, byte dest, bool wait_for_host){
   // TODO: temporary backslash printing instead of backspace
-  if( c==8){
+  if( c==8 || c==127){
     if( _sendToSerial(dest)) Serial.write('\\'); 
     if( _sendToSerial2(dest)) Serial2.write('\\');
     if( wait_for_host) _wait_for_transmission(1);
@@ -241,7 +241,7 @@ void IOManager::sendChar( byte c, byte dest, bool wait_for_host){
     return;
   }  
   // speed up processing
-  if( 0<c && c<127){
+  if( c<127){
     if( _sendToSerial(dest)) Serial.write(c); 
     if( _sendToSerial2(dest)) Serial2.write(c);
     if( wait_for_host) _wait_for_transmission(1);

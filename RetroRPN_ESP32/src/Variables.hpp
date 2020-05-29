@@ -124,6 +124,9 @@ class Variables{
     // used for quick access from the program
     inline double rpnGetStack( byte i=0){ return _rpnStack[i];};
     inline void rpnSetStack( double v, byte i=0){ _rpnStack[i] = v;};
+    inline void rpnClearStack(){
+      for( byte i=0; i<RPN_STACK; i++) _rpnStack[i] = 0.0;
+    };
     inline double *rpnGetStackPtr(){ return _rpnStack;};
     inline double rpnGetPreviousX(){ return *_prev;};
     inline void rpnSetPreviousX( double v){ *_prev = v;};
@@ -145,6 +148,9 @@ class Variables{
       rpnPUSH();
       *_rpnStack = v;
     };
+    size_t getTotalSize( VariableToken vt);
+    size_t getRowSize( VariableToken vt);
+    size_t getColumnSize( VariableToken vt);
 
   private:
     Keywords *_kwds;

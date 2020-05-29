@@ -9,11 +9,11 @@
 #ifndef _LEXER_HPP
 #define _LEXER_HPP
 
-#include "IOManager.hpp"
+#include "ProgramCode.hpp"
 #include "RPNStackBox.hpp"
 #include "MessageBox.hpp"
-//#include "CommandLine.hpp"
-//#include "SDManager.hpp"
+#include "CommandLine.hpp"
+#include "SDManager.hpp"
 
 class Lexer{
   public:
@@ -36,7 +36,14 @@ class Lexer{
     bool operator_LIST_Program();
     bool operator_LIST_Vars( bool constants);
 
+    bool operator_LOAD();
+    bool operator_LOAD_Program();
+    bool operator_LOAD_Vars( bool constants);
+
     bool operator_REM();
+
+    bool operator_STORE();
+    bool operator_STORE_Vars( bool constants);
 
     inline byte *_getCurrentPosition(){
       return _lexer_position;
@@ -48,11 +55,11 @@ class Lexer{
     Variables *_vars;
     Functions *_funs;
     ExpressionParser *_epar;
-    //LCDManager *_lcd;
-    //SDManager *_sdm;
+    LCDManager *_lcd;
+    SDManager *_sdm;
     RPNStackBox *_rsb;
     MessageBox *_mbox;
-    //CommandLine *_clb;
+    CommandLine *_clb;
 
     bool _expression_error = false;
     byte *_lexer_position;

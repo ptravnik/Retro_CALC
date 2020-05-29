@@ -15,6 +15,7 @@
 
 const char RPN_SaveStatusFile[] PROGMEM = "/_RPN_SaveStatus.txt";
 const char RPN_SaveStatusFile2[] PROGMEM = "/_RPN_SaveStatus.bin";
+const char RPN_SaveConstantsFile[] PROGMEM = "/_RPN_Constants.txt";
 
 const char SD_Message0[] PROGMEM = "+ SD inserted";
 const char SD_Message1[] PROGMEM = "+ SD removed";
@@ -23,6 +24,7 @@ const char SD_Message3[] PROGMEM = "+ SD mount failed";
 const char SD_Message4[] PROGMEM = "+ SD size: %llu MB";
 const char SD_Message_Mounted[] PROGMEM = "SD mounted";
 const char SD_Message_Removed[] PROGMEM = "SD removed";
+const char SD_Error_WriteFailed[] PROGMEM = "Err: SD failure";
 const char *const SD_Message_Table[] PROGMEM = {
   SD_Message0,
   SD_Message1,
@@ -31,6 +33,7 @@ const char *const SD_Message_Table[] PROGMEM = {
   SD_Message4
   };
 const char SD_root[] PROGMEM = "/";
+const char ConstantFileFormat[] PROGMEM = "%05d CONST ";
 
 //
 // Timer to check the SD status
@@ -199,6 +202,37 @@ void SDManager::saveState(){
   #else
   file.write( _vars->_buffer, _vars->_var_bottom);
   #endif
+  file.close();
+}
+
+void SDManager::storeVariables(){
+
+}
+
+void SDManager::storeConstants(){
+  if(!SDInserted) return;
+  if(!SDMounted) return;
+  File file = SD.open( RPN_SaveConstantsFile, FILE_WRITE);
+  if(!file){
+    #ifdef __DEBUG
+    Serial.println("Failed to open constants file for writing");
+    #endif
+    _mbox->setLabel(SD_Error_WriteFailed);
+    return;
+  }
+  VariableToken vt = _vars->getFirstConst();
+  size_t lineNumber = 10;
+  char *ptr = (char *)_io_buffer;
+  int offset, end_point;
+  #ifdef __DEBUG
+  Serial.println("Saving constants:");
+  #endif
+  while( !_vars->isStandardConstant( vt)){
+    _writeVariable( &file, ConstantFileFormat, lineNumber, vt);
+    vt = _vars->getNextVar( vt);
+    if( !vt) break;
+    lineNumber += 10;
+  }
   file.close();
 }
 
@@ -378,6 +412,67 @@ bool SDManager::_writeString( void *f, byte *v){
     if( !file->print(buff)) break;
   }
   return file->print("\r\n") != 2;
+}
+
+size_t SDManager::_writeVariable(void *f, const char *fmt, size_t lineNumber, VariableToken vt){
+  File *file = (File *)f;
+  char *ptr = (char *)_io_buffer;
+  int offset = snprintf ( ptr, INPUT_COLS, fmt, lineNumber);
+  offset = convertToUTF8( ptr + offset, (byte *)_vars->getVarName( vt), INPUT_COLS-offset) - ptr;
+  int end_point = offset;
+  size_t xsize, ysize; 
+  switch( _vars->getVarType(vt)){
+    case VARTYPE_NUMBER:
+      offset = end_point + snprintf ( ptr + end_point, INPUT_COLS-end_point, " = ");
+      offset = _epar->numberParser.stringValue( _vars->realValue(vt), _io_buffer + offset, INPUT_COLS-end_point) - _io_buffer;
+      snprintf ( ptr + offset, INPUT_COLS-offset, "\r\n");
+      file->print(ptr); 
+      #ifdef __DEBUG
+      Serial.println( ptr);
+      #endif
+      return lineNumber + PROGLINE_INCREMENT;
+    case VARTYPE_VECTOR:
+      xsize = _vars->getRowSize( vt);
+      for( size_t i; i<xsize; i++){
+        offset = end_point + snprintf ( ptr + end_point, INPUT_COLS-end_point, "[%d] = ", i);
+        offset = _epar->numberParser.stringValue( _vars->realValue(vt, i, 0), _io_buffer + offset, INPUT_COLS-end_point) - _io_buffer;
+        snprintf ( ptr + offset, INPUT_COLS-offset, "\r\n");
+        file->print(ptr);
+        lineNumber += PROGLINE_INCREMENT; 
+        #ifdef __DEBUG
+        Serial.println( ptr);
+        #endif
+      }
+      return lineNumber;
+    case  VARTYPE_MATRIX:
+      xsize = _vars->getRowSize( vt);
+      ysize = _vars->getColumnSize( vt);
+      for( size_t j; j<ysize; j++){
+        for( size_t i; i<xsize; i++){
+          offset = end_point + snprintf ( ptr + end_point, INPUT_COLS-end_point, "[%d,%d] = ", j, i);
+          offset = _epar->numberParser.stringValue( _vars->realValue(vt, i, j), _io_buffer + offset, INPUT_COLS-end_point) - _io_buffer;
+          snprintf ( ptr + offset, INPUT_COLS-offset, "\r\n");
+          file->print(ptr);
+          lineNumber += PROGLINE_INCREMENT; 
+          #ifdef __DEBUG
+          Serial.println( ptr);
+          #endif
+        }
+      }
+      return lineNumber;
+    case  VARTYPE_STRING:
+      offset = end_point + snprintf ( ptr + end_point, INPUT_COLS-end_point, " = \"");
+      offset = convertToUTF8( ptr+offset, _vars->stringValue(vt), INPUT_COLS-offset) - ptr;
+      snprintf ( ptr + offset, INPUT_COLS-offset, "\"\r\n");
+      file->print(ptr);
+      #ifdef __DEBUG
+      Serial.println( ptr);
+      #endif
+      return lineNumber + PROGLINE_INCREMENT;
+    default:
+      break;
+    }
+    return lineNumber;
 }
 
 //void appendFile(fs::FS &fs, const char * path, const char * message){

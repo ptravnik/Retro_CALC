@@ -33,6 +33,7 @@
 
 #define SD_CARD_OUT          255
 #define SD_CARD_NOT_MOUNTED  254
+#define PROGLINE_INCREMENT    10
 
 class SDManager{
   public:
@@ -51,6 +52,8 @@ class SDManager{
     void sleepOff();
     void loadState();
     void saveState();
+    void storeVariables();
+    void storeConstants();
     void listDir();
     void readFile( const char * path);
     void writeFile( const char * path, const char * message);
@@ -78,6 +81,7 @@ class SDManager{
     bool _writeDouble( void *f, double v);
     bool _readString( void *f, byte *buff, size_t limit);
     bool _writeString( void *f, byte *v);
+    size_t _writeVariable(void *f, const char *fmt, size_t lineNumber, VariableToken vt);
 };
 
 #endif // SDMANAGER_HPP

@@ -632,27 +632,6 @@ void RPNCalculator::_evaluateString(){
     _clb->clearInput();
     return;
   }
-  if( IsToken( _epar->_getCurrentPosition(), "#clr #VARS", false)){
-    _vars->removeVariables();
-    _mbox->setLabel( RPN_Message_ClearAll);
-    _clb->clearInput();
-    return;
-  }
-  if( IsToken( _epar->_getCurrentPosition(), "#clr #STACK", false)){
-    _vars->setVector( _vars->getFirstVar(), 0.0);
-    _mbox->setLabel( RPN_StatusMessage, false);
-    _clb->clearInput();
-    _rsb->setStackRedrawAll();
-    updateIOM();
-    return;
-  }
-  if( IsToken( _epar->_getCurrentPosition(), "#clr ", false)){
-    _vars->removeVariable( (char *)_clb->getInput(5));
-    _mbox->setLabel( RPN_Message_Clear, false);
-    _mbox->appendLabel( _clb->getInput(5));
-    _clb->clearInput();
-    return;
-  }
   _mbox->setLabel( RPN_Error_Unknown, true);  
 }
 

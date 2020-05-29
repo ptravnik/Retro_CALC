@@ -51,6 +51,18 @@ const char _OPR_matrix[] PROGMEM = "matrix";
 //#define _OPR_PROGRAM_KW    13
 const char _OPR_PROGRAM[] PROGMEM = "PROGRAM";
 const char _OPR_program[] PROGMEM = "program";
+//#define _OPR_NEW_KW    14
+const char _OPR_NEW[] PROGMEM = "NEW";
+const char _OPR_new[] PROGMEM = "new";
+//#define _OPR_LOAD_KW    15
+const char _OPR_LOAD[] PROGMEM = "LOAD";
+const char _OPR_load[] PROGMEM = "load";
+//#define _OPR_SAVE_KW    16
+const char _OPR_SAVE[] PROGMEM = "SAVE";
+const char _OPR_save[] PROGMEM = "save";
+//#define _OPR_CHAIN_KW    17
+const char _OPR_CHAIN[] PROGMEM = "CHAIN";
+const char _OPR_chain[] PROGMEM = "chain";
 
 void Keywords::init(){
     _addKeyword( _OPR_REM, _OPR_rem);           // 0
@@ -67,7 +79,11 @@ void Keywords::init(){
     _addKeyword( _OPR_VECTOR, _OPR_vector);     // 11
     _addKeyword( _OPR_MATRIX, _OPR_matrix);     // 12
     _addKeyword( _OPR_PROGRAM, _OPR_program);   // 13
-    //_addKeyword( Add here, Add here);         // 14
+    _addKeyword( _OPR_NEW, _OPR_new);           // 14
+    _addKeyword( _OPR_LOAD, _OPR_load);         // 15
+    _addKeyword( _OPR_SAVE, _OPR_save);         // 16
+    _addKeyword( _OPR_CHAIN, _OPR_chain);       // 17
+    //_addKeyword( Add here, Add here);         // 18
 };
 
 Keyword *Keywords::getKeyword(byte *str){

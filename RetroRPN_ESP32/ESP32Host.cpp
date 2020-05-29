@@ -18,6 +18,7 @@ static Keywords myKeywords;
 static Variables myVariables;
 static Functions myFunctions;
 static ExpressionParser myExpressionParser;
+static ProgramCode myProgramCode;
 static Lexer myLexer;
 static SDManager mySDManager;
 static MessageBox myMessageBox;
@@ -72,6 +73,7 @@ unsigned long ESP32Host::init() {
   _host_Components[UI_COMP_Variables] = &myVariables;
   _host_Components[UI_COMP_Functions] = &myFunctions;
   _host_Components[UI_COMP_ExpressionParser] = &myExpressionParser;
+  _host_Components[UI_COMP_ProgramCode] = &myProgramCode;
   _host_Components[UI_COMP_Lexer] = &myLexer;
   _host_Components[UI_COMP_SDManager] = &mySDManager;
   _host_Components[UI_COMP_MessageBox] = &myMessageBox;
@@ -91,6 +93,7 @@ unsigned long ESP32Host::init() {
   myVariables.init(_host_Components);
   myFunctions.init(_host_Components);
   myExpressionParser.init(_host_Components);
+  myProgramCode.init(_host_Components);
   myLexer.init(_host_Components);
 
   // Init SD and check hardware

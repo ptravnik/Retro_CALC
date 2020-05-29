@@ -13,13 +13,16 @@
 const char LEX_Error_OutOfMemory[] PROGMEM = "Err: Out of memory";
 const char LEX_Message_VariableList[] PROGMEM = "Variables:";
 const char LEX_Message_ConstantsList[] PROGMEM = "Constants:";
+const char LEX_Message_Saved[] PROGMEM = "Saved";
 
 // add operator includes here
 #include "operator_CLEAR.hpp"
 #include "operator_CONST.hpp"
 #include "operator_LET.hpp"
 #include "operator_LIST.hpp"
+#include "operator_LOAD.hpp"
 #include "operator_REM.hpp"
+#include "operator_STORE.hpp"
 
 //
 // Inits Lexer
@@ -30,11 +33,11 @@ void Lexer::init(void *components[]){
   _vars = (Variables *)components[UI_COMP_Variables];
   _funs = (Functions *)components[UI_COMP_Functions];
   _epar = (ExpressionParser *)components[UI_COMP_ExpressionParser];
-  //_lcd = (LCDManager *)components[UI_COMP_LCDManager];
-  //_sdm = (SDManager *)components[UI_COMP_SDManager];
-  //_rsb = (RPNStackBox *)components[UI_COMP_RPNBox];
+  _lcd = (LCDManager *)components[UI_COMP_LCDManager];
+  _sdm = (SDManager *)components[UI_COMP_SDManager];
+  _rsb = (RPNStackBox *)components[UI_COMP_RPNBox];
   _mbox = (MessageBox *)components[UI_COMP_MessageBox];
-  //_clb = (CommandLine *)components[UI_COMP_CommandLine];
+  _clb = (CommandLine *)components[UI_COMP_CommandLine];
   _io_buffer = _iom->getIOBuffer();
   _kwds->getKeywordById( _OPR_CLEAR_KW)->method = (void *)_operator_CLEAR_;
   _kwds->getKeywordById( _OPR_CONST_KW)->method = (void *)_operator_CONST_;
@@ -42,6 +45,7 @@ void Lexer::init(void *components[]){
   _kwds->getKeywordById( _OPR_LIST_KW)->method = (void *)_operator_LIST_;
   _kwds->getKeywordById( _OPR_REM_KW)->method = (void *)_operator_REM_;
   _kwds->getKeywordById( _OPR_REMALT_KW)->method = (void *)_operator_REM_;
+  _kwds->getKeywordById( _OPR_STORE_KW)->method = (void *)_operator_STORE_;
 }
 
 //

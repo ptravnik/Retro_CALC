@@ -57,16 +57,17 @@
 #define UI_COMP_Variables         3
 #define UI_COMP_Functions         4
 #define UI_COMP_ExpressionParser  5
-#define UI_COMP_Lexer             6
-#define UI_COMP_SDManager         7
-#define UI_COMP_MessageBox        8
-#define UI_COMP_CommandLine       9
-#define UI_COMP_RPNBox           10
-#define UI_COMP_TerminalBox      11
-#define UI_COMP_FileManager      12
-#define UI_COMP_RPNCalculator    13
-#define UI_COMP_BasicConsole     14
-#define UI_COMPONENTS_COUNT      15
+#define UI_COMP_ProgramCode       6
+#define UI_COMP_Lexer             7
+#define UI_COMP_SDManager         8
+#define UI_COMP_MessageBox        9
+#define UI_COMP_CommandLine      10
+#define UI_COMP_RPNBox           11
+#define UI_COMP_TerminalBox      12
+#define UI_COMP_FileManager      13
+#define UI_COMP_RPNCalculator    14
+#define UI_COMP_BasicConsole     15
+#define UI_COMPONENTS_COUNT      16
 
 // Current interface
 #define UI_UNDEFINED        0
@@ -142,7 +143,11 @@
 #define _OPR_VECTOR_KW     11
 #define _OPR_MATRIX_KW     12
 #define _OPR_PROGRAM_KW    13
-#define _OPERATOR_COUNT    14
+#define _OPR_NEW_KW        14
+#define _OPR_LOAD_KW       15
+#define _OPR_SAVE_KW       16
+#define _OPR_CHAIN_KW      17
+#define _OPERATOR_COUNT    18
 
 #define RPN_STACK          20
 
