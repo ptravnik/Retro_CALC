@@ -29,7 +29,7 @@ bool Lexer::operator_CLEAR(){
   #endif
   _ignore_Blanks();
   if( IsToken( _lexer_position, "STACK", true) || IsToken( _lexer_position, "stack", true)){
-    _vars->rpnClearStack();
+    _vars->clearRPNStack();
     _rsb->setStackRedrawAll();
     _skipToEOL( _lexer_position);
     return true;
@@ -88,17 +88,17 @@ bool Lexer::operator_CLEAR_Vars(bool constants){
   Serial.println((char *)_lexer_position);
   #endif
   byte *ptr = _lexer_position;
-  if( *ptr == '*' && ptr[1] == '*'&& ptr[2] == '*'){
+  if( *ptr == '*' && ptr[1] == '*' && ptr[2] == '*'){
     _skipToNextOperator( ptr);
-    //if( constants) _vars->removeConstants();
-    //else _vars->removeVariables();
-    if( !constants) _vars->removeVariables();
+    if( constants) _vars->removeAllConstants();
+    else _vars->removeAllVariables();
     return true;
   }
+  Serial.println( (char*)_lexer_position);
   ptr = _epar->nameParser.parse( _lexer_position);
   _skipToNextOperator( ptr);
+  Serial.println( _epar->nameParser.result);
   if( !_epar->nameParser.result) return true;
-  if( constants) _vars->removeConstant( (const char *)_epar->nameParser.Name());
-  else _vars->removeVariable( (const char *)_epar->nameParser.Name());
+  _vars->removeByName( _epar->nameParser.Name());
   return true;
 }

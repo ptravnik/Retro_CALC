@@ -15,13 +15,15 @@ const double _angleConversions[] PROGMEM = {1.74532925199e-2, 1.0, 1.5707963268e
 const char _VAR_stack[] PROGMEM = "stack";
 const char _VAR_prev[] PROGMEM = "prev";
 const char _VAR_amode[] PROGMEM = "amode%";
+const char _VAR_Gain[] PROGMEM = "Gain";
+const char _VAR_Offset[] PROGMEM = "Offset";
+const char _VAR_lcdPWM[] PROGMEM = "lcdPWM%";
 const char _VAR_current_dir[] PROGMEM = "current_dir$";
 const char _VAR_scrMessage[] PROGMEM = "scrMessage$";
 const char _VAR_rpnLabelX[] PROGMEM = "rpnLabelX$";
 const char _VAR_rpnLabelY[] PROGMEM = "rpnLabelY$";
 const char _VAR_rpnLabelZ[] PROGMEM = "rpnLabelZ$";
-const char _VAR_Gain[] PROGMEM = "Gain";
-const char _VAR_Offset[] PROGMEM = "Offset";
+
 const char _CON_deg[] PROGMEM = "deg";
 const char _CON_DEG[] PROGMEM = "DEG";
 const char _CON_rad[] PROGMEM = "rad";
@@ -36,225 +38,99 @@ const char _CON_False[] PROGMEM = "False";
 const char _CON_FALSE[] PROGMEM = "FALSE";
 const char _CON_High[] PROGMEM = "High%";
 const char _CON_Low[] PROGMEM = "Low%";
+const char _CON_varMemory[] PROGMEM = "varMemory%";
+const char _CON_prgMemory[] PROGMEM = "prgMemory%";
 
 const char SD_root2[] PROGMEM = "/";
 
 void Variables::init( void *components[]){
   _kwds = (Keywords *)components[UI_COMP_Keywords];
-  VariableToken vt = placeNewVariable( _VAR_stack, VARTYPE_VECTOR, RPN_STACK);
-  setVector( vt, 0.0);
-  _rpnStack = (double *)_getDataPtr( vt);
-  vt = placeNewVariable( _VAR_prev, VARTYPE_NUMBER);
-  setValue( vt, 0.0);   
-  _prev = (double *)_getDataPtr( vt);   
-  vt = placeNewVariable( _VAR_amode, VARTYPE_NUMBER);
-  setValue( vt, _MODE_DEGREES_); 
-  _amode = (int64_t *)_getDataPtr( vt);
-  vt = placeNewVariable( _VAR_current_dir, VARTYPE_STRING, CURRENT_DIR_LEN+1);
-  setValue( vt, SD_root2);  
-  currentDir = (char *)_getDataPtr( vt);
-  vt = placeNewVariable( _VAR_scrMessage, VARTYPE_STRING, SCR_COLS);
-  scrMessage = _getDataPtr( vt);
-  *scrMessage = _NUL_;
-  vt = placeNewVariable( _VAR_rpnLabelX, VARTYPE_STRING, SCR_COLS);
-  rpnLabelX = _getDataPtr( vt);
-  *rpnLabelX = _NUL_;
-  vt = placeNewVariable( _VAR_rpnLabelY, VARTYPE_STRING, SCR_COLS);
-  rpnLabelY = _getDataPtr( vt);
-  *rpnLabelY = _NUL_;
-  vt = placeNewVariable( _VAR_rpnLabelZ, VARTYPE_STRING, SCR_COLS);
-  rpnLabelZ = _getDataPtr( vt);
-  *rpnLabelZ = _NUL_;
-  vt = placeNewVariable( _VAR_Gain, VARTYPE_NUMBER);
-  gain = (double *)_getDataPtr( vt);
-  *gain = 1.0;  
-  vt = placeNewVariable( _VAR_Offset, VARTYPE_NUMBER);
-  offset = (double *)_getDataPtr( vt);
-  *offset = 0.0;
+  _rpnStack = (double *)_getDataPtr( _placeVector( false, _VAR_stack, RPN_STACK));
+  _prev = (double *)_getDataPtr( _placeNumber( false, _VAR_prev));
+  _amode = (int64_t *)_getDataPtr( _placeNumber( false, _VAR_amode, _MODE_DEGREES_));
+  gain = (double *)_getDataPtr( _placeNumber( false, _VAR_Gain, 1.0));
+  offset = (double *)_getDataPtr( _placeNumber( false, _VAR_Offset, 0.0));
+  _placeNumber( false, _VAR_lcdPWM, 200);
+  currentDir = (char *)_getDataPtr( _placeString( false,
+      _VAR_current_dir, CURRENT_DIR_LEN, SD_root2));
+  scrMessage = _getDataPtr( _placeString( false, _VAR_scrMessage, SCR_COLS));
+  rpnLabelX = _getDataPtr( _placeString( false, _VAR_rpnLabelX, SCR_COLS));
+  rpnLabelY = _getDataPtr( _placeString( false, _VAR_rpnLabelY, SCR_COLS));
+  rpnLabelZ = _getDataPtr( _placeString( false, _VAR_rpnLabelZ, SCR_COLS));
   _standard_bottom = _var_bottom;
   #ifdef __DEBUG
   Serial.print( "Placed all standard variables, standard bottom: ");
   Serial.println( _standard_bottom);
-  for( int i=0; i<_standard_bottom; i++){
-    Serial.print(i);   
-    Serial.print(" ");   
-    Serial.println(_buffer[i], HEX);   
-  }
   #endif
-  placeNewConstantValue( _CON_True, 1.0);
-  placeNewConstantValue( _CON_TRUE, 1.0);
-  placeNewConstantValue( _CON_False, 0.0);
-  placeNewConstantValue( _CON_FALSE, 0.0);
-  placeNewConstantValue( _CON_pi, RPN_PI);
-  placeNewConstantValue( _CON_PI, RPN_PI);
-  placeNewConstantValue( _CON_deg, 0.0);
-  placeNewConstantValue( _CON_DEG, 0.0);
-  placeNewConstantValue( _CON_rad, 1.0);
-  placeNewConstantValue( _CON_RAD, 1.0);
-  placeNewConstantValue( _CON_grad, 2.0);
-  placeNewConstantValue( _CON_GRAD, 2.0);
-  placeNewConstantValue( _CON_High, 1);
-  placeNewConstantValue( _CON_Low, 0);
+
+  _placeNumber( true, _CON_True, 1.0);
+  _placeNumber( true, _CON_TRUE, 1.0);
+  _placeNumber( true, _CON_False, 0.0);
+  _placeNumber( true, _CON_FALSE, 0.0);
+  _placeNumber( true, _CON_pi, RPN_PI);
+  _placeNumber( true, _CON_PI, RPN_PI);
+  _placeNumber( true, _CON_deg, 0.0);
+  _placeNumber( true, _CON_DEG, 0.0);
+  _placeNumber( true, _CON_rad, 1.0);
+  _placeNumber( true, _CON_RAD, 1.0);
+  _placeNumber( true, _CON_grad, 2.0);
+  _placeNumber( true, _CON_GRAD, 2.0);
+  _placeNumber( true, _CON_High, 1);
+  _placeNumber( true, _CON_Low, 0);
+  _varAvailble = (int64_t *)_getDataPtr( _placeNumber( true, _CON_varMemory));
+  _prgAvailble = (int64_t *)_getDataPtr( _placeNumber( true, _CON_prgMemory));
   _standard_top = _const_top;
-}
-
-//
-// Places new variable in either var or const stack
-// Returns ID or 0 if not enough memory
-//
-VariableToken Variables::placeNewVariable( const char *name, byte type, size_t row_size, size_t column_size){
-  size_t nameLen = _limitName( name);
-  size_t total_size = row_size * column_size;
-  size_t varLen = _getVarLength( nameLen, type, total_size);
-  if( _var_bottom + varLen >= _const_top) return 0; // not enough space
-  VariableToken vt = _var_bottom + 2; 
-  _placeVar( _buffer + _var_bottom, name, type, nameLen, total_size, row_size);
-  _var_bottom += varLen;  
-  return vt; 
-}
-VariableToken Variables::placeNewConstant( const char *name, byte type, size_t row_size, size_t column_size){
-  size_t nameLen = _limitName( name);
-  size_t total_size = row_size * column_size;
-  size_t varLen = _getVarLength( nameLen, type, total_size);
-  if( _const_top - _var_bottom <= varLen) return 0; // not enough space
-  _const_top -= varLen;
-  VariableToken vt = _const_top + 2;
-  _placeVar( _buffer + _const_top, name, type, nameLen, total_size, row_size);
-  return vt; 
-}
-VariableToken Variables::placeNewConstantValue( const char *name, double v){
-  VariableToken vt = placeNewConstant( name, VARTYPE_NUMBER);
-  if( vt < 2) return 0;
-  setValue( vt, v);
+  setMemoryAvailable();
   #ifdef __DEBUG
-  Serial.print("Constant set: ");
-  Serial.print( name);
-  Serial.print(" = ");
-  Serial.println(v);
+  Serial.print( "Placed all standard constants, standard top: ");
+  Serial.println( _standard_top);
+  Serial.print( "Available variables memory: ");
+  Serial.println( getMemoryAvailable());
   #endif
 }
 
 //
-// Removes variables from either var o const stack
+// List available variables or constants
 //
-VariableToken Variables::removeVariable( const char *name){
-  VariableToken vt = getVariable(name);
-  if(vt < 2) return 0;
-  if(vt < _standard_bottom){
-    //setValue( vt, 0.0); // TODO
-    return 0; // standard vars only cleared but not deleted
-  }
-  VariableToken vt2 = _getNextVar( vt);  
-  byte *dest = _buffer + vt - 2;
-  byte *src = _buffer + vt2 - 2;
-  for( size_t i=vt2-2; i<_var_bottom; i++)
-    *dest++ = *src++;
-  _var_bottom -= (vt2 - vt);
-  return vt;
-}
-VariableToken Variables::removeConstant( const char *name){
-  VariableToken vt = getConstant(name);
-  if(vt >= _standard_top) return 0; // standard cannot be deleted
-  VariableToken vt2 = _getNextVar( vt);  
-  byte *dest = _buffer + vt2 - 2;
-  byte *src = _buffer + vt - 2;
-  for( size_t i=vt-2; i>=_const_top; i--)
-    *dest-- = *src--;
-  _const_top += (vt2 - vt);
-  return vt;
-}
-
-//
-// returns variable name's offset or 0 if not found;
-// note that the actual variable starts two bytes earlier
-//
-VariableToken Variables::getVariable( const char *name){
-  if( _var_bottom == 0) return 0;
-  if( strlen(name) == 0) return 0;
-  VariableToken vt = getFirstVar();
-  const char *ptr = (const char*)_buffer + vt;
-  #ifdef __DEBUG
-  Serial.print( "Looking for: ");
-  Serial.println(name);
-  #endif
-  while(true){
-    #ifdef __DEBUG
-    Serial.print( "Checking: ");
-    Serial.println(ptr);
-    #endif
-    if( strcmp( name, ptr) == 0) return vt;
-    vt = _getNextVar( vt);
-    if( vt == 0 || vt>=_var_bottom) break; // no more variables
-    ptr = (const char*)_buffer + vt;
-  }
-  return 0;
-}
-VariableToken Variables::getConstant( const char *name){
-  if( _const_top >= VARIABLE_SPACE) return 0;
-  if( strlen(name) == 0) return 0;
-  VariableToken vt = getFirstConst();
-  const char *ptr = (const char*)_buffer + vt;
-  while(true){
-    if( strcmp( name, ptr) == 0) return vt;
-    vt = _getNextVar( vt);
-    if( vt == 0 || vt>=VARIABLE_SPACE) break; // no more constants
-    ptr = (const char*)_buffer + vt;
-  }
-  return 0;
-}
-
-//
-// Creates a variable or a constant;
-// creation of runtime variables in which the name matches one of the
-// keywords is not allowed 
-//
-VariableToken Variables::getOrCreate( bool asConstant, byte *name,
-  byte type, size_t row_size, size_t column_size){
-  if( _kwds->getKeyword( name) != NULL) return 0;
-  VariableToken vt = asConstant?
-    getConstant( name):
-    getVariable( name);
-  if( vt != 0) return vt;
-  return asConstant?
-    placeNewConstant( name, type, row_size, column_size):
-    placeNewVariable( name, type, row_size, column_size);
-}
-
-VariableToken Variables::getNextVar( VariableToken vt){
-  vt = _getNextVar( vt);
-  if (vt >= VARIABLE_SPACE) return 0;
-  if (_var_bottom < vt && vt+1 < _const_top) return 0;
-  return vt;
-}
-
 VariableToken Variables::_getNextVar( VariableToken vt){
   if( vt < 2) return 0;
   if( vt >= VARIABLE_SPACE) return 0;
-  byte vtype = _buffer[vt-2];
-  byte nameLen = _buffer[vt-1];
-  size_t offset = vt + nameLen + 1;
-  size_t *size_ptr = (size_t *)(_buffer + offset);
-  switch(vtype){
+  byte vtype = getVarType(vt);
+  if( !vtype) return 0; // undefined type;
+  byte nameLen = getVarNameLength(vt);
+  uint16_t total_size = getTotalSize(vt);
+  uint16_t varLen = _getVarLength( nameLen, vtype, total_size);
+  return vt + varLen;
+}
+VariableToken Variables::getNextVar( VariableToken vt){
+  vt = _getNextVar( vt);
+  if( vt < 2) return 0;
+  if( vt >= VARIABLE_SPACE) return 0;
+  if( _var_bottom < vt && vt-2 < _const_top ) return 0;
+  return vt;
+}
+uint16_t Variables::getTotalSize( VariableToken vt){
+  if( getVarType( vt) == VARTYPE_NUMBER) return 1;
+  uint16_t *ptr = (uint16_t *)_getVarBlockPtr( vt);
+  return *ptr;
+}
+uint16_t Variables::getRowSize( VariableToken vt){
+  switch( getVarType( vt)){
     case VARTYPE_NUMBER:
-      offset += sizeof(double);
-      break;
-    case VARTYPE_VECTOR:
-      offset += sizeof(size_t);
-      offset += *size_ptr * sizeof(double);
-      break;
-    case VARTYPE_MATRIX:
-      offset += sizeof(size_t);
-      offset += sizeof(size_t);
-      offset += *size_ptr * sizeof(double);
-      break;
+      return 1;
     case VARTYPE_STRING:
-      offset += sizeof(size_t);
-      offset += *size_ptr + 1;
-      break;
+    case VARTYPE_VECTOR:
+      return getTotalSize( vt);
     default:
-      return 0;  
+      break;
   }
-  return offset + 2;  
+  uint16_t *ptr = (uint16_t *)_getVarBlockPtr( vt);
+  return ptr[1];
+}
+uint16_t Variables::getColumnSize( VariableToken vt){
+  if( getVarType( vt) != VARTYPE_MATRIX) return 1;
+  uint16_t *ptr = (uint16_t *)_getVarBlockPtr( vt);
+  return ptr[0]/ptr[1];
 }
 
 //
@@ -273,7 +149,79 @@ bool Variables::isNameBASICString( VariableToken vt){
   return nameEndsWith(vt) == _DOLLAR_;
 }
 bool Variables::isNameBASICInteger( VariableToken vt){
-  return _buffer[ vt + getVarNameLength( vt) - 1] == _PERCENT_;
+  return nameEndsWith(vt) == _PERCENT_;
+}
+
+//
+// Setting values
+//
+int64_t Variables::_limitHuge( double v){
+  if( v > _HUGE_POS_INTEGER_) return _HUGE_POS_INTEGER_;
+  if( v < _HUGE_NEG_INTEGER_) return _HUGE_NEG_INTEGER_;
+  return (int64_t)v;
+}
+void Variables::setValueReal( VariableToken vt, double v, uint16_t i, uint16_t j){
+  if( vt < 2) return;
+  if( getVarType(vt) == VARTYPE_STRING) return;
+  if( isNameBASICInteger(vt)){
+    int64_t *ptri = (int64_t *)_getDataPtr( vt, i, j);
+    *ptri = _limitHuge( v);
+    return;
+  }
+  double *ptrd = (double *)_getDataPtr( vt, i, j);
+  *ptrd = v;
+}
+void Variables::setValueInteger( VariableToken vt, int64_t v, uint16_t i, uint16_t j){
+  if( vt < 2) return;
+  if( getVarType(vt) == VARTYPE_STRING) return;
+  if( isNameBASICInteger(vt)){
+    int64_t *ptri = (int64_t *)_getDataPtr( vt, i, j);
+    *ptri = v;
+    return;
+  }
+  double *ptrd = (double *)_getDataPtr( vt, i, j);
+  *ptrd = (double)v;
+}
+void Variables::setValueString( VariableToken vt, const char *v){
+  if( vt < 2) return;
+  if( getVarType(vt) != VARTYPE_STRING) return;
+  uint16_t totalSize = getTotalSize(vt);
+  char *ptr = (char *)_getDataPtr( vt);
+  strncpy(ptr, v, totalSize);  
+}
+void Variables::setValueRealArray( VariableToken vt, double v){
+  if( vt < 2) return;
+  if( getVarType(vt) == VARTYPE_STRING) return;  
+  if( getVarType(vt) == VARTYPE_NUMBER){
+    setValueReal( vt, v);
+    return;  
+  }
+  uint16_t totalSize = getTotalSize(vt);
+  if( isNameBASICInteger(vt)){
+    int64_t *ptri = (int64_t *)_getDataPtr( vt, 0, 0);
+    int64_t tmp = _limitHuge( v);
+    for( uint16_t i=0; i<totalSize; i++) *ptri++ = tmp;
+    return;
+  }
+  double *ptrd = (double *)_getDataPtr( vt, 0, 0);
+  for( uint16_t i=0; i<totalSize; i++) *ptrd++ = v;
+}
+void Variables::setValueIntegerArray( VariableToken vt, int64_t v){
+  if( vt < 2) return;
+  if( getVarType(vt) == VARTYPE_STRING) return;
+  if( getVarType(vt) == VARTYPE_NUMBER){
+    setValueInteger( vt, v);
+    return;  
+  }
+  uint16_t *total_length = (uint16_t *)_getVarBlockPtr( vt);
+  if( isNameBASICReal(vt)){
+    double *ptrd = (double *)_getDataPtr( vt, 0, 0);
+    double tmp = (double)v;
+    for( uint16_t i=0; i<*total_length; i++) *ptrd++ = tmp;
+    return;
+  }
+  int64_t *ptri = (int64_t *)_getDataPtr( vt, 0, 0);
+  for( uint16_t i=0; i<*total_length; i++) *ptri++ = v;
 }
 
 //
@@ -282,25 +230,26 @@ bool Variables::isNameBASICInteger( VariableToken vt){
 // % - integers
 // $ - strings
 //
-double Variables::realValue( VariableToken vt, size_t i, size_t j){
+double Variables::realValue( VariableToken vt, uint16_t i, uint16_t j){
   if( vt < 2) return 0.0;
   if( getVarType(vt) == VARTYPE_STRING) return 0.0;
-  if( isNameBASICReal(vt)){
-    double *ptrd = (double *)_getDataPtr( vt, i, j);
-    return *ptrd;
+  byte * ptr = _getDataPtr( vt, i, j);
+  if( isNameBASICInteger(vt)){
+    int64_t *ptri = (int64_t *)_getDataPtr( vt, i, j);
+    return (double)ptri[0];
   }
-  int64_t *ptri = (int64_t *)_getDataPtr( vt, i, j);
-  return (double)*ptri;
+  double *ptrd = (double *)_getDataPtr( vt, i, j);
+  return *ptrd;
 }
-int64_t Variables::integerValue( VariableToken vt, size_t i, size_t j){
+int64_t Variables::integerValue( VariableToken vt, uint16_t i, uint16_t j){
   if( vt < 2) return 0L;
   if( getVarType(vt) == VARTYPE_STRING) return 0L;
-  if( isNameBASICReal(vt)){
-    double *ptrd = (double *)_getDataPtr( vt, i, j);
-    return _limitHuge( *ptrd);
+  if( isNameBASICInteger(vt)){
+    int64_t *ptri = (int64_t *)_getDataPtr( vt, i, j);
+    return ptri[0];
   }
-  int64_t *ptri = (int64_t *)_getDataPtr( vt, i, j);
-  return *ptri;
+  double *ptrd = (double *)_getDataPtr( vt, i, j);
+  return (int64_t)(*ptrd);
 }
 byte * Variables::stringValue( VariableToken vt){
   if( vt < 2) return NULL;
@@ -309,89 +258,189 @@ byte * Variables::stringValue( VariableToken vt){
 }
 
 //
-// Setting values
+// Looks for constants and variables;
+// Returns zero if not found or if a keyword
 //
-void Variables::setValue( VariableToken vt, double v, size_t i, size_t j){
-  if( vt < 2) return;
-  if( getVarType(vt) == VARTYPE_STRING) return;
-  if( isNameBASICReal(vt)){
-    double *ptrd = (double *)_getDataPtr( vt, i, j);
-    *ptrd = v;
-    return;
-  }
-  int64_t *ptri = (int64_t *)_getDataPtr( vt, i, j);
-  *ptri = _limitHuge( v);
+VariableToken Variables::findByName( const char *name){
+  if( strlen(name) == 0) return 0;
+  if( _kwds->isKeyword( (byte *)name)) return 0;
+  VariableToken vt = _findConstantByName( name);
+  if( vt > 0) return vt;
+  return _findVariableByName( name);
 }
-void Variables::setValue( VariableToken vt, int64_t v, size_t i, size_t j){
-  if( vt < 2) return;
-  if( getVarType(vt) == VARTYPE_STRING) return;
-  if( isNameBASICReal(vt)){
-    double *ptrd = (double *)_getDataPtr( vt, i, j);
-    *ptrd = (double)v;
-    return;
+VariableToken Variables::_findConstantByName( const char *name){
+  if( _const_top >= VARIABLE_SPACE) return 0;
+  VariableToken vt = getFirstConst();
+  const char *ptr = (const char*)_buffer + vt;
+  while(true){
+    if( strcmp( name, ptr) == 0) return vt;
+    vt = _getNextVar( vt);
+    if( vt == 0 || vt>=VARIABLE_SPACE) break; // no more constants
+    ptr = (const char*)_buffer + vt;
   }
-  int64_t *ptri = (int64_t *)_getDataPtr( vt, i, j);
-  *ptri = v;
+  return 0;
 }
-void Variables::setValue( VariableToken vt, const char *v){
-  if( vt < 2) return;
-  if( getVarType(vt) != VARTYPE_STRING) return;
-  char *ptr = (char *)_getVarBlockPtr( vt);
-  size_t *size_ptr = (size_t *)ptr;
-  strncpy(ptr+sizeof(size_t), v, *size_ptr);  
+VariableToken Variables::_findVariableByName( const char *name){
+  if( _var_bottom == 0) return 0;
+  VariableToken vt = getFirstVar();
+  const char *ptr = (const char*)_buffer + vt;
+  #ifdef __DEBUG
+  Serial.print( "Looking for: ");
+  Serial.println(name);
+  #endif
+  while(true){
+    #ifdef __DEBUG
+    Serial.print( "Checking: ");
+    Serial.println(ptr);
+    #endif
+    if( strcmp( name, ptr) == 0) return vt;
+    vt = _getNextVar( vt);
+    if( vt == 0 || vt>=_var_bottom) break; // no more variables
+    ptr = (const char*)_buffer + vt;
+  }
+  return 0;
 }
-void Variables::setVector( VariableToken vt, double v){
-  if( vt < 2) return;
-  if( getVarType(vt) == VARTYPE_STRING) return;  
-  if( getVarType(vt) == VARTYPE_NUMBER){
-    setValue( vt, v);
-    return;  
-  }
-  size_t *total_length = (size_t *)_getVarBlockPtr( vt);
-  if( isNameBASICReal(vt)){
-    double *ptrd = (double *)_getDataPtr( vt, 0, 0);
-    for( size_t i=0; i<*total_length; i++) *ptrd++ = v;
-    return;
-  }
-  int64_t *ptri = (int64_t *)_getDataPtr( vt, 0, 0);
-  int64_t tmp = _limitHuge( v);
-  for( size_t i=0; i<*total_length; i++) *ptri++ = tmp;
+byte *Variables::findDataPtr( const char * name, uint16_t i, uint16_t j){
+  VariableToken vt = findByName( name);
+  if( !vt) return NULL;
+  return _getDataPtr( vt, i, j);
 }
-void Variables::setVector( VariableToken vt, int64_t v){
-  if( vt < 2) return;
-  if( getVarType(vt) == VARTYPE_STRING) return;
-  if( getVarType(vt) == VARTYPE_NUMBER){
-    setValue( vt, v);
-    return;  
+
+//
+// Places new variable in either var or const stack
+// Returns ID or 0 if not enough memory
+//
+VariableToken Variables::getOrCreateNumber( bool asConstant, byte *name){
+   // redeclaration of keywords not allowed
+  if( _kwds->isKeyword( (byte *)name)) return 0; 
+  VariableToken vt = findByName( name);
+  if( vt){ // exists
+    if( isReadOnly(vt)) return 0; // standard constants
+    return vt;
   }
-  size_t *total_length = (size_t *)_getVarBlockPtr( vt);
-  if( isNameBASICReal(vt)){
-    double *ptrd = (double *)_getDataPtr( vt, 0, 0);
-    double tmp = (double)v;
-    for( size_t i=0; i<*total_length; i++) *ptrd++ = tmp;
-    return;
-  }
-  int64_t *ptri = (int64_t *)_getDataPtr( vt, 0, 0);
-  for( size_t i=0; i<*total_length; i++) *ptri++ = v;
+  vt = _placeNumber( asConstant, (const char *)name);
+  *_varAvailble = (int64_t)getMemoryAvailable();
+  return vt;
 }
+
+
+//
+// Creates a variable or a constant;
+// creation of runtime variables in which the name matches one of the
+// keywords is not allowed 
+//
+VariableToken Variables::getOrCreate2( bool asConstant, byte *name ){
+  // if( _kwds->isKeyword( name)) return 0;
+  // VariableToken vt = findByName( name);
+  // if( !vt){ // on the fly can be created only scalars and strings
+  //   uint16_t nameLen = 
+  //   if( isConstant(vt) != asConstant) return 0;
+  //   if( isReadOnly(vt)) return 0;
+  //   byte t = getVarType(vt); 
+  //   if( t != vtype) return 0;
+  //   switch(t){
+  //     case VARTYPE_NUMBER:
+  //       return vt:
+  //     case VARTYPE_NUMBER:
+  //       return vt:
+  //   }
+  // }
+
+  // VariableToken vt = asConstant?
+  //   _findConstantByName( name):
+  //   _findVariableByName( name);
+  // if( vt != 0) return vt;
+  // return asConstant?
+  //   placeNewConstant( name, vtype, row_size, column_size):
+  //   placeNewVariable( name, vtype, row_size, column_size);
+  return 0;
+}
+
+
+void Variables::_removeVariable( VariableToken vt){
+  VariableToken vt2 = _getNextVar( vt);
+  byte *dest = _buffer + vt - 2;
+  byte *src = _buffer + vt2 - 2;
+  for( uint16_t i=vt2-2; i<_var_bottom; i++)
+    *dest++ = *src++;
+  _var_bottom -= (vt2 - vt);
+  return;
+}
+void Variables::_removeConstant( VariableToken vt){
+  VariableToken vt2 = _getNextVar( vt);  
+  byte *dest = _buffer + vt2 - 2;
+  byte *src = _buffer + vt - 2;
+  for( uint16_t i=vt-2; i>_const_top; i--)
+    *dest-- = *src--;
+  _const_top += (vt2 - vt);
+  return;
+}
+void Variables::removeByToken( VariableToken vt){
+  if( vt<2) return;
+  if( isReadOnly( vt)) return; // read-only constant
+  if( vt-2<_standard_bottom ) return; // unremovable variable
+  if( isConstant( vt)) _removeConstant( vt);
+  else _removeVariable(vt);
+  *_varAvailble = (int64_t)getMemoryAvailable();
+}
+void Variables::removeByName( const char *name){
+  VariableToken vt = findByName(name);
+  removeByToken( vt);
+}
+
+//
+// Stack handling methods
+//
+void Variables::swapRPNXY(){
+  double tmp = _rpnStack[0];
+  _rpnStack[0] = _rpnStack[1];
+  _rpnStack[1] = tmp;
+}
+void Variables::popRPNStack(byte start){
+  for(byte i=start; i<RPN_STACK; i++) _rpnStack[i-1] = _rpnStack[i];
+}
+void Variables::pushRPNStack(){
+  for(byte i=RPN_STACK-1; i>0; i--) _rpnStack[i] = _rpnStack[i-1];
+}
+void Variables::pushRPNStack( double v){
+  pushRPNStack();
+  *_rpnStack = v;
+}
+
+double Variables::getConvertedAngle( double a){
+  return a * _angleConversions[ (uint16_t)(*_amode)];
+}
+double Variables::getUnconvertedAngle( double a){
+  if( isnan(a)) return a;
+  return a / _angleConversions[(uint16_t)(*_amode)];
+}
+
+//
+// Private methods
+//
 
 //
 // Estimates variable length
 //
-size_t Variables::_getVarLength( size_t nameLen, byte type,
-                                 size_t total_size){
+uint16_t Variables::_getVarLength( uint16_t nameLen, byte vtype,
+                                 uint16_t total_size){
   nameLen += 3;
-  switch( type){
+  switch( vtype){
     case VARTYPE_NUMBER:
       // +8 for double or int64 value
-      return nameLen + sizeof(double);
+      nameLen += sizeof(double);
+      break;
     case VARTYPE_VECTOR:
-      return nameLen + sizeof(size_t) + total_size * sizeof(double);
+      nameLen += sizeof(uint16_t) + total_size * sizeof(double);
+      break;
     case VARTYPE_MATRIX:
-      return nameLen + 2 * sizeof(size_t) + total_size * sizeof(double);
+      nameLen += 2 * sizeof(uint16_t) + total_size * sizeof(double);
+      break;
     case VARTYPE_STRING:
-      return nameLen + sizeof(size_t) + total_size + 1;
+      nameLen += sizeof(uint16_t) + total_size + 1;
+      break;
     default:
+      nameLen = 0;
       break;
   }
   return nameLen;
@@ -400,110 +449,104 @@ size_t Variables::_getVarLength( size_t nameLen, byte type,
 //
 // points to the data, including strings and arrays
 //
+byte * Variables::_getLengthBlockPtr( VariableToken vt){
+  if( vt < 2) return NULL;
+  if( vt >= VARIABLE_SPACE) return NULL;
+  return _buffer + vt - 2;
+}
 byte * Variables::_getVarBlockPtr( VariableToken vt){
-  if( vt < 2) return NULL;
-  return _buffer + vt + getVarNameLength(vt) + 1;
+  byte *ptr = _getLengthBlockPtr(vt);
+  if(!ptr) return NULL;
+  return ptr + ptr[1] + 3;
 }
-byte * Variables::_getDataPtr( VariableToken vt, size_t i, size_t j){
-  if( vt < 2) return NULL;
+byte * Variables::_getDataPtr( VariableToken vt, uint16_t i, uint16_t j){
   byte *ptr = _getVarBlockPtr( vt);
-  size_t *size_ptr = (size_t *)ptr;
-  size_t row_size;
-  switch(getVarType(vt)){
-    case VARTYPE_NUMBER:
-      #ifdef __DEBUG
-      Serial.print("Number offset: ");
-      Serial.println((size_t)(ptr-_buffer+2));
-      #endif
-      return ptr;
-    case VARTYPE_STRING:
-      #ifdef __DEBUG
-      Serial.print("String offset: ");
-      Serial.println((size_t)(ptr-_buffer+2));
-      #endif
-      size_ptr++;
-      return (byte *)size_ptr;
-    case VARTYPE_MATRIX:
-      ptr += sizeof( size_t);
-      row_size = size_ptr[1];
-      if( i >= row_size) i = row_size - 1;
-      i += j * row_size;
-    case VARTYPE_VECTOR: // fall-through
-      ptr += sizeof( size_t);
-      if( i >= *size_ptr) i = *size_ptr - 1;
-      ptr += i << 3;
-      #ifdef __DEBUG
-      Serial.print("Vector offset: ");
-      Serial.println((size_t)(ptr-_buffer+2));
-      #endif
-      return ptr;
-    default:
-      break;
+  if( !ptr) return NULL;
+  byte tp = _buffer[vt-2]; 
+  if( tp == VARTYPE_NONE) return NULL;
+  if( tp == VARTYPE_NUMBER) return ptr;
+  uint16_t *size_ptr = (uint16_t*)ptr;
+  uint16_t total_size = size_ptr[0];
+  if( i>=total_size) i = 0;
+  ptr += sizeof( uint16_t);
+  if( tp == VARTYPE_STRING) return ptr + i;
+  if( tp == VARTYPE_VECTOR) return ptr + i * sizeof(double);
+  ptr += sizeof( uint16_t);
+  uint16_t row_size = size_ptr[1];
+  uint16_t column_size = total_size / row_size;
+  if( i>=row_size) j = row_size-1;
+  if( j>=column_size) j = column_size-1;
+  i = i*row_size + j;
+  if( i>=total_size) i = 0;
+  return ptr + i * sizeof(double);
+}
+
+//
+// Allocates space for the new variable; if no memory, returns 0
+//
+VariableToken Variables::_allocateVarSpace( bool isConst,
+    uint16_t nameLen, byte varType, uint16_t totalSize){
+  uint16_t l = _getVarLength( nameLen, varType, totalSize);
+  if( l >= getMemoryAvailable()) return 0;
+  if( isConst){
+    _const_top -= l;
+    return _const_top + 2;
   }
-  return NULL;
+  VariableToken vt = _var_bottom + 2;
+  _var_bottom += l;
+  return vt;
 }
-
-//
-// Limits huge integers
-//
-int64_t Variables::_limitHuge( double v){
-  if( v > _HUGE_POS_INTEGER_) return _HUGE_POS_INTEGER_;
-  if( v < _HUGE_NEG_INTEGER_) return _HUGE_NEG_INTEGER_;
-  return v;
-}
-
-void Variables::_placeVar( byte *ptr, const char *name, byte type, size_t nameLen, size_t total_size, size_t row_size){
-  *ptr++ = type;
+VariableToken Variables::_placeVarName( bool isConst, const char *name,
+    byte varType, uint16_t totalSize){
+  uint16_t nameLen = strlen( name);
+  if( !nameLen) return 0;
+  if( nameLen >= 254) nameLen = 254; 
+  VariableToken vt = _allocateVarSpace( isConst, nameLen, varType, totalSize);
+  if( !vt) return 0;
+  byte *ptr = _getLengthBlockPtr(vt);
+  *ptr++ = varType;
   *ptr++ = (byte)nameLen;
-  size_t *ptr2 = (size_t *)(strncpy( (char *)ptr, name, nameLen) + nameLen + 1);
-  if( type == VARTYPE_NUMBER) return;
-  *ptr2 = total_size;
-  if( type == VARTYPE_MATRIX) ptr2[1] = row_size;
+  strncpy( (char *)ptr, name, nameLen);
+  return vt;
 }
-
-size_t Variables::_limitName( const char *name){
-  size_t nameLen = strlen( name);
-  if( nameLen>254) return 254;
-  return nameLen;
+VariableToken Variables::_placeNumber( bool isConst,
+    const char *name, double value){
+  VariableToken vt = _placeVarName( isConst, name, VARTYPE_NUMBER, 1);
+  if( !vt) return 0;
+  setValueReal( vt, value);
+  return vt;
 }
-
-void Variables::rpnSWAP(){
-  double tmp = _rpnStack[0];
-  _rpnStack[0] = _rpnStack[1];
-  _rpnStack[1] = tmp;
+VariableToken Variables::_placeVector( bool isConst,
+    const char *name, uint16_t length, double value){
+  if( length == 0) return 0;
+  VariableToken vt = _placeVarName( isConst, name, VARTYPE_VECTOR, length);
+  if( !vt) return 0;
+  uint16_t *ptr = (uint16_t *)_getVarBlockPtr( vt);
+  *ptr = length;
+  setValueRealArray( vt, value);
+  return vt;
 }
-
-double Variables::getConvertedAngle( double a){
-  return a * _angleConversions[ (size_t)(*_amode)];
+VariableToken Variables::_placeMatrix( bool isConst,
+    const char *name, uint16_t rows, uint16_t cols, double value){
+  uint16_t totalSize = rows*cols;
+  if( totalSize == 0) return 0;
+  VariableToken vt = _placeVarName( isConst, name, VARTYPE_MATRIX, totalSize);
+  if( !vt) return 0;
+  uint16_t *ptr = (uint16_t *)_getVarBlockPtr( vt);
+  *ptr++ = totalSize;
+  *ptr = cols;
+  setValueRealArray( vt, value);
+  return vt;
 }
-
-double Variables::getUnconvertedAngle( double a){
-  if( isnan(a)) return a;
-  return a / _angleConversions[(size_t)(*_amode)];
-}
-
-size_t Variables::getTotalSize( VariableToken vt){
-  if( getVarType( vt) == VARTYPE_NUMBER) return 1;
-  size_t *ptr = (size_t *)_getVarBlockPtr( vt);
-  return *ptr;
-}
-
-size_t Variables::getRowSize( VariableToken vt){
-  switch( getVarType( vt)){
-    case VARTYPE_NUMBER:
-      return 1;
-    case VARTYPE_STRING:
-    case VARTYPE_VECTOR:
-      return getTotalSize( vt);
-    default:
-      break;
-  }
-  size_t *ptr = (size_t *)_getVarBlockPtr( vt);
-  return ptr[1];
-}
-
-size_t Variables::getColumnSize( VariableToken vt){
-  if( getVarType( vt) != VARTYPE_MATRIX) return 1;
-  size_t *ptr = (size_t *)_getVarBlockPtr( vt);
-  return ptr[0]/ptr[1];
+VariableToken Variables::_placeString( bool isConst,
+    const char *name, uint16_t length, const char* value){
+  if( length == 0) return 0;
+  VariableToken vt = _placeVarName( isConst, name, VARTYPE_STRING, length);
+  if( !vt) return 0;
+  uint16_t *ptr = (uint16_t *)_getVarBlockPtr( vt);
+  *ptr++ = length;
+  char *dataPtr = (char *)ptr;
+  if( value) strncpy( dataPtr, value, length);
+  else *dataPtr = _NUL_;
+  return vt;
 }

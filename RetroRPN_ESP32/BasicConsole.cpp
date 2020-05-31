@@ -186,7 +186,7 @@ void BasicConsole::processCommand(byte c){
   }
   _epar->parse(_clb->getInput());  
   if( _epar->result != _RESULT_UNDEFINED_)
-    _vars->rpnPUSH(_epar->numberParser.realValue());
+    _vars->pushRPNStack(_epar->numberParser.realValue());
   _clb->clearInput();
   expectCommand = false;
   processCommand( c);
@@ -218,7 +218,7 @@ void BasicConsole::processInput( bool silent) {
       Serial.println("Console: Result is NAN");
       break;
     default:
-      _vars->rpnPUSH(_epar->numberParser.realValue());
+      _vars->pushRPNStack(_epar->numberParser.realValue());
       if( !silent){
         _rsb->setStackRedrawAll();
         updateIOM();
@@ -232,13 +232,13 @@ void BasicConsole::processInput( bool silent) {
 // Stack operations
 // 
 void BasicConsole::push(bool refresh) {
-  _vars->rpnSavePreviousX();
-  _vars->rpnPUSH();
+  _vars->saveRPNPrev();
+  _vars->pushRPNStack();
   _setRedrawAndUpdateIOM( refresh);
 }
 void BasicConsole::pop(bool refresh) {
-  _vars->rpnSavePreviousX();
-  _vars->rpnPOP();
+  _vars->saveRPNPrev();
+  _vars->popRPNStack();
   _setRedrawAndUpdateIOM( refresh);
 }
 void BasicConsole::swap(bool refresh) {
@@ -246,58 +246,58 @@ void BasicConsole::swap(bool refresh) {
   updateIOM(refresh);
 }
 void BasicConsole::roll(bool refresh) {
-  _vars->rpnPUSH(_vars->rpnGetStack(RPN_STACK-1));
+  _vars->pushRPNStack(_vars->getRPNRegister(RPN_STACK-1));
   _setRedrawAndUpdateIOM( refresh);
 }
 void BasicConsole::prev(bool refresh) {
-  _vars->rpnPUSH(_vars->rpnGetPreviousX());
+  _vars->pushRPNStack(_vars->getRPNPrev());
   _setRedrawAndUpdateIOM( refresh);
 }
 void BasicConsole::add(bool refresh) {
-  _savePopAndUpdate( _vars->rpnGetStack(1) + _vars->rpnGetStack(), refresh);
+  _savePopAndUpdate( _vars->getRPNRegister(1) + _vars->getRPNRegister(), refresh);
 }
 void BasicConsole::subtract(bool refresh) {
-  _savePopAndUpdate( _vars->rpnGetStack(1) - _vars->rpnGetStack(), refresh);
+  _savePopAndUpdate( _vars->getRPNRegister(1) - _vars->getRPNRegister(), refresh);
 }
 void BasicConsole::multiply(bool refresh) {
-  _savePopAndUpdate( _vars->rpnGetStack(1) * _vars->rpnGetStack(), refresh);
+  _savePopAndUpdate( _vars->getRPNRegister(1) * _vars->getRPNRegister(), refresh);
 }
 void BasicConsole::divide(bool refresh) {
-  if( abs(_vars->rpnGetStack()) < 1e-300){
+  if( abs(_vars->getRPNRegister()) < 1e-300){
     _mbox->setLabel(BAS_Error_DivZero);
     _setRedrawAndUpdateIOM( refresh);
     return;    
   }
-  _savePopAndUpdate( _vars->rpnGetStack(1) / _vars->rpnGetStack(), refresh);
+  _savePopAndUpdate( _vars->getRPNRegister(1) / _vars->getRPNRegister(), refresh);
 }
 void BasicConsole::signchange(bool refresh) {
-  _vars->rpnSavePreviousX();
-  _vars->rpnSetStack( -_vars->rpnGetStack());
+  _vars->saveRPNPrev();
+  _vars->negateRPNX();
   _setRedrawAndUpdateIOM( refresh);
 }
 void BasicConsole::power(bool refresh) {
-  _vars->rpnSavePreviousX(1);
+  _vars->saveRPNPrev(1);
   //_messages
   // power zero: using "1 convention"  
-  if( _vars->rpnGetStack() == 0.0){
+  if( _vars->isRPNRegisterZero()){
     _mbox->setLabel( BAS_Warning_ZeroPowerZero);
     _popPartial( 1.0);
     updateIOM(refresh);
     return;
   }
   // positive power of zero: zero
-  if( _vars->rpnGetStack() > 0.0 && _vars->rpnGetStack(1) == 0.0){
+  if( _vars->getRPNRegister() > 0.0 && _vars->isRPNRegisterZero(1)){
     _popPartial( 0.0);
     updateIOM(refresh);
     return;
   }
   // negative power of zero: div by zero
-  if( _vars->rpnGetStack() < 0.0 && _vars->rpnIsZero(1)){
+  if( _vars->getRPNRegister() < 0.0 && _vars->isRPNRegisterZero(1)){
     _mbox->setLabel(BAS_Error_DivZero);
     _setRedrawAndUpdateIOM( refresh);
     return;
   }
-  double tmp = pow( _vars->rpnGetStack(1), _vars->rpnGetStack());
+  double tmp = pow( _vars->getRPNRegister(1), _vars->getRPNRegister());
   if( isnan(tmp)){
     _mbox->setLabel( BAS_Error_NAN);
     _setRedrawAndUpdateIOM( refresh);
@@ -311,7 +311,7 @@ void BasicConsole::power(bool refresh) {
 // If the number is large, periodic functions are useless
 //
 void BasicConsole::_checkTrigAccuracy(){
-  double tmp = abs( _vars->getConvertedAngle());
+  double tmp = abs( _vars->getConvertedAngleRPNX());
   if( tmp <= 1e+16) return;
   _mbox->setLabel( BAS_Warning_Accuracy);
   Serial.println(BAS_Warning_Accuracy);
@@ -381,10 +381,10 @@ void BasicConsole::_evaluateCommand(){
 //      return;
 //    case _RPN_SWAP_XY_:
 //      _vars->savePrevRPN(1);
-//      _vars->rpnSWAP();
+//      _vars->swapRPNXY();
 //      break;
 //    case _RPN_QUICK_PUSH_:
-//      _vars->rpnPUSH();
+//      _vars->pushRPNStack();
 //      break;
 //    case _RPN_SQRT_CHECK_:
 //      if( _vars->rpnStack() < 0.0){
@@ -437,13 +437,13 @@ void BasicConsole::_evaluateString(){
   }
   if( IsToken( _epar->nameParser.Name(), "hex", false)){
     ptr = _clb->getInput();
-    _epar->numberParser.stringHex( _vars->rpnGetStack(), ptr);
+    _epar->numberParser.stringHex( _vars->getRPNRegister(), ptr);
     _clb->processEND();
     _iom->sendStringLn( ptr);
     return;
   }
   if( IsToken( _epar->nameParser.Name(), "inj", false)){
-    _epar->numberParser.stringValue( _vars->rpnGetStack(), _io_buffer);
+    _epar->numberParser.stringValue( _vars->getRPNRegister(), _io_buffer);
     _iom->injectKeyboard();
     _clb->clearInput();
     return;
@@ -496,27 +496,15 @@ void BasicConsole::_evaluateString(){
     _clb->clearInput();
     return;
   }
-  if( IsToken( _epar->_getCurrentPosition(), "#scr+", false)){
-    _lcd->changeLED( 16);
-    _mbox->report_LCDBrightness( _lcd->ledBrightness);
-    _clb->clearInput();
-    return;
-  }
-  if( IsToken( _epar->_getCurrentPosition(), "#scr-", false)){
-    _lcd->changeLED( -16);
-    _mbox->report_LCDBrightness( _lcd->ledBrightness);
-    _clb->clearInput();
-    return;
-  }
   Serial.println("Unknown command:");
   Serial.println((char *)_epar->_getCurrentPosition());
 }
 
 void BasicConsole::_popPartial() {
-  _vars->rpnPOP(2);
+  _vars->popRPNStack(2);
   _rsb->setStackRedrawAll();
 }
 void BasicConsole::_popPartial( double v) {
   _popPartial();
-  _vars->rpnSetStack(v);
+  _vars->setRPNRegister(v);
 }

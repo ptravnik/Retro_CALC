@@ -19,13 +19,14 @@ const char *const LCD_Message_Table[] PROGMEM = {
   LCD_WelcomeMessage1, 
   LCD_WelcomeMessage2
   };
-
+const char _LCD_lcdPWM[] PROGMEM = "lcdPWM%";
 
 //
 // Inits LCD display
 //
 unsigned long LCDManager::init( void *components[]) {
   _iom = (IOManager *)components[UI_COMP_IOManager];
+  _vars = (Variables *)components[UI_COMP_Variables];
   _io_buffer = _iom->getIOBuffer();
 
   // Set timer and attach to the led
@@ -71,6 +72,8 @@ void LCDManager::waitForEndSplash( unsigned long start, bool cls) {
   while( millis()-start < SCR_SPLASH) delay(50);
   memset( _buffer, _SP_, SCR_SIZE);
   memset( lineInversed, false, SCR_ROWS);
+  _ledPWM = (int64_t *)_vars->findDataPtr( _LCD_lcdPWM);
+  if( _ledPWM) ledBrightness = (byte)( *_ledPWM & 0xFF);
   if( cls) {
     _dimLED( ledBrightness, 0, 5); // dim before cleaning
     clearScreen( _SP_, true);
@@ -264,6 +267,11 @@ void LCDManager::redraw() {
   int16_t x0, cp;
   byte c, tmp;
   uint8_t *ptr;
+  if( _ledPWM && *_ledPWM != ledBrightness){
+    byte br = (byte)*_ledPWM;
+    *_ledPWM = (int64_t)br;
+    setLED( br);
+  }
   cp = _cursor_position();
   tmp = _buffer[ cp];
   if( cursorShown){

@@ -60,7 +60,7 @@ void RPNStackBox::redraw() {
     if( _stackRedrawRequired[i]){
       _stackRedrawRequired[i] = false;
       _lcd->clearLine( rpnNums[i]);
-      size_t len = _epar->numberParser.stringValue(_vars->rpnGetStack(i), _io_buffer)-_io_buffer;
+      size_t len = _epar->numberParser.stringValue(_vars->getRPNRegister(i), _io_buffer)-_io_buffer;
       if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
       _lcd->cursorTo( SCR_RIGHT-len, rpnNums[i]);
       _lcd->sendString( _io_buffer);
@@ -76,7 +76,7 @@ void RPNStackBox::updateIOM( bool refresh) {
   _iom->sendLn();
   for( int8_t i=2; i>=0; i--){
     _iom->sendStringLn( _labels[i]);
-    size_t len = _epar->numberParser.stringValue( _vars->rpnGetStack(i), _io_buffer)-_io_buffer;
+    size_t len = _epar->numberParser.stringValue( _vars->getRPNRegister(i), _io_buffer)-_io_buffer;
     if( len >= SCR_RIGHT) len = SCR_RIGHT-1;    
     for( byte j=0; j<SCR_RIGHT-len; j++) _iom->sendChar( ' ');
     _iom->sendStringUTF8Ln();

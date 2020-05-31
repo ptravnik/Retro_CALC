@@ -890,6 +890,50 @@ bool ExpressionParser::_parse_FunctionArguments(Function *f, double *_args){
   return false;
 }
 
+bool ExpressionParser::_parse_VariableArguments(VariableToken vt){
+  _ignore_Blanks();
+  _martixRow = 0;
+  _martixColumn = 0;
+  switch( _vars->getVarType(vt)){
+    case VARTYPE_NUMBER:
+      _expression_error = *_parser_position == '[' || *_parser_position == '('; 
+      return _expression_error;
+    case VARTYPE_VECTOR:
+    case VARTYPE_STRING:
+      if( *_parser_position != '[' && *_parser_position != '(') return false;
+      if( *_parser_position == '['){
+        _parser_position++;
+        if( _parse_ListMember( ']')) return true;
+      }
+      if( *_parser_position == '('){
+        _parser_position++;
+        if( _parse_ListMember( ')')) return true;
+      }
+      if( numberParser.result != _RESULT_INTEGER_) return true;
+      _martixColumn = (int)numberParser.integerValue();
+      return false;
+    default:
+      if( *_parser_position != '[' && *_parser_position != '(') return false;
+      if( *_parser_position == '['){
+        _parser_position++;
+        if( _parse_ListMember( ',')) return true;
+        if( numberParser.result != _RESULT_INTEGER_) return true;
+        _martixRow = (int)numberParser.integerValue();
+        if( _parse_ListMember( ']')) return true;
+      }
+      if( *_parser_position == '('){
+        _parser_position++;
+        if( _parse_ListMember( ',')) return true;
+        if( numberParser.result != _RESULT_INTEGER_) return true;
+        _martixRow = (int)numberParser.integerValue();
+        if( _parse_ListMember( ')')) return true;
+      }
+      if( numberParser.result != _RESULT_INTEGER_) return true;
+      _martixColumn = (int)numberParser.integerValue();
+      return false;
+  }
+}
+
 //
 // Returns true if unmatched brackets
 //

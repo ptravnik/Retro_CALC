@@ -96,6 +96,15 @@ Keyword *Keywords::getKeyword(byte *str){
   return NULL; // not found
 }
 
+bool Keywords::isKeyword(byte *str){
+  Keyword *tmp = _keywords;
+  for(size_t i=0; i<_OPERATOR_COUNT; i++, tmp++){
+    if( IsKeyword(str, tmp->name0)) return true;
+    if( IsKeyword(str, tmp->name1)) return true;
+  }
+  return false; // not found
+}
+
 byte *Keywords::parse( byte *str){
   lastKeywordFound = NULL;
   byte tmp;

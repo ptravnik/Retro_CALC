@@ -52,15 +52,15 @@ class ProgramCode{
     
     // VariableToken removeVariable( const char *name);
     // VariableToken removeConstant( const char *name);
-    // inline void removeVariables(){ _var_bottom = _standard_bottom;};
-    // inline void removeConstants(){ _const_top = _standard_top;};
+    // inline void removeAllVariables(){ _var_bottom = _standard_bottom;};
+    // inline void removeAllConstants(){ _const_top = _standard_top;};
 
-    // VariableToken getVariable( const char *name);
-    // inline VariableToken getVariable( byte *name){
-    //   return getVariable( (const char *)name);};
-    // VariableToken getConstant( const char *name);
-    // inline VariableToken getConstant( byte *name){
-    //   return getConstant( (const char *)name);};
+    // VariableToken findVariableByName( const char *name);
+    // inline VariableToken findVariableByName( byte *name){
+    //   return findVariableByName( (const char *)name);};
+    // VariableToken findConstantByName( const char *name);
+    // inline VariableToken findConstantByName( byte *name){
+    //   return findConstantByName( (const char *)name);};
     // inline bool isStandardConstant( VariableToken vt){
     //   return vt>_standard_top;};
 
@@ -96,7 +96,7 @@ class ProgramCode{
     // void setVector( VariableToken vt, int64_t v);
     // inline void setVector( VariableToken vt, long v){ setVector( vt, (int64_t)v);};
     // inline void setVector( VariableToken vt, int v){ setVector( vt, (int64_t)v);};
-    // void rpnSWAP();
+    // void swapRPNXY();
     // double getConvertedAngle( double a); // converts argument to radians
     // double getUnconvertedAngle( double a); // converts argument to current angle representation
     // inline double getConvertedAngle(){return getConvertedAngle( _rpnStack[0]);};
@@ -112,17 +112,17 @@ class ProgramCode{
     //   if(m != _MODE_RADIAN_ && m != _MODE_GRADIAN_) m = _MODE_DEGREES_;
     //   *_amode = (int64_t)m;
     // };
-    // inline void rpnSavePreviousX( byte i=0){ *_prev = _rpnStack[i];};
-    // inline void rpnRestorePreviousX(){ _rpnStack[0] = *_prev;};
-    // inline bool rpnIsZero( byte i=0){ return _rpnStack[i] == 0.0;};
-    // inline void rpnPOP(byte start=1){
+    // inline void saveRPNPrev( byte i=0){ *_prev = _rpnStack[i];};
+    // inline void restoreRPNPrev(){ _rpnStack[0] = *_prev;};
+    // inline bool isRPNRegisterZero( byte i=0){ return _rpnStack[i] == 0.0;};
+    // inline void popRPNStack(byte start=1){
     //   for(byte i=start; i<RPN_STACK; i++) _rpnStack[i-1] = _rpnStack[i];
     // };
-    // inline void rpnPUSH(){
+    // inline void pushRPNStack(){
     //   for(byte i=RPN_STACK-1; i>0; i--) _rpnStack[i] = _rpnStack[i-1];
     // };
-    // inline void rpnPUSH( double v){
-    //   rpnPUSH();
+    // inline void pushRPNStack( double v){
+    //   pushRPNStack();
     //   *_rpnStack = v;
     // };
 

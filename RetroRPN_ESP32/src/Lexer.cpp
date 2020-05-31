@@ -135,7 +135,7 @@ bool Lexer::_processVariable( bool asConstant){
     _lexer_position = ptr;
      return false;
   }
-  lastVariable = _vars->getOrCreate( asConstant, _epar->nameParser.Name());
+  lastVariable = _vars->getOrCreateNumber( asConstant, _epar->nameParser.Name());
   if( lastVariable == 0){
     _mbox->setLabel(LEX_Error_OutOfMemory);
     _skipToNextOperator( _lexer_position);
@@ -146,11 +146,13 @@ bool Lexer::_processVariable( bool asConstant){
   _lexer_position = _epar->parse(_lexer_position);
   switch( _epar->result ){
     case _RESULT_INTEGER_:
+      _vars->setValueInteger( lastVariable, _epar->numberParser.integerValue());
+      break;
     case _RESULT_REAL_:
-      _vars->setValue( lastVariable, _epar->numberParser.realValue());
+      _vars->setValueReal( lastVariable, _epar->numberParser.realValue());
       break;
     default:
-      _vars->setValue( lastVariable, 0.0);
+      _vars->setValueReal( lastVariable, 0.0);
       break;
   }
   _skipToNextOperator( _lexer_position);

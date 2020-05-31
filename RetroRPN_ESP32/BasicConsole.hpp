@@ -69,7 +69,7 @@ class BasicConsole{
       updateIOM(refresh);
     };
     inline void _savePopAndUpdate( double v, bool refresh) {
-      _vars->rpnSavePreviousX();
+      _vars->saveRPNPrev();
       _popPartial(v);
       updateIOM(refresh);
     };

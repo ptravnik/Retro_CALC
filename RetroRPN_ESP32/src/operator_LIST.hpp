@@ -85,7 +85,21 @@ bool Lexer::operator_LIST_Vars(bool constants){
       _vars->getFirstConst():
       _vars->getFirstVar();
   while( vt){
-    _iom->sendStringLn( _vars->getVarName( vt));
+    char *ptr = convertToUTF8( (char *)_io_buffer, _vars->getVarName( vt), INPUT_COLS);
+    switch( _vars->getVarType(vt)){
+      case VARTYPE_VECTOR:
+        snprintf( ptr, INPUT_COLS - _vars->getVarNameLength( vt), "[%d]", _vars->getTotalSize(vt));
+        break;
+      case VARTYPE_MATRIX:
+        snprintf( ptr, INPUT_COLS - _vars->getVarNameLength( vt), "[%d,%d]", _vars->getRowSize(vt),_vars->getColumnSize(vt));
+        break;
+      case VARTYPE_STRING:
+        snprintf( ptr, INPUT_COLS - _vars->getVarNameLength( vt), "[%d] (string)", _vars->getTotalSize(vt));
+        break;
+      default:
+        break;
+    }
+    _iom->sendStringUTF8Ln( (char *)_io_buffer);
     vt = _vars->getNextVar( vt);
   }
   _skipToNextOperator( _lexer_position);

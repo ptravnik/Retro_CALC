@@ -95,6 +95,8 @@ class ExpressionParser{
     Functions *_funs;
     bool _expression_error = false;
     byte *_parser_position;
+    int _martixRow = 0;
+    int _martixColumn = 0;
     inline void _ignore_Blanks(){
       while(IsSpacer(*_parser_position))
         _parser_position++;
@@ -104,11 +106,17 @@ class ExpressionParser{
       _parser_position++;
       return true;
     };
+    inline bool _check_NextTokens( byte c1, byte c2){
+      if( *_parser_position != c1 && *_parser_position != c2) return false;
+      _parser_position++;
+      return true;
+    };
     bool _validate_NextCharacter( byte c);
     bool _validate_NextOperation( const char *op1);
     bool _validate_NextOperation( const char *op1, const char *op2);
     bool _parse_ListMember( byte terminator);
     bool _parse_FunctionArguments( Function *f, double *_args);
+    bool _parse_VariableArguments(VariableToken vt);
     byte *_parse_Expression_Logic();
     byte *_parse_Expression_NOT();
     byte *_parse_Expression_Comparison();

@@ -97,6 +97,7 @@
 #define _RPN_GOFF2_SOLVER 12
 #define _RPN_STACK_GET    13
 
+#define _FUN_Variable_    -1
 #define _FUN_AMODE_KW_     0
 #define _FUN_SIN_KW_       1
 #define _FUN_COS_KW_       2
@@ -166,6 +167,7 @@ class Keywords{
     inline Keyword *getKeywordById( int16_t id){
       return _keywords + id; 
     };
+    bool isKeyword(byte *str);
     byte *parse( byte *);
   private:
     size_t _id;

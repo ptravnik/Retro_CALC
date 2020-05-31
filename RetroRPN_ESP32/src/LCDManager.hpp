@@ -28,6 +28,7 @@
 #define LCDMANAGER_HPP
 
 #include "IOManager.hpp"
+#include "Variables.hpp"
 
 // fade LED PIN (replace with LED_BUILTIN=2 constant for built-in LED)
 // LCD PIN controls power for LCD
@@ -130,6 +131,7 @@ class LCDManager{
   private:
     byte *_io_buffer;
     IOManager *_iom;
+    Variables *_vars;
     bool _blinked = false;
     uint32_t _last_blinked = 0;
     uint16_t _cursor_column = 0;
@@ -141,6 +143,7 @@ class LCDManager{
     uint8_t _tileHeight = 0;
     uint8_t _tileWidth = 0;
     uint8_t *_graphics;
+    int64_t *_ledPWM = NULL;
     void _dimLED( byte start_duty, byte stop_duty, byte step=30);
     void _ledcAnalogWrite(uint8_t channel, uint8_t value);
 };

@@ -26,19 +26,19 @@ bool Lexer::operator_CONST(){
     _skipToNextOperator( ptr);
      return true;
   }
-  lastVariable = _vars->getOrCreate( true, _epar->nameParser.Name());
+  lastVariable = _vars->getOrCreateNumber( true, _epar->nameParser.Name());
   if( lastVariable == 0){
     _mbox->setLabel(LEX_Error_OutOfMemory);
     _skipToNextOperator( _lexer_position);
     return true;
   }
-  if( _vars->isStandardConstant(lastVariable)){
+  if( _vars->isReadOnly(lastVariable)){
     _skipToNextOperator( _lexer_position);
     return true;
   }
   _lexer_position = ptr; // name found, looking for assignment
   if( !_findAssignment()){ // no assignment take from stack
-    _vars->setValue( lastVariable, _vars->rpnGetStack());
+    _vars->setValueReal( lastVariable, _vars->getRPNRegister());
     _skipToNextOperator( _lexer_position);
      return true;
   }
@@ -46,11 +46,13 @@ bool Lexer::operator_CONST(){
   _lexer_position = _epar->parse(_lexer_position);
   switch( _epar->result ){
     case _RESULT_INTEGER_:
+      _vars->setValueInteger( lastVariable, _epar->numberParser.integerValue());
+      break;
     case _RESULT_REAL_:
-      _vars->setValue( lastVariable, _epar->numberParser.realValue());
+      _vars->setValueReal( lastVariable, _epar->numberParser.realValue());
       break;
     default:
-      _vars->setValue( lastVariable, 0.0);
+      _vars->setValueReal( lastVariable, 0.0);
       break;
   }
   _skipToNextOperator( _lexer_position);

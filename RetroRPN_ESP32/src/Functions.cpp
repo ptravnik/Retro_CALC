@@ -102,12 +102,10 @@ const char _FUN_lin2[] PROGMEM = "lin2";
 const char _FUN_LIN2[] PROGMEM = "LIN2";
 
 static Function VariableFunction;
-static Function ConstantFunction;
 
 void Functions::init( void *components[]){
   _vars = (Variables *)components[UI_COMP_Variables];
-  VariableFunction.id = -1;
-  ConstantFunction.id = -2;
+  VariableFunction.id = _FUN_Variable_;
   _addFunction( _FUN_amode, _FUN_AMODE, 1, 0, _RPN_AMODE_); // 0
   _addFunction( _FUN_sin, _FUN_SIN, 1, 1, _RPN_CHECK_TRIG_); // 1
   _addFunction( _FUN_cos, _FUN_COS, 1, 1, _RPN_CHECK_TRIG_); // 2
@@ -147,9 +145,7 @@ Function *Functions::getFunction(byte *str){
     if( IsKeyword(str, ptr->name0)) return ptr;
     if( IsKeyword(str, ptr->name1)) return ptr;
   }
-  VariableToken vt = _vars->getConstant( str);
-  if( vt) return _setVariable( &ConstantFunction, vt);
-  vt = _vars->getVariable( str);
+  VariableToken vt = _vars->findByName( str);
   if( vt) return _setVariable( &VariableFunction, vt);
   return NULL; // not found
 }
@@ -260,7 +256,7 @@ double *Functions::Compute( Function *mf, double *args){
       iStack = (int)floor(args[0]);
       if( iStack<0) iStack = 0;
       if( iStack>=RPN_STACK) iStack = RPN_STACK-1;
-      _rets[0] = _vars->rpnGetStack(iStack);
+      _rets[0] = _vars->getRPNRegister(iStack);
       break;
     case _FUN_LCIRC_KW_:
       _rets[0] = _MATH_PI_ * 2.0 * args[0];
@@ -370,14 +366,22 @@ double *Functions::goff2( double *stack) {
 }
 
 //
-// Sets constant o variable
+// Sets constant or variable
 //
 Function *Functions::_setVariable( Function *f, VariableToken vt) {
-    f->name0 = _vars->getVarName( vt);
-    f->name1 = f->name0;
-    f->nArgs = 0;
-    f->VarTag = vt;
-    //if( _vars->getVarType() == VARTYPE_MATRIX) f->nArgs = 2;
-    //if( _vars->getVarType() == VARTYPE_NUMBER) f->nArgs = 0;
+  f->name0 = (const char *)_vars->getVarName( vt);
+  f->name1 = f->name0;
+  f->nArgs = 1;
+  f->VarTag = vt;
+  switch(_vars->getVarType( vt)){
+    case VARTYPE_MATRIX:
+      f->nArgs = 2;
+      return f;
+    case VARTYPE_NUMBER:
+      f->nArgs = 0;
+      return f;
+    default:
+      break;
+    }
   return f;
 }

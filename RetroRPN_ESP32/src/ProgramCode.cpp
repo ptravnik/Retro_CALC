@@ -64,7 +64,7 @@ void ProgramCode::convertLine(){
 // // Removes variables from either var o const stack
 // //
 // VariableToken Variables::removeVariable( const char *name){
-//   VariableToken vt = getVariable(name);
+//   VariableToken vt = findVariableByName(name);
 //   if(vt < _standard_bottom) return 0; // standard cannot be deleted
 //   VariableToken vt2 = _getNextVar( vt);  
 //   byte *dest = _buffer + vt - 2;
@@ -75,7 +75,7 @@ void ProgramCode::convertLine(){
 //   return vt;
 // }
 // VariableToken Variables::removeConstant( const char *name){
-//   VariableToken vt = getConstant(name);
+//   VariableToken vt = findConstantByName(name);
 //   if(vt >= _standard_top) return 0; // standard cannot be deleted
 //   VariableToken vt2 = _getNextVar( vt);  
 //   byte *dest = _buffer + vt2 - 2;
@@ -90,7 +90,7 @@ void ProgramCode::convertLine(){
 // // returns variable name's offset or 0 if not found;
 // // note that the actual variable starts two bytes earlier
 // //
-// VariableToken Variables::getVariable( const char *name){
+// VariableToken Variables::findVariableByName( const char *name){
 //   if( _var_bottom == 0) return 0;
 //   if( strlen(name) == 0) return 0;
 //   VariableToken vt = getFirstVar();
@@ -111,7 +111,7 @@ void ProgramCode::convertLine(){
 //   }
 //   return 0;
 // }
-// VariableToken Variables::getConstant( const char *name){
+// VariableToken Variables::findConstantByName( const char *name){
 //   if( _const_top >= VARIABLE_SPACE) return 0;
 //   if( strlen(name) == 0) return 0;
 //   VariableToken vt = getFirstConst();
@@ -134,8 +134,8 @@ void ProgramCode::convertLine(){
 //   byte type, size_t row_size, size_t column_size){
 //   if( _kwds->getKeyword( name) != NULL) return 0;
 //   VariableToken vt = asConstant?
-//     getConstant( name):
-//     getVariable( name);
+//     findConstantByName( name):
+//     findVariableByName( name);
 //   if( vt != 0) return vt;
 //   return asConstant?
 //     placeNewConstant( name, type, row_size, column_size):
@@ -389,7 +389,7 @@ void ProgramCode::convertLine(){
 //   return nameLen;
 // }
 
-// void Variables::rpnSWAP(){
+// void Variables::swapRPNXY(){
 //   double tmp = _rpnStack[0];
 //   _rpnStack[0] = _rpnStack[1];
 //   _rpnStack[1] = tmp;

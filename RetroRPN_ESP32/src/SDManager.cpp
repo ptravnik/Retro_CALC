@@ -227,7 +227,7 @@ void SDManager::storeConstants(){
   #ifdef __DEBUG
   Serial.println("Saving constants:");
   #endif
-  while( !_vars->isStandardConstant( vt)){
+  while( !_vars->isReadOnly( vt)){
     _writeVariable( &file, ConstantFileFormat, lineNumber, vt);
     vt = _vars->getNextVar( vt);
     if( !vt) break;

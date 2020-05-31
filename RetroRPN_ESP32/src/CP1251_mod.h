@@ -30,9 +30,9 @@
 #define _ESC_       27
 #define _RPN_       31
 #define _SP_        32
-#define _HASH_      36
-#define _DOLLAR_    37
-#define _PERCENT_   38
+#define _HASH_      35
+#define _DOLLAR_    36
+#define _PERCENT_   37
 #define _COMMA_     44
 #define _DECIMAL_   46
 #define _ZERO_      48
