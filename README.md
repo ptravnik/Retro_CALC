@@ -38,7 +38,7 @@ The code is partially ported and tested on the ESP-32 platform. Production PCBs 
 1. Validate which version of hardware keyboard is connected: the production layout uses different h file as the buttons\' position is different from the early mock-up.
 1. Select the board as **ESP32 Dev Module**, compile and upload as usual. Dev module requires you to hold **BOOT** down for security reasons; on my module (v 1) this pin is not exposed, so must be done with the button on the module itself. Your board may have this on GPIO 00 pin - wiring to an external button is recommended.
 
-## To build for the Keyboard Injector:
+## To build the Keyboard Injector:
 1. Tested only with cheap Chinese clones of Sparkfun Pro Micro on Arduino IDE 1.18.10 and 1.18.12.
 1. Carefully follow the [install instructions from Sparkfun](https://learn.sparkfun.com/tutorials/pro-micro--fio-v3-hookup-guide/all)
 1. Download the [code from github](https://github.com/ptravnik/Retro_CALC/tree/master/Keyboard_Injector_Micro)
@@ -48,5 +48,5 @@ The code is partially ported and tested on the ESP-32 platform. Production PCBs 
 
 ## Automated testing
 1. Place the content of [testing folder](https://github.com/ptravnik/Retro_CALC/tree/master/BASIC_Tests) into the root of the SD card.
-1. Insert the SD into the calculator and press hard reboot.
-1. Upon the calculator reboot (or new firmware install from the IDE), issue command **RUN** via Serial Monitor.
+1. Insert the SD into the calculator and cycle power button.
+1. Upon the calculator wake-up (or new firmware install from the IDE + reboot), issue command **RUN** via Serial Monitor.
