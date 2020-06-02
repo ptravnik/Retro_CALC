@@ -45,3 +45,8 @@ The code is partially ported and tested on the ESP-32 platform. Production PCBs 
 1. Select the board as **Sparkfun Pro Micro** and the processor as **ATMega 32U4 3.3V, 8MHz** or **ATMega 5.0V 16MHz** version (depending on the one you have); **CAUTION** "Leonardo" may work for 5V / 16 MHz boards, but will surely brick a 3.3V version!
 1. Select the board's port
 1. Upload to board (shorting Reset to Ground may be required after the interface says "Uploading...")
+
+## Automated testing
+1. Place the content of [testing folder](https://github.com/ptravnik/Retro_CALC/tree/master/BASIC_Tests) into the root of the SD card.
+1. Insert the SD into the calculator and press hard reboot.
+1. Upon the calculator reboot (or new firmware install from the IDE), issue command **RUN** via Serial Monitor.
