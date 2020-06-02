@@ -94,10 +94,8 @@ bool Lexer::operator_CLEAR_Vars(bool constants){
     else _vars->removeAllVariables();
     return true;
   }
-  Serial.println( (char*)_lexer_position);
   ptr = _epar->nameParser.parse( _lexer_position);
   _skipToNextOperator( ptr);
-  Serial.println( _epar->nameParser.result);
   if( !_epar->nameParser.result) return true;
   _vars->removeByName( _epar->nameParser.Name());
   return true;

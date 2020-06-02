@@ -359,6 +359,10 @@ VariableToken Variables::getOrCreate2( bool asConstant, byte *name ){
 
 void Variables::_removeVariable( VariableToken vt){
   VariableToken vt2 = _getNextVar( vt);
+  if( vt2>_var_bottom){
+    _var_bottom = vt-2;
+    return;
+  } 
   byte *dest = _buffer + vt - 2;
   byte *src = _buffer + vt2 - 2;
   for( uint16_t i=vt2-2; i<_var_bottom; i++)
@@ -368,17 +372,19 @@ void Variables::_removeVariable( VariableToken vt){
 }
 void Variables::_removeConstant( VariableToken vt){
   VariableToken vt2 = _getNextVar( vt);  
-  byte *dest = _buffer + vt2 - 2;
-  byte *src = _buffer + vt - 2;
-  for( uint16_t i=vt-2; i>_const_top; i--)
+  if( vt-2<=_const_top){
+    _const_top = vt2-2;
+    return;
+  } 
+  byte *dest = _buffer + vt2 - 3;
+  byte *src = _buffer + vt - 3;
+  for( uint16_t i=vt-3; i>=_const_top; i--)
     *dest-- = *src--;
   _const_top += (vt2 - vt);
   return;
 }
 void Variables::removeByToken( VariableToken vt){
-  if( vt<2) return;
-  if( isReadOnly( vt)) return; // read-only constant
-  if( vt-2<_standard_bottom ) return; // unremovable variable
+  if( isUnremovable( vt)) return; // read-only constant or unremovable variable
   if( isConstant( vt)) _removeConstant( vt);
   else _removeVariable(vt);
   *_varAvailble = (int64_t)getMemoryAvailable();

@@ -505,22 +505,6 @@ void RPNCalculator::_evaluateCommand(){
 //
 void RPNCalculator::_evaluateString(){
   byte *ptr;
-  // size_t v = _vars->findByName( _epar->nameParser.Name());
-  // if( v > 0){
-  //   _vars->pushRPNStack( _vars->realValue( v));
-  //   _clb->clearInput();
-  //   _rsb->setStackRedrawAll();
-  //   updateIOM();
-  //   return;
-  // }
-  // v = _vars->findByName( _epar->nameParser.Name());
-  // if( v > 0){
-  //   _vars->pushRPNStack( _vars->realValue( v));
-  //   _clb->clearInput();
-  //   _rsb->setStackRedrawAll();
-  //   updateIOM();
-  //   return;
-  // }
   if( IsToken( _epar->nameParser.Name(), "cls", false)){
     resetRPNLabels();
     _clb->clearInput();

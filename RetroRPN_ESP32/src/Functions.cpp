@@ -155,13 +155,8 @@ double *Functions::Compute( Function *mf, double *args){
   int iStack = 0;
   switch(mf->id){
     case -1:
-      Serial.print( "Variable found: ");
-      Serial.println( (char *)mf->name0);
-      _rets[0] = _vars->realValue( mf->VarTag);
-      break;
-    case -2:
       #ifdef __DEBUG
-      Serial.print( "Constant found: ");
+      Serial.print( "Variable found: ");
       Serial.println( (char *)mf->name0);
       #endif
       _rets[0] = _vars->realValue( mf->VarTag);
@@ -222,7 +217,7 @@ double *Functions::Compute( Function *mf, double *args){
       _rets[0] = args[0] * args[0];    
       break;
     case _FUN_ROOT_KW_:
-      _rets[0] = pow(args[1], 1./args[0]);
+      _rets[0] = pow(args[0], 1./args[1]);
       break;
     case _FUN_SIGN_KW_:
       _rets[0] = 0.0;

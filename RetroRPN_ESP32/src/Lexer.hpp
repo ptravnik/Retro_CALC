@@ -42,6 +42,8 @@ class Lexer{
 
     bool operator_REM();
 
+    bool operator_RUN();
+
     bool operator_STORE();
     bool operator_STORE_Vars( bool constants);
 
@@ -53,6 +55,7 @@ class Lexer{
     IOManager *_iom;
     Keywords *_kwds;
     Variables *_vars;
+    ProgramCode *_code;
     Functions *_funs;
     ExpressionParser *_epar;
     LCDManager *_lcd;
@@ -70,6 +73,9 @@ class Lexer{
     byte *_skipToEOL( byte *str);
     byte *_skipToNextOperator( byte *str);
     bool _validate_NextCharacter( byte c);
+
+    void _operatorListProgramCode(uint16_t lFrom, uint16_t lTo=MAX_LINE_NUMBER);
+
     inline void _ignore_Blanks(){
       while(IsSpacer(*_lexer_position))
         _lexer_position++;

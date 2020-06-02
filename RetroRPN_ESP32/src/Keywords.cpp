@@ -63,6 +63,9 @@ const char _OPR_save[] PROGMEM = "save";
 //#define _OPR_CHAIN_KW    17
 const char _OPR_CHAIN[] PROGMEM = "CHAIN";
 const char _OPR_chain[] PROGMEM = "chain";
+//#define _OPR_RUN_KW    18
+const char _OPR_RUN[] PROGMEM = "RUN";
+const char _OPR_run[] PROGMEM = "run";
 
 void Keywords::init(){
     _addKeyword( _OPR_REM, _OPR_rem);           // 0
@@ -83,7 +86,8 @@ void Keywords::init(){
     _addKeyword( _OPR_LOAD, _OPR_load);         // 15
     _addKeyword( _OPR_SAVE, _OPR_save);         // 16
     _addKeyword( _OPR_CHAIN, _OPR_chain);       // 17
-    //_addKeyword( Add here, Add here);         // 18
+    _addKeyword( _OPR_RUN, _OPR_run);           // 18
+    //_addKeyword( Add here, Add here);         // 19
 };
 
 Keyword *Keywords::getKeyword(byte *str){

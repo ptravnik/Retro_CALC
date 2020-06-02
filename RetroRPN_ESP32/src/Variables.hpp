@@ -71,6 +71,10 @@ class Variables{
     uint16_t getColumnSize( VariableToken vt);
     inline bool isConstant( VariableToken vt){ return vt>_const_top;};
     inline bool isReadOnly( VariableToken vt){ return vt>_standard_top;};
+    inline bool isUnremovable( VariableToken vt){
+        if( vt < 2) return true; 
+        if( vt-2 <=_standard_bottom) return true;
+        return vt > _standard_top;};
     byte nameEndsWith( VariableToken vt);
     bool isNameBASICReal( VariableToken vt);
     bool isNameBASICString( VariableToken vt);
@@ -160,9 +164,9 @@ class Variables{
     //
     // returns available variable memory
     //
-    inline uint16_t getMemoryAvailable(){
+    inline size_t getMemoryAvailable(){
         return _const_top - _var_bottom;};
-    inline void setMemoryAvailable( uint16_t prg = 0){
+    inline void setMemoryAvailable( size_t prg = 0){
         *_varAvailble = (int64_t)getMemoryAvailable();
         *_prgAvailble = (int64_t)prg;};
 

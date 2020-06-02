@@ -12,29 +12,38 @@
 #include "Parsers.hpp"
 
 #define BASIC_SPACE       64000
-#define LineNumber        size_t
-#define LineLenght        size_t
+#define LineNumber        uint16_t
 
 //
 // Program is placed in the code space as following:
 //
-// bytes 0 and 1  - line number as size_t
-// byte3 2 and 3  - line length as size_t
+// bytes 0 and 1  - line number as 2-byte integer
+// byte3 2 and 3  - line length as 2-byte integer
 // bytes 4 and above - a null-terminated string with code
 //
 // The program stack is placed below and grows up
 //
+
+struct ProgramLine{
+  LineNumber lineNumber = 0;
+  byte *line = NULL;
+};
 
 class ProgramCode{
   public:
     size_t _program_bottom = 0;
     byte _buffer[ BASIC_SPACE];
     LineNumber currentLine = 0;
+    LineNumber lastLine = 0;
     
     void init( void *components[]);
     inline byte *getBottom(){ return _buffer + _program_bottom;};
-    inline size_t memoryAvailable(){ return  BASIC_SPACE - _program_bottom  - 2*sizeof(size_t);};
-    void convertLine();
+    inline size_t memoryAvailable(){ return  BASIC_SPACE - _program_bottom  - 2*sizeof(uint16_t);};
+    void clearProgram();
+    bool addLine( byte *line);
+    ProgramLine getFirstLine();
+    ProgramLine getNextLine( ProgramLine pl);
+
 
     // VariableToken placeNewVariable( const char *name, byte type=VARTYPE_NUMBER,
     //         size_t row_size = 1, size_t column_size = 1);
@@ -128,6 +137,7 @@ class ProgramCode{
 
   private:
     Keywords *_kwds;
+    Variables *_vars;
     ExpressionParser *_epar;
 };
 

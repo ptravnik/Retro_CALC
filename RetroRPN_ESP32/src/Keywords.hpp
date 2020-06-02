@@ -148,7 +148,8 @@
 #define _OPR_LOAD_KW       15
 #define _OPR_SAVE_KW       16
 #define _OPR_CHAIN_KW      17
-#define _OPERATOR_COUNT    18
+#define _OPR_RUN_KW        18
+#define _OPERATOR_COUNT    19
 
 #define RPN_STACK          20
 

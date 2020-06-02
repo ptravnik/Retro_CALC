@@ -153,8 +153,8 @@ unsigned long ESP32Host::tick() {
   }
   if(dt > SCREEN_OFF_PERIOD){
     // TODO: check here if saving is needed
-    mySDManager.saveState();
-    myRPNCalculator.saveState();
+    // mySDManager.saveState();
+    // myRPNCalculator.saveState();
     myLCDManager.sleepOn();
     return myIOManager.lastInput;
   }

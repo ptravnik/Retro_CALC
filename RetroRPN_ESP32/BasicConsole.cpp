@@ -49,6 +49,7 @@ unsigned long BasicConsole::init(void *components[]){
   _lcd = (LCDManager *)components[UI_COMP_LCDManager];
   _sdm = (SDManager *)components[UI_COMP_SDManager];
   _epar = (ExpressionParser *)components[UI_COMP_ExpressionParser];
+  _lex = (Lexer *)components[UI_COMP_Lexer];
   _rsb = (RPNStackBox *)components[UI_COMP_RPNBox];
   _clb = (CommandLine *)components[UI_COMP_CommandLine];
   _mbox = (MessageBox *)components[UI_COMP_MessageBox];
@@ -184,8 +185,8 @@ void BasicConsole::processCommand(byte c){
     }
     return;
   }
-  _epar->parse(_clb->getInput());  
-  if( _epar->result != _RESULT_UNDEFINED_)
+  _lex->parse(_clb->getInput());  
+  if( _lex->result != _RESULT_UNDEFINED_)
     _vars->pushRPNStack(_epar->numberParser.realValue());
   _clb->clearInput();
   expectCommand = false;
@@ -204,8 +205,8 @@ void BasicConsole::processInput( bool silent) {
   _iom->sendLn();
   #endif
   _clb->copyToPrevious();
-  _epar->parse(_clb->getInput()); 
-  switch(_epar->result){
+  _lex->parse(_clb->getInput()); 
+  switch(_lex->result){
     case _RESULT_STRING_:
       if( _epar->lastMathFunction == NULL){
         _evaluateString();

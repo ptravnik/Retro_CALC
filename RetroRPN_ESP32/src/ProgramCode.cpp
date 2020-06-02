@@ -8,57 +8,79 @@
 
 #include "ProgramCode.hpp"
 
-#define __DEBUG
+//#define __DEBUG
 
 void ProgramCode::init( void *components[]){
   _kwds = (Keywords *)components[UI_COMP_Keywords];
+  _vars = (Variables *)components[UI_COMP_Variables];
   _epar = (ExpressionParser *)components[UI_COMP_ExpressionParser];
 }
 
-void ProgramCode::convertLine(){
-  #ifdef __DEBUG
-  Serial.print("Line: ");
-  Serial.println( (char *)getBottom());
-  #endif
-  byte *ptr = _epar->numberParser.parse( getBottom());
+void ProgramCode::clearProgram(){
+  _program_bottom = 0;
+  currentLine = 0;
+  lastLine = 0;
 }
 
+//
+// Returns true if an error or no more memory
+//
+bool ProgramCode::addLine( byte *line){
+  byte *ptr = _epar->numberParser.parse( line);
+  if( *ptr == _SP_) ptr++;
+  if( _epar->numberParser.result != _RESULT_INTEGER_ ) return true;
+  int32_t lineNum = (int32_t)_epar->numberParser.integerValue();
+  if( lineNum > MAX_LINE_NUMBER) return true;
+  if( lineNum <= lastLine) return true;
+  size_t lineLen = strlen( ptr);
+  if( lineLen + 5 >= memoryAvailable()) return true;
+  uint16_t *linePtr = (uint16_t *)getBottom();
+  linePtr[0] = (uint16_t)lineNum;
+  linePtr[1] = (uint16_t)lineLen;
+  strcpy( (char*)getBottom() + 2*sizeof(uint16_t), (const char*)ptr);
+  #ifdef __DEBUG
+  Serial.print("Placed at ");
+  Serial.print( _program_bottom);
+  Serial.print(" #");
+  Serial.print( linePtr[0]);
+  Serial.print(" (");
+  Serial.print( linePtr[1]);
+  Serial.print(" bytes): ");
+  Serial.println( (char *)ptr);
+  #endif
+  _program_bottom += 2*sizeof( uint16_t) + lineLen + 1;
+  lastLine = lineNum;
+  _vars->setMemoryAvailable( memoryAvailable());
+  return false;
+}
 
-// //
-// // Places new variable in either var or const stack
-// // Returns ID or 0 if not enough memory
-// //
-// VariableToken Variables::placeNewVariable( const char *name, byte type, size_t row_size, size_t column_size){
-//   size_t nameLen = _limitName( name);
-//   size_t total_size = row_size * column_size;
-//   size_t varLen = _getVarLength( nameLen, type, total_size);
-//   if( _var_bottom + varLen >= _const_top) return 0; // not enough space
-//   VariableToken vt = _var_bottom + 2; 
-//   _placeVar( _buffer + _var_bottom, name, type, nameLen, total_size, row_size);
-//   _var_bottom += varLen;  
-//   return vt; 
+ProgramLine ProgramCode::getFirstLine(){
+  ProgramLine pl;
+  if( _program_bottom == 0) return pl;
+  uint16_t *ptr = (uint16_t *)_buffer; 
+  pl.lineNumber = ptr[0];
+  pl.line = _buffer + 2*sizeof(uint16_t);
+  return pl;
+}
+
+ProgramLine ProgramCode::getNextLine( ProgramLine pl){
+  ProgramLine pl2;
+  if( pl.line == NULL) return pl2;
+  uint16_t *ptr = (uint16_t *)(pl.line) - 1;
+  pl2.line = pl.line + *ptr + 1 + 2*sizeof(uint16_t);
+  if( pl2.line-_buffer > _program_bottom){
+    pl2.line = NULL;
+    return pl2;
+  }
+  ptr = (uint16_t *)(pl2.line) - 2;
+  pl2.lineNumber = *ptr;
+  return pl2;
+}
+
+// byte *getLineString( ProgramLine pl, byte *buffer){
+
 // }
-// VariableToken Variables::placeNewConstant( const char *name, byte type, size_t row_size, size_t column_size){
-//   size_t nameLen = _limitName( name);
-//   size_t total_size = row_size * column_size;
-//   size_t varLen = _getVarLength( nameLen, type, total_size);
-//   if( _const_top - _var_bottom <= varLen) return 0; // not enough space
-//   _const_top -= varLen;
-//   VariableToken vt = _const_top + 2;
-//   _placeVar( _buffer + _const_top, name, type, nameLen, total_size, row_size);
-//   return vt; 
-// }
-// VariableToken Variables::placeNewConstantValue( const char *name, double v){
-//   VariableToken vt = placeNewConstant( name, VARTYPE_NUMBER);
-//   if( vt < 2) return 0;
-//   setValue( vt, v);
-//   #ifdef __DEBUG
-//   Serial.print("Constant set: ");
-//   Serial.print( name);
-//   Serial.print(" = ");
-//   Serial.println(v);
-//   #endif
-// }
+
 
 // //
 // // Removes variables from either var o const stack

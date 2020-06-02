@@ -22,6 +22,7 @@ const char LEX_Message_Saved[] PROGMEM = "Saved";
 #include "operator_LIST.hpp"
 #include "operator_LOAD.hpp"
 #include "operator_REM.hpp"
+#include "operator_RUN.hpp"
 #include "operator_STORE.hpp"
 
 //
@@ -31,6 +32,7 @@ void Lexer::init(void *components[]){
   _iom = (IOManager *)components[UI_COMP_IOManager];
   _kwds = (Keywords *)components[UI_COMP_Keywords];
   _vars = (Variables *)components[UI_COMP_Variables];
+  _code = (ProgramCode *)components[UI_COMP_ProgramCode];
   _funs = (Functions *)components[UI_COMP_Functions];
   _epar = (ExpressionParser *)components[UI_COMP_ExpressionParser];
   _lcd = (LCDManager *)components[UI_COMP_LCDManager];
@@ -45,6 +47,7 @@ void Lexer::init(void *components[]){
   _kwds->getKeywordById( _OPR_LIST_KW)->method = (void *)_operator_LIST_;
   _kwds->getKeywordById( _OPR_REM_KW)->method = (void *)_operator_REM_;
   _kwds->getKeywordById( _OPR_REMALT_KW)->method = (void *)_operator_REM_;
+  _kwds->getKeywordById( _OPR_RUN_KW)->method = (void *)_operator_RUN_;
   _kwds->getKeywordById( _OPR_STORE_KW)->method = (void *)_operator_STORE_;
 }
 

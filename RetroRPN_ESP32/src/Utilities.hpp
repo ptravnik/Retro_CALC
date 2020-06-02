@@ -15,7 +15,7 @@
 #define UNKNOWN_UTF8 (byte)'*'
 #define DECIMAL_PLACES  9
 #define MAXIMUM_NUMBER_LENGTH 22
-#define MAX_LINE_NUMBER    10010
+#define MAX_LINE_NUMBER    10000
 
 //
 // Returns true if a spacer

@@ -21,6 +21,7 @@
 
 #include <FS.h>
 #include "Parsers.hpp"
+#include "ProgramCode.hpp"
 #include "MessageBox.hpp"
 
 // or use LED_BUILTIN=2 constant for built-in LED
@@ -70,6 +71,7 @@ class SDManager{
     byte *_io_buffer;
     IOManager *_iom;
     Variables *_vars;
+    ProgramCode *_code;
     MessageBox *_mbox;
     ExpressionParser *_epar;
     void _checkSDPin();

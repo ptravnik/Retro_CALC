@@ -15,11 +15,21 @@
 static bool _operator_LIST_( Lexer *lex){
   return lex->operator_LIST();
 }
-static void _listFake( size_t lFrom, size_t lTo=MAX_LINE_NUMBER){
-    Serial.print("listing program form ");
-    Serial.print( lFrom);
-    Serial.print(" to ");
-    Serial.println( lTo); 
+void Lexer::_operatorListProgramCode(uint16_t lFrom, uint16_t lTo){
+  char *buff = (char *)_iom->getIOBuffer();
+  ProgramLine pl = _code->getFirstLine();
+  while( true){
+    if( pl.line == NULL) return;
+    if( pl.lineNumber > lTo) return;
+    if( pl.lineNumber < lFrom){
+      pl = _code->getNextLine( pl);
+      continue;
+    }
+    int n = snprintf( buff, INPUT_COLS, "%05u ", pl.lineNumber);
+    convertToUTF8( buff+n, pl.line, INPUT_COLS-n);
+    _iom->sendStringUTF8Ln( buff);
+    pl = _code->getNextLine( pl);
+  }
 }
 bool Lexer::operator_LIST(){
   #ifdef __DEBUG
@@ -45,11 +55,11 @@ bool Lexer::operator_LIST(){
 
 bool Lexer::operator_LIST_Program(){
   // TODO
-  Serial.println("LIST PROGRAM not yet implemented (Program class undefined)");
+  Serial.println("LIST PROGRAM:");
   byte *ptr = _epar->parse( _lexer_position);
   size_t lFrom = 0;
   if( _epar->result != _RESULT_INTEGER_){
-    _listFake( lFrom);
+     _operatorListProgramCode( lFrom);
     _skipToNextOperator( _lexer_position);
     return true;
   }
@@ -59,17 +69,17 @@ bool Lexer::operator_LIST_Program(){
     lFrom = clipLineNumber(_epar->numberParser.integerValue());
   }
   if( _validate_NextCharacter( _COMMA_)){
-    _listFake( lFrom);
+     _operatorListProgramCode(  lFrom);
     _skipToNextOperator( _lexer_position);
     return true;
   }
   ptr = _epar->parse( _lexer_position);
   if( _epar->result == _RESULT_INTEGER_){
-    _listFake( lFrom, clipLineNumber(_epar->numberParser.integerValue(), lFrom));
+    _operatorListProgramCode(  lFrom, clipLineNumber(_epar->numberParser.integerValue(), lFrom));
     _skipToNextOperator( ptr);
     return true;
   }
-  _listFake( lFrom);
+  _operatorListProgramCode(  lFrom);
   _skipToNextOperator( ptr);
   return true;
 }

@@ -53,6 +53,7 @@ class BasicConsole{
     LCDManager *_lcd;
     SDManager *_sdm;
     ExpressionParser *_epar;
+    Lexer *_lex;
     CommandLine *_clb;
     RPNStackBox *_rsb;
     MessageBox *_mbox;

@@ -16,6 +16,7 @@
 const char RPN_SaveStatusFile[] PROGMEM = "/_RPN_SaveStatus.txt";
 const char RPN_SaveStatusFile2[] PROGMEM = "/_RPN_SaveStatus.bin";
 const char RPN_SaveConstantsFile[] PROGMEM = "/_RPN_Constants.txt";
+const char RPN_AutoexecFile[] PROGMEM = "/autotest.bas";
 
 const char SD_Message0[] PROGMEM = "+ SD inserted";
 const char SD_Message1[] PROGMEM = "+ SD removed";
@@ -85,6 +86,7 @@ bool SDManager::_detectSDCard(){
 unsigned long SDManager::init(void *components[]){
   _iom = (IOManager *)components[UI_COMP_IOManager];
   _vars = (Variables *)components[UI_COMP_Variables];
+  _code = (ProgramCode *)components[UI_COMP_ProgramCode];
   _mbox = (MessageBox *)components[UI_COMP_MessageBox];
   _epar = (ExpressionParser *)components[UI_COMP_ExpressionParser];
   _io_buffer = _iom->getIOBuffer();
@@ -160,6 +162,18 @@ void SDManager::sleepOff(){
 //
 // TODO: load and save functionality here
 //
+static uint16_t _ReadLn_( File file, byte *ptr){
+  uint16_t nBytes = 0;
+  while(file.available()){
+    byte b = file.read();
+    if( b==_CR_) continue;
+    if( b==_LF_) break;
+    ptr[nBytes++] = b;
+    if( nBytes >= INPUT_LIMIT) break;
+  }
+  ptr[nBytes] = _NUL_;
+  return nBytes;
+}
 void SDManager::loadState(){
   if(!SDInserted) return;
   if(!SDMounted) return;
@@ -180,6 +194,20 @@ void SDManager::loadState(){
   Serial.print(_vars->_var_bottom);
   Serial.println(" bytes");
   #endif
+
+  file = SD.open( RPN_AutoexecFile);
+  if(!file){
+    #ifdef __DEBUG
+    Serial.println("Failed to open autotest.bat for reading");
+    #endif
+    return;
+  }
+  _code->clearProgram();
+  while( true){
+    if( !_ReadLn_( file, _io_buffer)) break;
+    if( _code->addLine( _io_buffer)) break;
+  }
+  file.close();
 }
 
 void SDManager::saveState(){
