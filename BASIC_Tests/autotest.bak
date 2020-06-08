@@ -1,0 +1,32 @@
+00005 REM This is a test
+00006 rem This is a test
+00007 # This is a test
+00010 ABS(-10.1) # 10.1
+00011 abs(-10.1) # 10.1
+00020 ACOS(0.5) # 60
+00021 acos(0.5) # 60
+00025 amode% = grad # 2
+00026 amode% # should be 2
+00027 amode% = 0 # 0
+00030 ASIN(0.5) # 30
+00031 asin(0.5) # 30
+00040 ATAN(1.0) # 45
+00041 atan(1.0) # 45
+00050 CATH(3,5) # 4
+00051 cath(55,44) # 33
+00060 CLEAR amode% # Protected var
+00061 clear amode% # Protected var
+00070 CLEAR *** # Nothing to clear
+00071 clear *** # Nothing to clear
+00080 CLEAR CONST True # Protected const
+00081 clear const False # Protected const
+00090 CLEAR CONST *** # Nothing to clear
+00091 clear const *** # Nothing to clear
+00100 #CLEAR PROGRAM {i{, j}} # Not implemented yet
+00110 CLEAR STACK # Sets stack values to zeros.
+00120 CONST UltimateAnswer2 = 7*6 + 1 # 42
+00121 const UltimateAnswer = 7*6  # 42
+00122 CLEAR CONST UltimateAnswer2 # Nothing
+00123 clear const UltimateAnswer2 # Nothing
+00130 COS(-45) # 0.7071
+00131 cos(-45) # 0.7071
