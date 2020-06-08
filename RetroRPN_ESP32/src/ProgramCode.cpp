@@ -33,7 +33,7 @@ bool ProgramCode::addLine( byte *line){
   if( lineNum > MAX_LINE_NUMBER) return true;
   if( lineNum <= lastLine) return true;
   size_t lineLen = strlen( ptr);
-  if( lineLen + 5 >= memoryAvailable()) return true;
+  if( lineLen + 5 >= getMemoryAvailable()) return true;
   uint16_t *linePtr = (uint16_t *)getBottom();
   linePtr[0] = (uint16_t)lineNum;
   linePtr[1] = (uint16_t)lineLen;
@@ -50,7 +50,7 @@ bool ProgramCode::addLine( byte *line){
   #endif
   _program_bottom += 2*sizeof( uint16_t) + lineLen + 1;
   lastLine = lineNum;
-  _vars->setMemoryAvailable( memoryAvailable());
+  _vars->setMemoryAvailable( getMemoryAvailable());
   return false;
 }
 

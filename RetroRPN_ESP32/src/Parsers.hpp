@@ -38,9 +38,26 @@ class NumberParser{
       result = _RESULT_INTEGER_;
       _iValue = v;
     }
+    inline void setValue( int32_t v){
+      result = _RESULT_INTEGER_;
+      _iValue = (int64_t)v;
+    }
+    inline void setValue( int16_t v){
+      result = _RESULT_INTEGER_;
+      _iValue = (int64_t)v;
+    }
+    inline void setValue( size_t v){
+      result = _RESULT_INTEGER_;
+      _iValue = (int64_t)v;
+    }
     inline void setValue( byte v){
       result = _RESULT_INTEGER_;
       _iValue = (int64_t)v;
+    }
+    inline void resetValue(){
+      result = _RESULT_UNDEFINED_;
+      _dValue = 0.0;
+      _iValue = 0L;
     }
 private:
     byte _numString[_NUMBER_LENGTH_];
@@ -91,6 +108,7 @@ class ExpressionParser{
       return _parser_position;
     };
   private:
+    Keywords *_kwds;
     Variables *_vars;
     Functions *_funs;
     bool _expression_error = false;

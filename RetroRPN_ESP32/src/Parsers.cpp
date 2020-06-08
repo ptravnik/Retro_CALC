@@ -439,6 +439,7 @@ inline byte NameParser::VarType(){
 // Inits ExpressionParser
 //
 void ExpressionParser::init(void *components[]){
+  _kwds = (Keywords *)components[UI_COMP_Keywords];
   _vars = (Variables *)components[UI_COMP_Variables];
   _funs = (Functions *)components[UI_COMP_Functions];
 }
@@ -784,6 +785,8 @@ byte *ExpressionParser::_parse_Expression_Power(){
     if(_expression_error) return ptr;
     b = numberParser.realValue();
     a = pow(a, b);
+    _expression_error = isnan( a);
+    if( _expression_error) break;
   }
   return _parser_position;
 }
@@ -798,7 +801,7 @@ byte *ExpressionParser::_parse_Expression_Value(){
     _parser_position = nameParser.parse(_parser_position);
     if(!nameParser.result) return _parser_position;
     #ifdef __DEBUG
-    Serial.print("Found keyword: ");
+    Serial.print("Keyword found (0): ");
     Serial.println((char *)nameParser.Name());
     #endif
     lastMathFunction = _funs->getFunction(nameParser.Name());
@@ -810,8 +813,8 @@ byte *ExpressionParser::_parse_Expression_Value(){
       return _parser_position;
     }
     #ifdef __DEBUG
-    Serial.print("Located function: ");
-    Serial.println(lastMathFunction->name0);
+    Serial.print("Function keyword found: ");
+    Serial.println( (char *)_kwds->getKeywordById( lastMathFunction->kwid)->name0);
     #endif
     Function *mfptr = lastMathFunction; // could be a recursive call!
     double _args[3]; // kept on system stack
@@ -820,19 +823,22 @@ byte *ExpressionParser::_parse_Expression_Value(){
       return _parser_position;
     }
     #ifdef __DEBUG
-    Serial.print("Function: ");
-    Serial.print(mfptr->name1);
-    for( byte i=0; i<3; i++){
+    Serial.print("Argument(s):");
+    for( byte i=0; i<lastMathFunction->nArgs; i++){
       Serial.print(" ");
       Serial.print(_args[i]);
     }
+    Serial.println();
     #endif    
-    double *tmp = _funs->Compute( mfptr, _args);
+    if( _funs->Compute( mfptr, _args)){
+      result = _RESULT_STRING_;
+      return _parser_position;  
+    }
     #ifdef __DEBUG
     Serial.print("Computation returned: ");
-    Serial.println(*tmp);
+    Serial.println(_funs->_rets[0]);
     #endif
-    numberParser.setValue(*tmp);
+    numberParser.setValue(_funs->_rets[0]);
     result = numberParser.result;
     return _parser_position;
   }

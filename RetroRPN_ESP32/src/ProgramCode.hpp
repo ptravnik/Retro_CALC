@@ -38,7 +38,7 @@ class ProgramCode{
     
     void init( void *components[]);
     inline byte *getBottom(){ return _buffer + _program_bottom;};
-    inline size_t memoryAvailable(){ return  BASIC_SPACE - _program_bottom  - 2*sizeof(uint16_t);};
+    inline size_t getMemoryAvailable(){ return  BASIC_SPACE - _program_bottom  - 2*sizeof(uint16_t);};
     void clearProgram();
     bool addLine( byte *line);
     ProgramLine getFirstLine();

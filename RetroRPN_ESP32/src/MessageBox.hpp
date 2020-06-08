@@ -48,6 +48,7 @@ class MessageBox{
     inline char *getMessageBuffer(){
       return (char *)_message;
     };
+    inline void setRedrawRequired(){_messageRedrawRequired = true;};
   private:
     IOManager *_iom;
     Variables *_vars;

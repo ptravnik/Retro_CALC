@@ -10,339 +10,218 @@
 
 //#define __DEBUG
 
-//#define _FUN_AMODE_KW_ 0
-const char _FUN_amode[] PROGMEM = "amode";
-const char _FUN_AMODE[] PROGMEM = "AMODE";
-//#define _FUN_SIN_KW_ 1
-const char _FUN_sin[] PROGMEM = "sin";
-const char _FUN_SIN[] PROGMEM = "SIN";
-//#define _FUN_COS_KW_ 2
-const char _FUN_cos[] PROGMEM = "cos";
-const char _FUN_COS[] PROGMEM = "COS";
-//#define _FUN_TAN_KW_ 3
-const char _FUN_tan[] PROGMEM = "tan";
-const char _FUN_TAN[] PROGMEM = "TAN";
-//#define _FUN_POW_KW_ 4
-const char _FUN_pow[] PROGMEM = "pow";
-const char _FUN_POW[] PROGMEM = "POW";
-//#define _FUN_NEG_KW_ 5
-const char _FUN_neg[] PROGMEM = "neg";
-const char _FUN_NEG[] PROGMEM = "NEG";
-//#define _FUN_LN_KW_ 6
-const char _FUN_ln[] PROGMEM = "ln";
-const char _FUN_LN[] PROGMEM = "LN";
-//#define _FUN_LG_KW_ 7
-const char _FUN_lg[] PROGMEM = "lg";
-const char _FUN_LG[] PROGMEM = "LG";
-//#define _FUN_LOG_KW_ 8
-const char _FUN_log[] PROGMEM = "log";
-const char _FUN_LOG[] PROGMEM = "LOG";
-//#define _FUN_EXP_KW_ 9
-const char _FUN_exp[] PROGMEM = "exp";
-const char _FUN_EXP[] PROGMEM = "EXP";
-//#define _FUN_SQRT_KW_ 10
-const char _FUN_sqrt[] PROGMEM = "sqrt";
-const char _FUN_SQRT[] PROGMEM = "SQRT";
-//#define _FUN_SQ_KW_ 11
-const char _FUN_sq[] PROGMEM = "sq";
-const char _FUN_SQ[] PROGMEM = "SQ";
-//#define _FUN_ROOT_KW_ 12
-const char _FUN_root[] PROGMEM = "root";
-const char _FUN_ROOT[] PROGMEM = "ROOT";
-//#define _FUN_SIGN_KW_ 13
-const char _FUN_sign[] PROGMEM = "sign";
-const char _FUN_SIGN[] PROGMEM = "SIGN";
-//#define _FUN_ABS_KW_ 14
-const char _FUN_abs[] PROGMEM = "abs";
-const char _FUN_ABS[] PROGMEM = "ABS";
-//#define _FUN_INV_KW_ 15
-const char _FUN_inv[] PROGMEM = "inv";
-const char _FUN_INV[] PROGMEM = "INV";
-//#define _FUN_RADIUS_KW_ 16
-const char _FUN_radius[] PROGMEM = "radius";
-const char _FUN_RADIUS[] PROGMEM = "RADIUS";
-//#define _FUN_QUAD_KW_ 17
-const char _FUN_quad[] PROGMEM = "quad";
-const char _FUN_QUAD[] PROGMEM = "QUAD";
-//#define _FUN_SWAP_KW_ 18
-const char _FUN_swap[] PROGMEM = "swap";
-const char _FUN_SWAP[] PROGMEM = "SWAP";
-//#define _FUN_LCIRC_KW_ 19
-const char _FUN_lcirc[] PROGMEM = "lcirc";
-const char _FUN_LCIRC[] PROGMEM = "LCIRC";
-//#define _FUN_SCIRC_KW_ 20
-const char _FUN_scirc[] PROGMEM = "scirc";
-const char _FUN_SCIRC[] PROGMEM = "SCIRC";
-//#define _FUN_VSPHERE_KW_ 21
-const char _FUN_vsphere[] PROGMEM = "vsphere";
-const char _FUN_VSPHERE[] PROGMEM = "VSPHERE";
-//#define _FUN_SSPHERE_KW_ 22
-const char _FUN_ssphere[] PROGMEM = "ssphere";
-const char _FUN_SSPHERE[] PROGMEM = "SSPHERE";
-//#define _FUN_ASIN_KW_ 23
-const char _FUN_asin[] PROGMEM = "asin";
-const char _FUN_ASIN[] PROGMEM = "ASIN";
-//#define _FUN_ACOS_KW_ 24
-const char _FUN_acos[] PROGMEM = "acos";
-const char _FUN_ACOS[] PROGMEM = "ACOS";
-//#define _FUN_ATAN_KW_ 25
-const char _FUN_atan[] PROGMEM = "atan";
-const char _FUN_ATAN[] PROGMEM = "ATAN";
-//#define _FUN_GOFF2_KW_ 26
-const char _FUN_goff2[] PROGMEM = "goff2";
-const char _FUN_GOFF2[] PROGMEM = "GOFF2";
-//#define _FUN_CATH_KW_ 27
-const char _FUN_cath[] PROGMEM = "cath";
-const char _FUN_CATH[] PROGMEM = "CATH";
-//#define _FUN_STACK_KW_ 28
-const char _FUN_stack[] PROGMEM = "stack";
-const char _FUN_STACK[] PROGMEM = "STACK";
-//#define _FUN_STACK_KW_ 29
-const char _FUN_lin2[] PROGMEM = "lin2";
-const char _FUN_LIN2[] PROGMEM = "LIN2";
+// common function messages
+const char FUN_Error_Overflow[] PROGMEM = "Err: Too large";
+const char FUN_Error_Underflow[] PROGMEM = "Err: Too small";
+const char FUN_Error_Argument[] PROGMEM = "Err: Argument";
+const char FUN_Error_Domain[] PROGMEM = "Err: Domain";
+const char FUN_Error_InverseTrig[] PROGMEM = "Err: |X|>1";
+const char FUN_Error_NaN[] PROGMEM = "Err: NaN";
+const char FUN_Error_DivZero[] PROGMEM = "Err: Division by 0";
+const char FUN_Error_Gain_Offset[] PROGMEM = "Err: Same X1 and X2";
+const char FUN_Warning_Inaccurate[] PROGMEM = "Warn: Inaccurate";
+const char FUN_Warning_ZeroPowerZero[] PROGMEM = "Warn: 0^0";
+const char FUN_Warning_Complex[] PROGMEM = "Complex: \xb1iX";
+const char FUN_Message_Trivial[] PROGMEM = "Trivial";
+const char FUN_Message_NoRoots[] PROGMEM = "No roots";
+const char FUN_Message_OneRoot[] PROGMEM = "Single root";
+const char FUN_Message_TwoRoots[] PROGMEM = "Two roots";
+const char FUN_Message_ComplexRoots[] PROGMEM = "Complex: X\xb1iY";
+const char FUN_Message_Discriminant[] PROGMEM = "Discriminant";
+const char FUN_Message_Root1[] PROGMEM = "Root 1";
+const char FUN_Message_Root2[] PROGMEM = "Root 2";
+const char FUN_Message_ComplexPart[] PROGMEM = "Complex part";
+const char FUN_Message_RealPart[] PROGMEM = "Real part";
+const char FUN_Message_Gain[] PROGMEM = "Gain:";
+const char FUN_Message_Offset[] PROGMEM = "Offset:";
+const char FUN_Message_Goff_Solution[] PROGMEM = "Y=Gain*X+Offset";
+
+// add function includes here
+#include "functions_RPN.hpp"
+#include "functions_Math.hpp"
+#include "functions_Solvers.hpp"
 
 static Function VariableFunction;
 
 void Functions::init( void *components[]){
+  _kwds = (Keywords *)components[UI_COMP_Keywords];
   _vars = (Variables *)components[UI_COMP_Variables];
   VariableFunction.id = _FUN_Variable_;
-  _addFunction( _FUN_amode, _FUN_AMODE, 1, 0, _RPN_AMODE_); // 0
-  _addFunction( _FUN_sin, _FUN_SIN, 1, 1, _RPN_CHECK_TRIG_); // 1
-  _addFunction( _FUN_cos, _FUN_COS, 1, 1, _RPN_CHECK_TRIG_); // 2
-  _addFunction( _FUN_tan, _FUN_TAN, 1, 1, _RPN_CHECK_TRIG_); // 3
-  _addFunction( _FUN_pow, _FUN_POW, 2, 1, _RPN_POWER_); // 4
-  _addFunction( _FUN_neg, _FUN_NEG, 1, 1); // 5
-  _addFunction( _FUN_ln, _FUN_LN, 1, 1); // 6
-  _addFunction( _FUN_lg, _FUN_LG, 1, 1); // 7
-  _addFunction( _FUN_log, _FUN_LOG, 2, 1, _RPN_SWAP_XY_); // 8
-  _addFunction( _FUN_exp, _FUN_EXP, 1, 1); // 9
-  _addFunction( _FUN_sqrt, _FUN_SQRT, 1, 1, _RPN_SQRT_CHECK_); // 10
-  _addFunction( _FUN_sq, _FUN_SQ, 1, 1); // 11
-  _addFunction( _FUN_root, _FUN_ROOT, 2, 1, _RPN_ROOTYX_); // 12
-  _addFunction( _FUN_sign, _FUN_SIGN, 1, 1); // 13
-  _addFunction( _FUN_abs, _FUN_ABS, 1, 1); // 14
-  _addFunction( _FUN_inv, _FUN_INV, 1, 1, _RPN_DIV0_CHECK_); // 15  
-  _addFunction( _FUN_radius, _FUN_RADIUS, 2, 1); // 16
-  _addFunction( _FUN_quad, _FUN_QUAD, 3, 3, _RPN_QUAD_SOLVER); // 17
-  _addFunction( _FUN_swap, _FUN_SWAP, 2, 2, _RPN_SWAP_ONLY_); // 18
-  _addFunction( _FUN_lcirc, _FUN_LCIRC, 1, 1); // 19
-  _addFunction( _FUN_scirc, _FUN_SCIRC, 1, 1); // 20
-  _addFunction( _FUN_vsphere, _FUN_VSPHERE, 1, 1); // 21
-  _addFunction( _FUN_ssphere, _FUN_SSPHERE, 1, 1); // 22
-  _addFunction( _FUN_asin, _FUN_ASIN, 1, 1, _RPN_INVTRIG_); // 23
-  _addFunction( _FUN_acos, _FUN_ACOS, 1, 1, _RPN_INVTRIG_); // 24
-  _addFunction( _FUN_atan, _FUN_ATAN, 1, 1); // 25
-  _addFunction( _FUN_goff2, _FUN_GOFF2, 4, 2, _RPN_GOFF2_SOLVER); // 26
-  _addFunction( _FUN_cath, _FUN_CATH, 2, 1); // 27
-  _addFunction( _FUN_stack, _FUN_STACK, 1, 1); // 28
-  _addFunction( _FUN_lin2, _FUN_LIN2, 1, 1); // 29
+  _setFunction( _OPR_ABS_KW, (void *)_function_Math_ABS_, 1);
+  _setFunction( _OPR_ACOS_KW, (void *)_function_Math_ACOS_, 1);
+  _setFunction( _OPR_ACOSH_KW, (void *)_function_Math_ACOSH_, 1);
+  _setFunction( _OPR_ADD_KW, (void *)_function_RPN_ADD_, 0);
+  _setFunction( _OPR_ASIN_KW, (void *)_function_Math_ASIN_, 1);
+  _setFunction( _OPR_ASINH_KW, (void *)_function_Math_ASINH_, 1);
+  _setFunction( _OPR_ATAN_KW, (void *)_function_Math_ATAN_, 1);
+  _setFunction( _OPR_ATANH_KW, (void *)_function_Math_ATANH_, 1);
+  _setFunction( _OPR_CATH_KW, (void *)_function_Solver_CATH_, 2);
+  _setFunction( _OPR_COS_KW, (void *)_function_Math_COS_, 1);
+  _setFunction( _OPR_COSH_KW, (void *)_function_Math_COSH_, 1);
+  _setFunction( _OPR_COT_KW, (void *)_function_Math_COT_, 1);
+  _setFunction( _OPR_DIV_KW, (void *)_function_RPN_DIV_, 0);
+  _setFunction( _OPR_EXP_KW, (void *)_function_Math_EXP_, 1);
+  _setFunction( _OPR_GOFF2_KW, (void *)_function_Solver_GOFF2_, 0);
+  _setFunction( _OPR_LCIRC_KW, (void *)_function_Solver_LCIRC_, 1);
+  _setFunction( _OPR_LIN2_KW, (void *)_function_Solver_LIN2_, 0);
+  _setFunction( _OPR_LG_KW, (void *)_function_Math_LG_, 1);
+  _setFunction( _OPR_LN_KW, (void *)_function_Math_LN_, 1);
+  _setFunction( _OPR_LOG_KW, (void *)_function_Math_LOG_, 2);
+  _setFunction( _OPR_NDIS_KW, (void *)_function_Math_NDIS_, 1);
+  _setFunction( _OPR_NEG_KW, (void *)_function_RPN_NEG_, 0);
+  _setFunction( _OPR_MUL_KW, (void *)_function_RPN_MUL_, 0);
+  _setFunction( _OPR_OOX_KW, (void *)_function_RPN_OOX_, 0);
+  _setFunction( _OPR_POP_KW, (void *)_function_RPN_POP_, 0);
+  _setFunction( _OPR_POW_KW, (void *)_function_RPN_POW_, 2);
+  _setFunction( _OPR_QUAD_KW, (void *)_function_Solver_QUAD_, 0);
+  _setFunction( _OPR_RADIUS_KW, (void *)_function_Solver_RADIUS_, 2);
+  _setFunction( _OPR_ROLL_KW, (void *)_function_RPN_ROLL_, 0);
+  _setFunction( _OPR_ROOT_KW, (void *)_function_RPN_ROOT_, 2);
+  _setFunction( _OPR_SCIRC_KW, (void *)_function_Solver_SCIRC_, 1);
+  _setFunction( _OPR_SIN_KW, (void *)_function_Math_SIN_, 1);
+  _setFunction( _OPR_SIGN_KW, (void *)_function_Math_SIGN_, 1);
+  _setFunction( _OPR_SINH_KW, (void *)_function_Math_SINH_, 1);
+  _setFunction( _OPR_SQ_KW, (void *)_function_Math_SQ_, 1);
+  _setFunction( _OPR_SQRT_KW, (void *)_function_Math_SQRT_, 1);
+  _setFunction( _OPR_SSPHERE_KW, (void *)_function_Solver_SSPHERE_, 1);
+  _setFunction( _OPR_STACK_KW, (void *)_function_RPN_STACK_, 1);
+  _setFunction( _OPR_SUB_KW, (void *)_function_RPN_SUB_, 0);
+  _setFunction( _OPR_SWAP_KW, (void *)_function_RPN_SWAP_, 0);
+  _setFunction( _OPR_TAN_KW, (void *)_function_Math_TAN_, 1);
+  _setFunction( _OPR_TANH_KW, (void *)_function_Math_TANH_, 1);
+  _setFunction( _OPR_VSPHERE_KW, (void *)_function_Solver_VSPHERE_, 1);
+
+  _addFunction( _OPR_ABS_KW, 1);
+  _addFunction( _OPR_ACOS_KW, 1);
+  _addFunction( _OPR_ACOSH_KW, 1);
+  _addFunction( _OPR_ASIN_KW, 1);
+  _addFunction( _OPR_ASINH_KW, 1);
+  _addFunction( _OPR_ATAN_KW, 1);
+  _addFunction( _OPR_ATANH_KW, 1);
+  _addFunction( _OPR_CATH_KW, 2);
+  _addFunction( _OPR_COS_KW, 1);
+  _addFunction( _OPR_COSH_KW, 1);
+
+  _addFunction( _OPR_COT_KW, 1);
+  _addFunction( _OPR_EXP_KW, 1);
+  _addFunction( _OPR_LCIRC_KW, 1);
+  _addFunction( _OPR_LIN2_KW, 1);
+  _addFunction( _OPR_LG_KW, 1);
+  _addFunction( _OPR_LN_KW, 1);
+  _addFunction( _OPR_LOG_KW, 1);
+  _addFunction( _OPR_NDIS_KW, 1);
+  _addFunction( _OPR_POW_KW,2);
+  _addFunction( _OPR_RADIUS_KW,2);
+
+  _addFunction( _OPR_ROOT_KW,2);
+  _addFunction( _OPR_SCIRC_KW, 1);
+  _addFunction( _OPR_SIN_KW, 1);
+  _addFunction( _OPR_SIGN_KW, 1);
+  _addFunction( _OPR_SINH_KW, 1);
+  _addFunction( _OPR_SQ_KW, 1);
+  _addFunction( _OPR_SQRT_KW, 1);
+  _addFunction( _OPR_SSPHERE_KW, 1);
+  _addFunction( _OPR_STACK_KW, 1);
+  _addFunction( _OPR_TAN_KW, 1);
+  
+  _addFunction( _OPR_TANH_KW, 1);
+  _addFunction( _OPR_VSPHERE_KW, 1);
 }
 
 Function *Functions::getFunction(byte *str){
   Function *ptr;
+  Keyword *kwd = _kwds->getKeyword( str);
+  if( kwd == NULL){
+    VariableToken vt = _vars->findByName( str);
+    if( vt) return _setVariable( &VariableFunction, vt);
+    return NULL; // not found
+  }
+  #ifdef __DEBUG
+  Serial.print("Keyword found: ");
+  Serial.println( kwd->name0);
+  #endif
   for(size_t i=0; i<_FUNCTION_COUNT; i++){
     ptr = _functions + i;
-    if( IsKeyword(str, ptr->name0)) return ptr;
-    if( IsKeyword(str, ptr->name1)) return ptr;
+    if( ptr->kwid == kwd->id) return ptr;
   }
-  VariableToken vt = _vars->findByName( str);
-  if( vt) return _setVariable( &VariableFunction, vt);
+  #ifdef __DEBUG
+  Serial.print("Function not found: ");
+  Serial.println( kwd->id);
+  #endif
   return NULL; // not found
 }
 
-double *Functions::Compute( Function *mf, double *args){
-  byte a = _MODE_DEGREES_;
+byte Functions::Compute( Function *mf, double *args){
+  #ifdef __DEBUG
+  Serial.println( "Compute called");
+  #endif
+  Keyword *kwd;
+  byte (*myFunction)(Variables *, double *, double *, bool);
+  byte fReturn = 0;
   int iStack = 0;
-  switch(mf->id){
-    case -1:
-      #ifdef __DEBUG
-      Serial.print( "Variable found: ");
-      Serial.println( (char *)mf->name0);
-      #endif
-      _rets[0] = _vars->realValue( mf->VarTag);
-      break;
-    case _FUN_AMODE_KW_: // amode (TODO: temporary)
-      if( 0.5 <= args[0] && args[0] < 1.5) a = _MODE_RADIAN_; 
-      if( 1.5 <= args[0] && args[0] < 2.5) a = _MODE_GRADIAN_; 
-      _vars->setAngleMode( a);
-      break;
-    case _FUN_SIN_KW_:
-      #ifdef __DEBUG
-      Serial.print("Computing sin(");
-      Serial.print(args[0]);
-      Serial.print("), which is sin(");
-      Serial.print(_vars->getConvertedAngle(args[0]));
-      Serial.print(" radian) = ");
-      Serial.println(sin( _vars->getConvertedAngle(args[0])));
-      #endif
-      _rets[0] = sin( _vars->getConvertedAngle(args[0]));
-      break;
-    case _FUN_ASIN_KW_:
-      _rets[0] = _vars->getUnconvertedAngle(asin(args[0]));
-      break;
-    case _FUN_COS_KW_:
-      _rets[0] = cos( _vars->getConvertedAngle(args[0]));
-      break;
-    case _FUN_ACOS_KW_:
-      _rets[0] = _vars->getUnconvertedAngle(acos(args[0]));
-      break;
-    case _FUN_TAN_KW_:
-      _rets[0] = tan( _vars->getConvertedAngle(args[0]));
-      break;
-    case _FUN_ATAN_KW_:
-      _rets[0] = _vars->getUnconvertedAngle(atan(args[0]));
-      break;
-    case _FUN_POW_KW_: 
-      _rets[0] = pow(args[0], args[1]);
-      break;
-    case _FUN_NEG_KW_:
-      _rets[0] = -args[0];
-      break;
-    case _FUN_LN_KW_:
-      _rets[0] = log( args[0]);
-      break;
-    case _FUN_LG_KW_:
-      _rets[0] = log10( args[0]);    
-      break;
-    case _FUN_LOG_KW_:
-      _rets[0] = log10( args[0])/log10( args[1]);    
-      break;
-    case _FUN_EXP_KW_:
-      _rets[0] = exp( args[0]);    
-      break;
-    case _FUN_SQRT_KW_:
-      _rets[0] = sqrt( args[0]);    
-      break;
-    case _FUN_SQ_KW_:
-      _rets[0] = args[0] * args[0];    
-      break;
-    case _FUN_ROOT_KW_:
-      _rets[0] = pow(args[0], 1./args[1]);
-      break;
-    case _FUN_SIGN_KW_:
-      _rets[0] = 0.0;
-      if(args[0] == 0.0) break;
-      if(args[0] > 0.0){
-        _rets[0] = 1.0;
-        break;
-      }
-      _rets[0] = -1.0;
-      break;
-    case _FUN_ABS_KW_:
-      _rets[0] = abs(args[0]);
-      break;
-    case _FUN_INV_KW_:
-      _rets[0] = 1/args[0];
-      break;
-    case _FUN_RADIUS_KW_:
-      _rets[0] = sqrt( args[0]*args[0]+args[1]*args[1]);
-      break;
-    case _FUN_CATH_KW_:
-      _rets[0] = sqrt( abs(args[0]*args[0]-args[1]*args[1]));
-      break;
-    case _FUN_QUAD_KW_:
-      quad( args);
-      break;
-    case _FUN_SWAP_KW_:
-      _rets[0] = args[1];
-      _rets[1] = args[0];
-      break;
-    case _FUN_STACK_KW_:
-      iStack = (int)floor(args[0]);
-      if( iStack<0) iStack = 0;
-      if( iStack>=RPN_STACK) iStack = RPN_STACK-1;
-      _rets[0] = _vars->getRPNRegister(iStack);
-      break;
-    case _FUN_LCIRC_KW_:
-      _rets[0] = _MATH_PI_ * 2.0 * args[0];
-      break;
-    case _FUN_SCIRC_KW_:
-      _rets[0] = _MATH_PI_ * args[0] * args[0];
-      break;
-    case _FUN_VSPHERE_KW_:
-      _rets[0] = _MATH_PI_ * 4.0 * args[0] * args[0] * args[0] / 3.0;
-      break;
-    case _FUN_SSPHERE_KW_:
-      _rets[0] = _MATH_PI_ * 4.0 * args[0] * args[0];
-      break;
-    case _FUN_GOFF2_KW_:
-      goff2( args);
-      break;
-    case _FUN_LIN2_KW_:
-      _rets[0] = _vars->gain[0] * args[0] + _vars->offset[0];
-      break;
-    default:
-      break;
+  if(mf->id < 0){
+    #ifdef __DEBUG
+    Serial.print( "Variable found: ");
+    Serial.println( (char *)mf->name);
+    #endif
+    _rets[0] = _vars->realValue( mf->VarTag);
+    return 0;
   }
-  return _rets;
-}
-double *Functions::Compute( Function *mf, double arg){
-  return Compute( mf, &arg);  
-}
-double *Functions::Compute( Function *mf){
-  double arg = 0.0;
-  return Compute( mf, &arg);  
+  #ifdef __DEBUG
+  Serial.print( "Case called: ");
+  Serial.println( mf->kwid);
+  #endif
+  kwd = _kwds->getKeywordById( mf->kwid);
+  if( !kwd) return 1;
+  #ifdef __DEBUG
+  Serial.println( "Keyword found (2)");
+  #endif
+  if( !kwd->operator_ptr) return 1;
+  myFunction = (byte (*)(Variables *, double *, double *, bool))(kwd->operator_ptr);
+  fReturn = myFunction( _vars, args, _rets, false);
+  #ifdef __DEBUG
+  Serial.print("Ref function");
+  Serial.print( (char*)kwd->name0);
+  Serial.print( "(");
+  Serial.print(args[0]);
+  Serial.print(") = ");
+  Serial.println(_rets[0]);
+  #endif
+  if( _vars->mathError < _ERROR_) return 0;
+  _rets[0] = -999.25;
+  return 1;
 }
 
-void Functions::_addFunction( const char *name0, const char *name1, byte nArgs, byte nRets, byte RPNtag){
+byte Functions::ComputeRPN( Keyword *kw){
+  if( kw->operator_ptr == NULL){
+    Serial.print("Not implemented: ");
+    Serial.println( (char *)kw->name0);
+    return 0;
+  }
+  byte (*myFunction)(Variables *, double *, double *, bool) =
+      (byte (*)(Variables *, double *, double *, bool))(kw->operator_ptr);
+  double *args = _vars->getRPNStackPtr();
+  return myFunction( _vars, args, args, true);
+}
+
+void Functions::_addFunction( int16_t kwid, byte nArgs, byte RPNtag){
   if( _id >= _FUNCTION_COUNT) return;
   Function *tmp = _functions+_id;
   tmp->id = _id++;
-  tmp->name0 = name0;
-  tmp->name1 = name1;
+  tmp->kwid = kwid;
   tmp->nArgs = nArgs;
-  tmp->nRets = nRets;
   tmp->RPNtag = RPNtag;
   #ifdef __DEBUG
+  Keyword *kwd = _kwds->getKeywordById( kwid);
   Serial.print( tmp->id+1);
   Serial.print(" added function ");
-  Serial.print( tmp->name0);
+  Serial.print( kwd->name0);
   Serial.print(", AKA ");
-  Serial.print( tmp->name1);
+  Serial.print( kwd->name1);
   Serial.print( ", with ");
   Serial.print( tmp->nArgs);
-  Serial.print( " args and ");
-  Serial.print( tmp->nRets);
-  Serial.println( " rets.");
+  Serial.println( " argument(s)");
   #endif
-}
-
-//
-// Solves a quadratic equation
-//
-double *Functions::quad( double *stack) {
-  // Trivial solution or no roots
-  _clearRets();
-  if( stack[2] == 0.0 && stack[1] == 0.0)
-    return _rets;
-  double a = stack[2] * 2.0;
-  // Linear single root
-  if( a == 0.0){
-    _rets[0] = -stack[0] / stack[1];
-    _rets[1] = _rets[0];
-    return _rets;
-  }
-  // Discriminant
-  _rets[2] = stack[1] * stack[1] - 4.0 * stack[0] * stack[2];
-  // Quad single root
-  if( -1e-300 < _rets[2] && _rets[2] < 1e-300){
-    _rets[2] = 0.0;
-    _rets[0] = -stack[1] / a;
-    _rets[1] = _rets[0];
-    return _rets;
-  }
-  // Quad two roots
-  if( _rets[2] > 0.0){
-    _rets[0] = sqrt(_rets[2]);
-    _rets[1] = -(stack[1] +_rets[0]) / a;
-    _rets[0] -= stack[1];
-    _rets[0] /= a;
-    return _rets;
-  }
-  // Complex roots
-  _rets[1] = sqrt(-_rets[2]) / a;
-  _rets[0] -= stack[1] / a;
-  return _rets;
 }
 
 //
@@ -364,8 +243,7 @@ double *Functions::goff2( double *stack) {
 // Sets constant or variable
 //
 Function *Functions::_setVariable( Function *f, VariableToken vt) {
-  f->name0 = (const char *)_vars->getVarName( vt);
-  f->name1 = f->name0;
+  f->name = (const char *)_vars->getVarName( vt);
   f->nArgs = 1;
   f->VarTag = vt;
   switch(_vars->getVarType( vt)){

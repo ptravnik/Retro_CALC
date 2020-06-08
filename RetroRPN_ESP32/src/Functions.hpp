@@ -11,37 +11,43 @@
 
 #include "Variables.hpp"
 
-#define NMATH_RETURNS   3
-#define _MATH_PI_       3.14159265359
+#define NMATH_RETURNS       3
+#define _MATH_PI_           3.14159265359
+#define _MATH_SQ_PI_        1.77245385091
+#define _MATH_NDIS_NORM_    3.98942280402e-1
 
 struct Function{
   int16_t id = 0;
-  const char *name0;
-  const char *name1;
+  int16_t kwid = -1;
+  const char *name = NULL;
   byte nArgs = 1;
-  byte nRets = 1;
   size_t RPNtag = _RPN_COMMON_;
   size_t VarTag = 2;
 };
 
 class Functions{
   public:
+    double _rets[NMATH_RETURNS];
+
     void init( void *components[]);
     Function *getFunction(byte *str);
-    double *Compute( Function *mf, double *args);
-    double *Compute( Function *mf, double arg);
-    double *Compute( Function *mf);
-    double *quad( double *args);
+    byte Compute( Function *mf, double *args);
+    byte ComputeRPN( Keyword *kw);
     double *goff2( double *args);
   private:
+    Keywords *_kwds;
     Variables *_vars;
     size_t _id;
-    double _rets[NMATH_RETURNS];
     Function _functions[_FUNCTION_COUNT];
-    void _addFunction( const char *name0, const char *name1, byte nArgs, byte nRets, byte RPNtag=_RPN_COMMON_);
+    void _addFunction( int16_t kwid, byte nArgs, byte RPNtag=_RPN_COMMON_);
     Function *_setVariable( Function *f, VariableToken vt);
     inline void _clearRets(){
       for(byte i=0; i<NMATH_RETURNS; i++)_rets[i] = 0.0; 
+    };
+    inline void _setFunction( int16_t id, void *func, int8_t argsN){
+      Keyword *k = _kwds->getKeywordById( id);
+      k->operator_ptr = func;
+      k->argumentType = argsN;
     };
 };
 

@@ -15,11 +15,22 @@
 static bool _operator_CLEAR_( Lexer *lex){
   return lex->operator_CLEAR();
 }
-static void _clearFake( size_t lFrom, size_t lTo=MAX_LINE_NUMBER){
-    Serial.print("clearing program form ");
-    Serial.print( lFrom);
-    Serial.print(" to ");
-    Serial.println( lTo); 
+void Lexer::_operatorClearProgramCode(uint16_t lFrom, uint16_t lTo){
+  Serial.print("These lines will be gone: ");
+  char *buff = (char *)_iom->getIOBuffer();
+  ProgramLine pl = _code->getFirstLine();
+  while( true){
+    if( pl.line == NULL) return;
+    if( pl.lineNumber > lTo) return;
+    if( pl.lineNumber < lFrom){
+      pl = _code->getNextLine( pl);
+      continue;
+    }
+    int n = snprintf( buff, INPUT_COLS, "%05u ", pl.lineNumber);
+    convertToUTF8( buff+n, pl.line, INPUT_COLS-n);
+    _iom->sendStringUTF8Ln( buff);
+    pl = _code->getNextLine( pl);
+  }
 }
 bool Lexer::operator_CLEAR(){
   #ifdef __DEBUG
@@ -28,12 +39,6 @@ bool Lexer::operator_CLEAR(){
   Serial.println((char *)_lexer_position);
   #endif
   _ignore_Blanks();
-  if( IsToken( _lexer_position, "STACK", true) || IsToken( _lexer_position, "stack", true)){
-    _vars->clearRPNStack();
-    _rsb->setStackRedrawAll();
-    _skipToEOL( _lexer_position);
-    return true;
-  }
   _lexer_position = _kwds->parse(_lexer_position);
   if( _kwds->lastKeywordFound == NULL){
     return operator_CLEAR_Vars( false); 
@@ -43,8 +48,26 @@ bool Lexer::operator_CLEAR(){
       return operator_CLEAR_Program();
     case _OPR_CONST_KW:
       return operator_CLEAR_Vars( true);
+    case _OPR_STACK_KW:
+      _vars->clearRPNStack();
+      _rsb->setStackRedrawAll();
+      _skipToNextOperator( _lexer_position);
+    return true;
+    case _OPR_SUM_KW:
+      _vars->clearRPNSum();
+      _skipToNextOperator( _lexer_position);
+      return true;
+    case _OPR_SUMXY_KW:
+      _vars->clearRPNSumXY();
+      _skipToNextOperator( _lexer_position);
+      return true;
+    case _OPR_SUMS_KW:
+      _vars->clearRPNSum();
+      _vars->clearRPNSumXY();
+      _skipToNextOperator( _lexer_position);
+    return true;
     default:
-    break;
+      break;
   }
   return operator_CLEAR_Program(); 
 }
@@ -55,7 +78,7 @@ bool Lexer::operator_CLEAR_Program(){
   byte *ptr = _epar->parse( _lexer_position);
   size_t lFrom = 0;
   if( _epar->result != _RESULT_INTEGER_){
-    _clearFake( lFrom);
+    _operatorClearProgramCode( lFrom);
     _skipToNextOperator( _lexer_position);
     return true;
   }
@@ -65,17 +88,17 @@ bool Lexer::operator_CLEAR_Program(){
     lFrom = clipLineNumber(_epar->numberParser.integerValue());
   }
   if( _validate_NextCharacter( _COMMA_)){
-    _clearFake( lFrom);
+    _operatorClearProgramCode( lFrom);
     _skipToNextOperator( _lexer_position);
     return true;
   }
   ptr = _epar->parse( _lexer_position);
   if( _epar->result == _RESULT_INTEGER_){
-    _clearFake( lFrom, clipLineNumber(_epar->numberParser.integerValue(), lFrom));
+    _operatorClearProgramCode( lFrom, clipLineNumber(_epar->numberParser.integerValue(), lFrom));
     _skipToNextOperator( ptr);
     return true;
   }
-  _clearFake( lFrom);
+  _operatorClearProgramCode( lFrom);
   _skipToNextOperator( ptr);
   return true;
 }

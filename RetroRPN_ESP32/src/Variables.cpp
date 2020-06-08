@@ -12,11 +12,31 @@
 
 const double _angleConversions[] PROGMEM = {1.74532925199e-2, 1.0, 1.5707963268e-2};
 
+const char _RPN_Mode_Degrees[] PROGMEM = "Mode: Degrees";
+const char _RPN_Mode_Radians[] PROGMEM = "Mode: Radians";
+const char _RPN_Mode_Gradians[] PROGMEM = "Mode: Gradians";
+const char *const _RPN_AMODE_Table[] PROGMEM = {
+  _RPN_Mode_Degrees,
+  _RPN_Mode_Radians,
+  _RPN_Mode_Gradians
+  };
+
 const char _VAR_stack[] PROGMEM = "stack";
 const char _VAR_prev[] PROGMEM = "prev";
 const char _VAR_amode[] PROGMEM = "amode%";
+
+const char _VAR_nMean[] PROGMEM = "nMean";
+const char _VAR_Mean[] PROGMEM = "Mean";
+const char _VAR_StDev[] PROGMEM = "StDev";
+
+const char _VAR_nMeanXY[] PROGMEM = "nMeanXY";
+const char _VAR_MeanX[] PROGMEM = "MeanX";
+const char _VAR_StDevX[] PROGMEM = "StDevX";
+const char _VAR_MeanY[] PROGMEM = "MeanY";
+const char _VAR_StDevY[] PROGMEM = "StDevY";
 const char _VAR_Gain[] PROGMEM = "Gain";
 const char _VAR_Offset[] PROGMEM = "Offset";
+
 const char _VAR_lcdPWM[] PROGMEM = "lcdPWM%";
 const char _VAR_current_dir[] PROGMEM = "current_dir$";
 const char _VAR_scrMessage[] PROGMEM = "scrMessage$";
@@ -48,6 +68,12 @@ void Variables::init( void *components[]){
   _rpnStack = (double *)_getDataPtr( _placeVector( false, _VAR_stack, RPN_STACK));
   _prev = (double *)_getDataPtr( _placeNumber( false, _VAR_prev));
   _amode = (int64_t *)_getDataPtr( _placeNumber( false, _VAR_amode, _MODE_DEGREES_));
+  mean = (double *)_getDataPtr( _placeNumber( false, _VAR_Mean, 0.0));
+  stdev = (double *)_getDataPtr( _placeNumber( false, _VAR_StDev, 1.0));
+  meanX = (double *)_getDataPtr( _placeNumber( false, _VAR_MeanX, 0.0));
+  stdevX = (double *)_getDataPtr( _placeNumber( false, _VAR_StDevX, 1.0));
+  meanY = (double *)_getDataPtr( _placeNumber( false, _VAR_MeanY, 0.0));
+  stdevY = (double *)_getDataPtr( _placeNumber( false, _VAR_StDevY, 1.0));
   gain = (double *)_getDataPtr( _placeNumber( false, _VAR_Gain, 1.0));
   offset = (double *)_getDataPtr( _placeNumber( false, _VAR_Offset, 0.0));
   _placeNumber( false, _VAR_lcdPWM, 200);
@@ -77,6 +103,8 @@ void Variables::init( void *components[]){
   _placeNumber( true, _CON_GRAD, 2.0);
   _placeNumber( true, _CON_High, 1);
   _placeNumber( true, _CON_Low, 0);
+  nmean = (double *)_getDataPtr( _placeNumber( true, _VAR_nMean, 0.0));
+  nmeanXY = (double *)_getDataPtr( _placeNumber( true, _VAR_nMeanXY, 0.0));
   _varAvailble = (int64_t *)_getDataPtr( _placeNumber( true, _CON_varMemory));
   _prgAvailble = (int64_t *)_getDataPtr( _placeNumber( true, _CON_prgMemory));
   _standard_top = _const_top;
@@ -420,6 +448,9 @@ double Variables::getUnconvertedAngle( double a){
   if( isnan(a)) return a;
   return a / _angleConversions[(uint16_t)(*_amode)];
 }
+const char *Variables::getAMODEString(){
+  return _RPN_AMODE_Table[ getAngleMode()];
+}
 
 //
 // Private methods
@@ -555,4 +586,91 @@ VariableToken Variables::_placeString( bool isConst,
   if( value) strncpy( dataPtr, value, length);
   else *dataPtr = _NUL_;
   return vt;
+}
+
+void Variables::clearRPNSum(){
+  *nmean = 0.0;
+  *mean = 0.0;
+  *stdev = 1.0;
+  sumsq = 0.0;
+  variance = 0.0;
+}
+
+void Variables::clearRPNSumXY(){
+  *nmeanXY = 0.0;
+  *meanX = 0.0;
+  *stdevX = 1.0;
+  sumsqX = 0.0;
+  varianceX = 0.0;
+  *meanY = 0.0;
+  *stdevY = 0.0;
+  sumsqY = 0.0;
+  varianceY = 0.0;
+  sumsqXY = 0.0;
+  varianceXY = 0.0;
+  sumsqYX = 0.0;
+  varianceYX = 0.0;
+  *gain = 1.0;
+  *offset = 0.0;
+  rXY = 0.0;
+  stErrXY = 0.0;
+}
+
+void Variables::addSample2RPNSum( double v){
+  Serial.println("Sum called");
+  double pMean = *mean;
+  *nmean += 1.0;
+  *mean += (v - *mean) / (*nmean);
+  sumsq += (v - *mean) * (v - pMean);
+  sumsq = abs(sumsq);
+  variance = sumsq / *nmean;
+  *stdev = sqrt( (*nmean >= 3.0)? sumsq / (*nmean - 1.0): variance); 
+}
+
+void Variables::addSample2RPNSumXY( double x, double y){
+  *nmeanXY += 1.0;
+  double pMeanX = *meanX;
+  *meanX += (x - *meanX) / (*nmeanXY);
+  sumsqX += (x - *meanX) * (x - pMeanX);
+  sumsqX = abs(sumsqX);
+  varianceX = sumsqX / *nmeanXY;
+  *stdevX = sqrt( (*nmeanXY >= 3.0)? sumsqX / (*nmeanXY - 1.0): varianceX); 
+  double pMeanY = *meanY;
+  *meanY += (y - *meanY) / (*nmeanXY);
+  sumsqY += (y - *meanY) * (y - pMeanY);
+  sumsqY = abs(sumsqY);
+  varianceY = sumsqY / *nmeanXY;
+  *stdevY = sqrt( (*nmeanXY >= 3.0)? sumsqY / (*nmeanXY - 1.0): varianceY);
+  sumsqXY += (x - *meanX)*( y - pMeanY);
+  sumsqYX += (x - pMeanX)*( y - *meanY);
+  varianceXY = sumsqXY / *nmeanXY;
+  varianceYX = sumsqYX / *nmeanXY;
+  if( *nmeanXY < 0.5){
+    *gain = 0.0;
+    *offset = 0.0;
+    return;
+  }
+  if( *nmeanXY < 1.5){
+    *gain = 1.0;
+    *offset = 0.0;
+    return;
+  }
+  double r_num = (varianceXY + varianceYX) * 0.5;
+  double e_num = 1.0;
+  *gain = 0.0;
+  if( abs( varianceX) >= NEAR_ZERO){
+    *gain = r_num / varianceX;
+    e_num = varianceY / varianceX;
+  }
+  *offset = (*meanY) - (*gain) * (*meanX);
+  double r_den = sqrt( varianceX * varianceY);
+  rXY = 0.0;
+  if( r_den >= NEAR_ZERO){
+    rXY = r_num / r_den;
+    if( rXY > 1.0) rXY = 1.0;
+    if( rXY < -1.0) rXY = -1.0;
+  }
+  stErrXY = 0.0;
+  if( *nmeanXY > 2.5)
+    stErrXY = sqrt((1.0 - rXY*rXY) * e_num / (*nmeanXY - 2.0));
 }

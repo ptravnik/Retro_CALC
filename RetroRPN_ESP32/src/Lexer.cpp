@@ -13,17 +13,53 @@
 const char LEX_Error_OutOfMemory[] PROGMEM = "Err: Out of memory";
 const char LEX_Message_VariableList[] PROGMEM = "Variables:";
 const char LEX_Message_ConstantsList[] PROGMEM = "Constants:";
+const char LEX_Message_ProgMemory[] PROGMEM = "Program Memory:";
+const char LEX_Message_VarsMemory[] PROGMEM = "Variable Memory:";
 const char LEX_Message_Saved[] PROGMEM = "Saved";
+const char LEX_Message_SumUpdated[] PROGMEM = "Sum Updated";
+const char LEX_Message_N[] PROGMEM = "N:";
+const char LEX_Message_stDev[] PROGMEM = "StDev:";
+const char LEX_Message_Mean[] PROGMEM = "Mean:";
+const char LEX_Message_StdError[] PROGMEM = "Std Error:";
+const char LEX_Message_Gain[] PROGMEM = "Gain:";
+const char LEX_Message_Offset[] PROGMEM = "Offset:";
+
 
 // add operator includes here
+#include "operator_AMODE.hpp"
 #include "operator_CLEAR.hpp"
+
+static bool _operator_CLI_( Lexer *lex){
+  if( lex->currentUI != UI_CONSOLE) lex->nextUI = UI_CONSOLE;
+  lex->_skipToNextOperator();
+  return true;
+}
+
 #include "operator_CONST.hpp"
+
+static bool _operator_FMAN_( Lexer *lex){
+  if( lex->currentUI != UI_FILEMAN) lex->nextUI = UI_FILEMAN;
+  lex->_skipToNextOperator();
+  return true;
+}
+
 #include "operator_LET.hpp"
 #include "operator_LIST.hpp"
 #include "operator_LOAD.hpp"
+#include "operator_MEM.hpp"
+#include "operator_PUSH.hpp"
 #include "operator_REM.hpp"
+
+static bool _operator_RPN_( Lexer *lex){
+  if( lex->currentUI != UI_RPNCALC) lex->nextUI = UI_RPNCALC;
+  lex->_skipToNextOperator();
+  return true;
+}
+
 #include "operator_RUN.hpp"
 #include "operator_STORE.hpp"
+#include "operator_SUM.hpp"
+#include "operator_SUMXY.hpp"
 
 //
 // Inits Lexer
@@ -41,14 +77,22 @@ void Lexer::init(void *components[]){
   _mbox = (MessageBox *)components[UI_COMP_MessageBox];
   _clb = (CommandLine *)components[UI_COMP_CommandLine];
   _io_buffer = _iom->getIOBuffer();
-  _kwds->getKeywordById( _OPR_CLEAR_KW)->method = (void *)_operator_CLEAR_;
-  _kwds->getKeywordById( _OPR_CONST_KW)->method = (void *)_operator_CONST_;
-  _kwds->getKeywordById( _OPR_LET_KW)->method = (void *)_operator_LET_;
-  _kwds->getKeywordById( _OPR_LIST_KW)->method = (void *)_operator_LIST_;
-  _kwds->getKeywordById( _OPR_REM_KW)->method = (void *)_operator_REM_;
-  _kwds->getKeywordById( _OPR_REMALT_KW)->method = (void *)_operator_REM_;
-  _kwds->getKeywordById( _OPR_RUN_KW)->method = (void *)_operator_RUN_;
-  _kwds->getKeywordById( _OPR_STORE_KW)->method = (void *)_operator_STORE_;
+  _kwds->getKeywordById( _OPR_AMODE_KW)->operator_ptr = (void *)_operator_AMODE_;
+  _kwds->getKeywordById( _OPR_CLEAR_KW)->operator_ptr = (void *)_operator_CLEAR_;
+  _kwds->getKeywordById( _OPR_CLI_KW)->operator_ptr = (void *)_operator_CLI_;
+  _kwds->getKeywordById( _OPR_CONST_KW)->operator_ptr = (void *)_operator_CONST_;
+  _kwds->getKeywordById( _OPR_FMAN_KW)->operator_ptr = (void *)_operator_FMAN_;
+  _kwds->getKeywordById( _OPR_LET_KW)->operator_ptr = (void *)_operator_LET_;
+  _kwds->getKeywordById( _OPR_LIST_KW)->operator_ptr = (void *)_operator_LIST_;
+  _kwds->getKeywordById( _OPR_MEM_KW)->operator_ptr = (void *)_operator_MEM_;
+  _kwds->getKeywordById( _OPR_REM_KW)->operator_ptr = (void *)_operator_REM_;
+  _kwds->getKeywordById( _OPR_REMALT_KW)->operator_ptr = (void *)_operator_REM_;
+  _kwds->getKeywordById( _OPR_PUSH_KW)->operator_ptr = (void *)_operator_PUSH_;
+  _kwds->getKeywordById( _OPR_RPN_KW)->operator_ptr = (void *)_operator_RPN_;
+  _kwds->getKeywordById( _OPR_RUN_KW)->operator_ptr = (void *)_operator_RUN_;
+  _kwds->getKeywordById( _OPR_STORE_KW)->operator_ptr = (void *)_operator_STORE_;
+  _kwds->getKeywordById( _OPR_SUM_KW)->operator_ptr = (void *)_operator_SUM_;
+  _kwds->getKeywordById( _OPR_SUMXY_KW)->operator_ptr = (void *)_operator_SUMXY_;
 }
 
 //
@@ -84,12 +128,27 @@ byte *Lexer::parse(byte *str){
   while( *_lexer_position && *_lexer_position != '#'){
     _parseOperator();
     if( result == _RESULT_UNDEFINED_) break;
-    _ignore_Blanks();
     _check_NextToken( ':');
-    _ignore_Blanks();
   }
   return _lexer_position; 
 }
+
+//
+// Skips blanks to next token, repositions the pointer
+//
+bool Lexer::_check_NextToken( byte c){
+  _ignore_Blanks();
+  if( *_lexer_position != c ) return false;
+  _lexer_position++;
+  _ignore_Blanks();
+  return true;
+};
+bool Lexer::_peek_NextToken( byte c){
+  _ignore_Blanks();
+  if( *_lexer_position != c ) return false;
+  return true;
+};
+
 
 //
 // Parses one operator
@@ -105,8 +164,8 @@ void Lexer::_parseOperator(){
     Serial.println((char*)_epar->nameParser.Name());
     #endif
     lastKeyword = _kwds->getKeyword(_epar->nameParser.Name());
-    if( lastKeyword != NULL && _processKeyword()) return; // name is a function?
-    if( lastKeyword == NULL && _processVariable()) return; // name is an assignment?
+    if( _processKeyword()) return; // name is a function?
+    if( _processVariable()) return; // name is an assignment?
   }
 
   // direct expression evaluation
@@ -124,15 +183,58 @@ void Lexer::_parseOperator(){
 //
 bool Lexer::_processKeyword(){
   if( lastKeyword == NULL) return false;
-  if( lastKeyword->method == NULL) return false;
-  bool (*myOperator)(Lexer *) = (bool (*)(Lexer *))(lastKeyword->method);
-  return myOperator( this);
+  if( lastKeyword->operator_ptr == NULL) return false;
+  #ifdef __DEBUG
+  Serial.print("Processing ");
+  Serial.print( lastKeyword->name1);
+  Serial.print(" ");
+  Serial.println(lastKeyword->argumentType);
+  #endif
+  if(_peek_NextToken( '(')) return false;
+  if( lastKeyword->argumentType<0){
+    bool (*myOperator)(Lexer *) = (bool (*)(Lexer *))(lastKeyword->operator_ptr);
+    return myOperator( this);
+  }
+  _processRPNKeyword( lastKeyword);
+  _skipToNextOperator( _lexer_position);
+  return true;
+}
+
+bool Lexer::_processRPNKeyword( Keyword *kwd){
+  byte ret = _funs->ComputeRPN( kwd);
+  #ifdef __DEBUG
+  Serial.print("Method returned: ");
+  Serial.println( ret);
+  #endif
+  if( ret & 0x80) _mbox->setRedrawRequired();
+  if( ret & 0x40) _rsb->setLabelRedrawAll();
+  if( ret & 0x20) _rsb->resetRPNLabels();
+  switch( ret & 0x1F){
+    case 0:
+      break;
+    case 2:
+      _rsb->setStackRedrawRequired( 1);
+    case 1:
+      _rsb->setStackRedrawRequired( 0);
+      break;
+    default:
+      _rsb->setStackRedrawAll();
+      break;  
+  }
+  return true;
+}
+bool Lexer::processRPNKeywordByID( int16_t id, bool refresh){
+  Keyword *kwd = _kwds->getKeywordById( id);
+  if( !kwd) return false; // no such id
+  _processRPNKeyword( kwd);
+  _rsb->updateIOM( refresh);
 }
 
 //
 // Returns true if variable is recognized and assigned
 //
 bool Lexer::_processVariable( bool asConstant){
+  if( lastKeyword != NULL) return false; 
   byte *ptr = _lexer_position;
   if( !_findAssignment()){ // no assignment
     _lexer_position = ptr;
@@ -180,17 +282,19 @@ bool Lexer::_findAssignment(){
 }
 
 byte *Lexer::_skipToEOL( byte *str){
-    if( result==_RESULT_UNDEFINED_) result = _RESULT_EXECUTED_;
-    _lexer_position = str + strlen(str);
-    return _lexer_position;
+  if( str == NULL) str = _lexer_position;
+  if( result==_RESULT_UNDEFINED_) result = _RESULT_EXECUTED_;
+  _lexer_position = str + strlen(str);
+  return _lexer_position;
 }
 
 byte *Lexer::_skipToNextOperator( byte *str){
-    if( result==_RESULT_UNDEFINED_) result = _RESULT_EXECUTED_;
-    while( *str && *str != _COLON_) str++;
-    if( *str == _COLON_) str++;
-    _lexer_position = str;
-    return _lexer_position;
+  if( str == NULL) str = _lexer_position;
+  if( result==_RESULT_UNDEFINED_) result = _RESULT_EXECUTED_;
+  while( *str && *str != _COLON_) str++;
+  if( *str == _COLON_) str++;
+  _lexer_position = str;
+  return _lexer_position;
 }
 
 //
@@ -198,12 +302,35 @@ byte *Lexer::_skipToNextOperator( byte *str){
 // Used for finding commas, new lines and such
 //
 bool Lexer::_validate_NextCharacter( byte c){
+  _ignore_Blanks();
   bool tmp = *_lexer_position != c;
   if( tmp) return true;
   _lexer_position++;
   _ignore_Blanks();
   return false;  
 }
+
+//
+// Parses a list separated by commas
+// TODO: this is a kludge; change into the normal list parser
+//
+byte Lexer::_parseList( byte maxVal){
+  for( byte i=0; i<10; i++){
+    _lexer_position = _epar->parse(_lexer_position);
+    switch( _epar->result ){
+      case _RESULT_INTEGER_:
+      case _RESULT_REAL_:
+      _listValues[i++] = _epar->numberParser.realValue();
+      if(i>= maxVal) return i;
+      break;
+    default:
+      return i;
+    }
+    if( !_validate_NextCharacter(',')) return i;
+  }
+  return maxVal;
+}
+
 
 // //
 // // Checks if the value at text position is one of operations

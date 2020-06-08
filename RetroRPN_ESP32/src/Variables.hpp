@@ -13,6 +13,7 @@
 
 #define VARIABLE_SPACE    32000
 #define RPN_PI            3.14159265359
+#define NEAR_ZERO         1.0e-100
 #define CURRENT_DIR_LEN   255
 
 #define VARTYPE_NONE      0
@@ -42,6 +43,7 @@
 
 class Variables{
   public:
+    byte mathError = 0;
     size_t _var_bottom = 0;
     size_t _standard_bottom = 0;
     size_t _const_top = VARIABLE_SPACE;
@@ -52,8 +54,32 @@ class Variables{
     byte *rpnLabelX;
     byte *rpnLabelY;
     byte *rpnLabelZ;
+
+    // 1-D statistical
+    double *nmean;
+    double *mean;
+    double *stdev;
+    double sumsq = 0.0;
+    double variance = 0.0;
+
+    // 2-D statistical
+    double *nmeanXY;
+    double *meanX;
+    double *stdevX;
+    double sumsqX = 0.0;
+    double varianceX = 0.0;
+    double *meanY;
+    double *stdevY;
+    double sumsqY = 0.0;
+    double varianceY = 0.0;
+    double sumsqXY = 0.0;
+    double varianceXY = 0.0;
+    double sumsqYX = 0.0;
+    double varianceYX = 0.0;
     double *gain;
     double *offset;
+    double rXY = 0.0;
+    double stErrXY = 0.0;
 
     void init( void *components[]);
 
@@ -127,9 +153,6 @@ class Variables{
     inline void removeAllVariables(){ _var_bottom = _standard_bottom;};
     inline void removeAllConstants(){ _const_top = _standard_top;};
     
-    // VariableToken removeVariable( const char *name);
-    // VariableToken removeConstant( const char *name);
-
     //
     // RPN banging methods
     //
@@ -142,7 +165,12 @@ class Variables{
     inline void negateRPNX(){ _rpnStack[0] = -_rpnStack[0];};    
     inline void inverseRPNX(){ _rpnStack[0] = 1.0/_rpnStack[0];};    
     inline void clearRPNStack(){
-      for( byte i=0; i<RPN_STACK; i++) _rpnStack[i] = 0.0;};
+        *_prev = 0.0;
+        for( byte i=0; i<RPN_STACK; i++) _rpnStack[i] = 0.0;};
+    void clearRPNSum();
+    void clearRPNSumXY();
+    void addSample2RPNSum( double v);
+    void addSample2RPNSumXY( double x, double y);
     inline double *getRPNStackPtr(){ return _rpnStack;};
     inline double getRPNPrev(){ return *_prev;};
     inline void setRPNPrev( double v){ *_prev = v;};
@@ -155,11 +183,24 @@ class Variables{
     //
     inline byte getAngleMode(){ return (byte)(*_amode);};
     inline void setAngleMode( byte m){
-      if(m != _MODE_RADIAN_ && m != _MODE_GRADIAN_) m = _MODE_DEGREES_;
-      *_amode = (int64_t)m;};
+        if(m != _MODE_RADIAN_ && m != _MODE_GRADIAN_) m = _MODE_DEGREES_;
+        *_amode = (int64_t)m;};
     double getConvertedAngle( double a); // converts argument to radians
     double getUnconvertedAngle( double a); // converts argument to current angle representation
     inline double getConvertedAngleRPNX(){return getConvertedAngle( _rpnStack[0]);};
+    const char *getAMODEString();
+
+    //
+    // safe access to screen messages 
+    //
+    inline void setScrMessage( const char *mess){
+        strncpy( (char *)scrMessage, mess, HSCROLL_LIMIT);};
+    inline void setRPNLabelX( const char *mess){
+        strncpy( (char *)rpnLabelX, mess, HSCROLL_LIMIT);};
+    inline void setRPNLabelY( const char *mess){
+        strncpy( (char *)rpnLabelY, mess, HSCROLL_LIMIT);};
+    inline void setRPNLabelZ( const char *mess){
+        strncpy( (char *)rpnLabelZ, mess, HSCROLL_LIMIT);};
 
     //
     // returns available variable memory
