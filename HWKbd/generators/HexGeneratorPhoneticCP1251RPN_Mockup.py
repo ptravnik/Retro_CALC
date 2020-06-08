@@ -183,9 +183,9 @@ kbd.addButtonNoSwitch(["#CODE=031*","*","#CODE=010edit#CODE=013","*",
                        "ъ","Ъ","#CODE=010edit#CODE=013","*"])         # 04
 kbd.addButtonNoSwitch(["#CODE=031/","/","#CODE=010fman","fman",
                        "ь","Ь","#CODE=010fman","fman"])               # 05
-kbd.addButtonNoSwitch(["#CODE=031^","^","^","^",
+kbd.addButtonNoSwitch(["#CODE=031^","^","^","#CODE=010root#CODE=013",
                        "ё","Ё","^","^"])                              # 06
-kbd.addButtonNoSwitch(["#CODE=031#CODE=177","~","\\","#CODE=177",
+kbd.addButtonNoSwitch(["#CODE=031#CODE=177","~","\\","#CODE=010oox#CODE=013",
                        "~","\\","#CODE=177","#CODE=177"])             # 07
 kbd.addButtonSimple("eeeeшШee")                                       # 08
 kbd.addButtonNoSwitch([".",",",":",";",
@@ -226,8 +226,10 @@ kbd.addButtonSimple("iI  иИ  ") # 28
 kbd.addButtonSimple("oO  оО  ") # 29
 kbd.addButtonSimple("pP  пП  ") # 30
 
-kbd.addButtonSimple("aA  аА  ") # 31
-kbd.addButtonSimple("sS  сс  ") # 32
+kbd.addButtonNoSwitch(["a","A","#CODE=010clear ","#CODE=010clear const ",
+                       "а","А","#CODE=010clear","#CODE=010clear const "]) # 31 (clear)
+kbd.addButtonNoSwitch(["s","S","#CODE=010sum#CODE=013","#CODE=010sumxy#CODE=013",
+                       "с","С","#CODE=010sum#CODE=013","#CODE=010sumxy#CODE=013"]) # 32 (sum)
 kbd.addButtonSimple("dD  дД  ") # 33
 kbd.addButtonSimple("fF  фФ  ") # 34
 kbd.addButtonSimple("gG  гГ  ") # 35
