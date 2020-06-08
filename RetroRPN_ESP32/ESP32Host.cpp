@@ -129,20 +129,16 @@ unsigned long ESP32Host::tick() {
   mySDManager.tick();
   myIOManager.tick();
   myLCDManager.tick();
-  byte *uiRequest = NULL;
-  switch(currentUI){
+  switch(myLexer.currentUI){
     case UI_RPNCALC:
       myRPNCalculator.tick();
-      uiRequest = &(myRPNCalculator.nextUI); 
       break;
     case UI_FILEMAN:
       myFileManager.tick();
-      uiRequest = &(myFileManager.nextUI); 
       break;
     case UI_EDITOR:
     case UI_CONSOLE:
       myBasicConsole.tick();
-      uiRequest = &(myBasicConsole.nextUI); 
     default:
       break; 
   }   
@@ -169,28 +165,27 @@ unsigned long ESP32Host::tick() {
     return myIOManager.lastInput;
   }
   myLCDManager.LEDOn();
-  if( uiRequest != NULL && *uiRequest != UI_UNDEFINED)
-    selectUI(uiRequest);
-  else
-    redraw();
+  selectNextUI();
+  redraw();
   return myIOManager.lastInput;
 }
 
-void ESP32Host::selectUI(byte *ui){
-  if( *ui == UI_UNDEFINED) return;
-  byte tmp = *ui;
-  *ui = UI_UNDEFINED;
+void ESP32Host::selectNextUI(){
+  if( myLexer.nextUI == UI_UNDEFINED) return;
+  byte tmp = myLexer.nextUI;
+  myLexer.nextUI = UI_UNDEFINED;
   selectUI(tmp);
 }
 
 void ESP32Host::selectUI(byte ui){
-  if( currentUI == ui) return;
-  currentUI = ui;
+  if( myLexer.currentUI == ui) return;
+  myLexer.currentUI = ui;
+  myCommandLine.clearInput(); // TODO: check if this interferes with Lexer
   show();
 }
 
 void ESP32Host::show(){
-  switch(currentUI){
+  switch(myLexer.currentUI){
     case UI_RPNCALC:
       myRPNCalculator.show();
       break;
@@ -208,7 +203,7 @@ void ESP32Host::show(){
 }
 
 void ESP32Host::redraw(){
-  switch(currentUI){
+  switch(myLexer.currentUI){
     case UI_RPNCALC:
       myRPNCalculator.redraw();
       break;

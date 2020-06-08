@@ -58,6 +58,7 @@ unsigned long FileManager::init(void *components[]){
   _lcd = (LCDManager *)components[UI_COMP_LCDManager];
   _sdm = (SDManager *)components[UI_COMP_SDManager];
   _epar = (ExpressionParser *)components[UI_COMP_ExpressionParser];
+  _lex = (Lexer *)components[UI_COMP_Lexer];
   _io_buffer = _iom->getIOBuffer();
 
 //  _messages[0] = _messageBuffer;
@@ -95,7 +96,7 @@ void FileManager::show(){
   _lcd->redraw();
   _sdm->listDir();
   delay(2000);
-  nextUI = UI_RPNCALC;
+  _lex->nextUI = UI_RPNCALC;
 }
 
 //

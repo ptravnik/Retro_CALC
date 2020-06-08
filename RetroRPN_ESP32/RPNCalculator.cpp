@@ -11,40 +11,11 @@
 //#define __DEBUG
 
 const char RPN_StatusMessage[] PROGMEM = "RPN Ready";
-const char RPN_Error_DivZero[] PROGMEM = "Err: div 0";
-const char RPN_Error_NAN[] PROGMEM = "Err: NaN";
-const char RPN_Error_Trig[] PROGMEM = "Err: |X|>1";
-const char RPN_Error_Unknown[] PROGMEM = "Unknown:";
-const char RPN_Error_OutOfMemory[] PROGMEM = "Out of memory:";
-const char RPN_Warning_ZeroPowerZero[] PROGMEM = "Warn: 0^0";
-const char RPN_Warning_Accuracy[] PROGMEM = "Warn: Inaccurate!";
-const char RPN_Mode_Degrees[] PROGMEM = "Mode: Degrees";
-const char RPN_Mode_Radians[] PROGMEM = "Mode: Radians";
-const char RPN_Mode_Gradians[] PROGMEM = "Mode: Gradians";
-const char RPN_Message_Complex[] PROGMEM = "Complex: \xb1i";
-const char RPN_Message_Trivial[] PROGMEM = "Trivial";
-const char RPN_Message_NoRoots[] PROGMEM = "No roots";
-const char RPN_Message_OneRoot[] PROGMEM = "Single root";
-const char RPN_Message_TwoRoots[] PROGMEM = "Two roots";
-const char RPN_Message_ComplexRoots[] PROGMEM = "Complex: X\xb1iY";
-const char RPN_Message_Discriminant[] PROGMEM = "Discriminant";
-const char RPN_Message_Root1[] PROGMEM = "Root 1";
-const char RPN_Message_Root2[] PROGMEM = "Root 2";
-const char RPN_Message_ComplexPart[] PROGMEM = "Complex part";
-const char RPN_Message_RealPart[] PROGMEM = "Real part";
-const char RPN_Message_Gain[] PROGMEM = "Gain";
-const char RPN_Message_Offset[] PROGMEM = "Offset";
-const char RPN_Message_Goff_Solution[] PROGMEM = "Y=Gain*X+Offset";
-const char RPN_Message_Stored[] PROGMEM = "Stored: ";
-const char RPN_Message_NewStored[] PROGMEM = "New: ";
-const char RPN_Message_Clear[] PROGMEM = "Clear: ";
-const char RPN_Message_ClearAll[] PROGMEM = "Cleared all";
-const char *const RPN_AMOD_Table[] PROGMEM = {
-  RPN_Mode_Degrees,
-  RPN_Mode_Radians,
-  RPN_Mode_Gradians
-  };
 
+const char RPN_Error_NAN[] PROGMEM = "Err: NaN";
+const char RPN_Error_Unknown[] PROGMEM = "Unknown:";
+//const char RPN_Message_Complex[] PROGMEM = "Complex: \xb1i";
+ 
 //
 // Inits calculator
 //
@@ -60,7 +31,7 @@ unsigned long RPNCalculator::init(void *components[]){
   _mbox = (MessageBox *)components[UI_COMP_MessageBox];
   _clb = (CommandLine *)components[UI_COMP_CommandLine];
   _io_buffer = _iom->getIOBuffer();
-  resetRPNLabels(false);
+  _rsb->resetRPNLabels();
   loadState();
   _rsb->setStackRedrawAll();
   return _iom->keepAwake();
@@ -102,22 +73,6 @@ void RPNCalculator::updateIOM( bool refresh) {
 }
 
 //
-// Resets all calculator labels
-//
-void RPNCalculator::resetRPNLabels( bool refresh) {
-  _rsb->resetRPNLabels();
-  updateIOM(refresh);
-}
-
-//
-// Sets one label: 0 - X, 1 - Y, 2 - Z
-//
-void RPNCalculator::setRPNLabel( byte label, byte *message, bool refresh) {
-  _rsb->setRPNLabel( label, message);
-  updateIOM(refresh);
-}
-
-//
 // Sends one byte
 //
 void RPNCalculator::sendChar( byte c) {
@@ -128,31 +83,45 @@ void RPNCalculator::sendChar( byte c) {
   }
   switch(c){
     case _RPN_:
+      #ifdef __DEBUG
+      Serial.println("_RPN_ received");
+      #endif
       expectCommand = true;
       return;
     case _LF_:
+      #ifdef __DEBUG
+      Serial.println("_LF_ pressed");
+      #endif
       processInput(true);
       return;
     case _CR_:
+      #ifdef __DEBUG
+      Serial.println("_CR_ pressed");
+      #endif
       processInput(false);
       return;
     case _UP_:
+      // TODO: lexer prev      
       _clb->copyFromPrevious();
       _clb->updateIOM();
       return;
     case _DOWN_:
-      swap();
+      _lex->processRPNKeywordByID( _OPR_SWAP_KW);
       return;
     case _PGUP_:
-      prev();
+      //_lex->processRPNKeywordByID( _OPR_PUSH_KW); //PUSH is an operator, not function
+      _vars->saveRPNPrev();
+      _vars->pushRPNStack( _vars->getRPNPrev());
+      _rsb->setStackRedrawAll();
       return;
     case _PGDN_:
-      roll();
+      _lex->processRPNKeywordByID( _OPR_ROLL_KW);
       return;
     case _ESC_:
       _clb->processESC();
       _mbox->setLabel(RPN_StatusMessage, false);
-      resetRPNLabels(true);
+      _rsb->resetRPNLabels();
+      updateIOM(true);
       return;
     default: // other chars go to command line
       _clb->sendChar(c);
@@ -167,22 +136,22 @@ void RPNCalculator::_processCommand(byte c){
   if(_clb->isInputEmpty()){
     switch(c){
       case '+':
-        add();
+        _lex->processRPNKeywordByID( _OPR_ADD_KW);
         return;
       case '-':
-        subtract();
+        _lex->processRPNKeywordByID( _OPR_SUB_KW);
         return;
       case '*':
-        multiply();
+        _lex->processRPNKeywordByID( _OPR_MUL_KW);
         return;
       case '/':
-        divide();
+        _lex->processRPNKeywordByID( _OPR_DIV_KW);
         return;
       case '^':
-        power();
+        _lex->processRPNKeywordByID( _OPR_POW_KW);
         return;
       case _PLSMNS_:
-        signchange();
+        _lex->processRPNKeywordByID( _OPR_NEG_KW);
         return;
     default:
       _clb->processEntry(c);
@@ -218,27 +187,50 @@ void RPNCalculator::_processCommand(byte c){
 //
 void RPNCalculator::processInput( bool silent) {
   #ifdef __DEBUG
-  Serial.print("Processing Input: [");
+  if( silent) Serial.print( "Silently p");
+  else Serial.print( "P");
+  Serial.print("rocessing input: [");
   Serial.print( (char *)_clb->getInput());
   Serial.println("]");
   #else
   _iom->sendLn();
   #endif
+  if( !silent && _clb->isInputEmpty()){
+    #ifdef __DEBUG
+    Serial.println("_CR_ pressed for _PUSH_");
+    #endif
+    _vars->pushRPNStack();
+    _rsb->setStackRedrawAll();
+    _rsb->updateIOM();
+    return;
+  }
   _clb->copyToPrevious();
   _lex->parse(_clb->getInput()); 
   switch(_lex->result){
     case _RESULT_INTEGER_:
     case _RESULT_REAL_:
+      #ifdef __DEBUG
+      Serial.println("Numeric result");
+      #endif
       _vars->pushRPNStack(_epar->numberParser.realValue());
       break;
     case _RESULT_STRING_:
-      if( _epar->lastMathFunction == NULL){
-        _evaluateString();
-        return; 
-      }
-      _evaluateCommand();
+      #ifdef __DEBUG
+      Serial.println("String result");
+      #endif
+      if( _epar->lastMathFunction != NULL) break;
+      _evaluateString();
+      return; 
+    case _RESULT_EXECUTED_:
+      #ifdef __DEBUG
+      Serial.println("Executed result");
+      #endif
       break;
     case _RESULT_UNDEFINED_:
+      #ifdef __DEBUG
+      Serial.println("Undefined result");
+      #endif
+      //_mbox->setLabel( RPN_StatusMessage, true);
       //_mbox->setLabel( RPN_Error_NAN, true);
       return;
     default:
@@ -249,153 +241,6 @@ void RPNCalculator::processInput( bool silent) {
     _rsb->setStackRedrawAll();
     updateIOM();
   }
-}
-
-//
-// Stack operations
-// 
-void RPNCalculator::push(bool refresh) {
-  _vars->saveRPNPrev();
-  _vars->pushRPNStack();
-  _setRedrawAndUpdateIOM( refresh);
-}
-void RPNCalculator::pop(bool refresh) {
-  _vars->saveRPNPrev();
-  _vars->popRPNStack();
-  _setRedrawAndUpdateIOM( refresh);
-}
-void RPNCalculator::swap(bool refresh) {
-  _vars->saveRPNPrev();
-  _vars->swapRPNXY();
-  _rsb->setStackRedrawRequired(0);
-  _rsb->setStackRedrawRequired(1);
-  updateIOM(refresh);
-}
-void RPNCalculator::roll(bool refresh) {
-  _vars->pushRPNStack( _vars->getRPNRegister(RPN_STACK-1));
-  _setRedrawAndUpdateIOM( refresh);
-}
-void RPNCalculator::prev(bool refresh) {
-  _vars->pushRPNStack(_vars->getRPNPrev());
-  _setRedrawAndUpdateIOM( refresh);
-}
-void RPNCalculator::add(bool refresh) {
-  _savePopAndUpdate( _vars->getRPNRegister(1) + _vars->getRPNRegister(), refresh);
-}
-void RPNCalculator::subtract(bool refresh) {
-  _savePopAndUpdate( _vars->getRPNRegister(1) - _vars->getRPNRegister(), refresh);
-}
-void RPNCalculator::multiply(bool refresh) {
-  _savePopAndUpdate( _vars->getRPNRegister(1) * _vars->getRPNRegister(), refresh);
-}
-void RPNCalculator::divide(bool refresh) {
-  if( abs(_vars->getRPNRegister()) < 1e-300){
-    _mbox->setLabel( RPN_Error_DivZero);
-    _setRedrawAndUpdateIOM( refresh);
-    return;    
-  }
-  _savePopAndUpdate( _vars->getRPNRegister(1) / _vars->getRPNRegister(), refresh);
-}
-void RPNCalculator::signchange(bool refresh) {
-  _vars->saveRPNPrev();
-  _vars->negateRPNX();
-  _setRedrawAndUpdateIOM( refresh);
-}
-void RPNCalculator::power(bool refresh) {
-  _vars->saveRPNPrev(1);
-  //_messages
-  // power zero: using "1 convention"  
-  if( _vars->isRPNRegisterZero(1) && _vars->isRPNRegisterZero(0)){
-    _mbox->setLabel( RPN_Warning_ZeroPowerZero);
-    _popPartial( 1.0);
-    updateIOM( refresh);
-    return;
-  }
-  // positive power of zero: zero
-  if( _vars->getRPNRegister() > 0.0 && _vars->isRPNRegisterZero(1)){
-    _popPartial( 0.0);
-    updateIOM( refresh);
-    return;
-  }
-  // negative power of zero: div by zero
-  if( _vars->getRPNRegister() < 0.0 && _vars->isRPNRegisterZero(1)){
-    _mbox->setLabel( RPN_Error_DivZero);
-    _setRedrawAndUpdateIOM( refresh);
-    return;
-  }
-  double tmp = pow( _vars->getRPNRegister(1), _vars->getRPNRegister());
-  if( isnan(tmp)){
-    _mbox->setLabel( RPN_Error_NAN);
-    _setRedrawAndUpdateIOM( refresh);
-    return;    
-  }
-  _popPartial( tmp);
-  updateIOM(refresh);
-}
-
-//
-// If the number is large, periodic functions are useless
-//
-void RPNCalculator::_checkTrigAccuracy(){
-  double tmp = abs( _vars->getConvertedAngleRPNX());
-  if( tmp > 1e+16)
-      _mbox->setLabel( RPN_Warning_Accuracy);
-}
-
-//
-// Decorator for quad equation solver
-//
-void RPNCalculator::quad(bool refresh) {
-  // Trivial solution
-  if( _vars->isRPNRegisterZero(2) && _vars->isRPNRegisterZero(1) && _vars->isRPNRegisterZero()){
-    _mbox->setLabel( RPN_Message_Trivial, false);
-    return;    
-  }
-  // No roots
-  if( _vars->isRPNRegisterZero(2) && _vars->isRPNRegisterZero(1)){
-    _mbox->setLabel( RPN_Message_NoRoots, false);
-    return;    
-  }
-  // Solve
-  double *tmp = _funs->quad(_vars->getRPNStackPtr());
-  for(byte i=0; i<3; i++) _vars->setRPNRegister( tmp[i], i);
-  setRPNLabel( 2, RPN_Message_Discriminant, false);
-  // Complex roots
-  if(tmp[2] < 0.0){
-    _mbox->setLabel(RPN_Message_ComplexRoots, false);
-    setRPNLabel( 0, RPN_Message_RealPart, false);
-    setRPNLabel( 1, RPN_Message_ComplexPart, false);
-    return;
-  }
-  // Real roots
-  setRPNLabel( 0, RPN_Message_Root1, false);
-  setRPNLabel( 1, RPN_Message_Root2, false);
-  if(tmp[2] == 0.0)
-    _mbox->setLabel(RPN_Message_OneRoot, false);
-  else
-    _mbox->setLabel(RPN_Message_TwoRoots, false);
-  return;
-}
-
-//
-// Decorator for goff2 equation solver
-//
-void RPNCalculator::goff2(bool refresh) {
-  // No solution
-  if( _vars->getRPNRegister(3) == _vars->getRPNRegister(1)){
-    _mbox->setLabel(RPN_Message_Trivial, false);
-    return;    
-  }
-  // Solution
-  double *tmp = _funs->goff2(_vars->getRPNStackPtr());
-  _mbox->setLabel( RPN_Message_Goff_Solution, false);
-  setRPNLabel( 0, RPN_Message_Offset, false);
-  setRPNLabel( 1, RPN_Message_Gain, false);
-  _vars->popRPNStack(3);
-  _vars->setRPNRegister( tmp[0]);
-  _vars->setRPNRegister( tmp[1], 1);
-  _rsb->setStackRedrawAll();
-  return;
 }
 
 //
@@ -422,107 +267,15 @@ void RPNCalculator::saveState(){
 }
 
 //
-// Process a command, such as "sin" without parameters 
-//
-void RPNCalculator::_evaluateCommand(){
-  #ifdef __DEBUG
-  Serial.println((char *)_epar->lastMathFunction->name0);
-  #endif
-  bool doPopPartial = true;
-  bool doUpdateIOM = true;
-  double *return_ptr;
-  _vars->saveRPNPrev();
-  switch(_epar->lastMathFunction->RPNtag){
-    case _RPN_AMODE_:
-      _funs->Compute( _epar->lastMathFunction, _vars->getRPNStackPtr());
-      _mbox->setLabel( RPN_AMOD_Table[ _vars->getAngleMode()]);
-      pop(true);
-      return;
-    case _RPN_CHECK_TRIG_:
-      _checkTrigAccuracy();
-      break;
-    case _RPN_INVTRIG_:
-      if( abs(_vars->getRPNRegister()) > 1.0){
-        _mbox->setLabel(RPN_Error_Trig);
-        _rsb->setStackRedrawRequired();
-        updateIOM(doUpdateIOM);
-        return;
-      }
-      break;
-    case _RPN_DIV0_CHECK_:
-      if( _vars->isRPNRegisterZero()){
-        _mbox->setLabel(RPN_Error_DivZero);
-        doPopPartial = false;
-      }
-      break;
-    case _RPN_ROOTYX_:
-      if( _vars->isRPNRegisterZero()){
-        _mbox->setLabel(RPN_Error_DivZero);
-        doPopPartial = false;
-        break;
-      }
-      _vars->inverseRPNX();
-      // fall-through!
-    case _RPN_POWER_:
-      power(true);
-      return;
-    case _RPN_SWAP_ONLY_:
-      swap(true);
-      return;
-    case _RPN_SWAP_XY_:
-      _vars->saveRPNPrev(1);
-      _vars->swapRPNXY();
-      break;
-    case _RPN_QUICK_PUSH_:
-      _vars->pushRPNStack();
-      break;
-    case _RPN_SQRT_CHECK_:
-      if( _vars->getRPNRegister() < 0.0){
-        _mbox->setLabel(RPN_Message_Complex);
-        _vars->negateRPNX();
-      }      
-      break;
-    case _RPN_QUAD_SOLVER:
-      quad(true);
-      _setRedrawAndUpdateIOM( doUpdateIOM);
-      return;
-    case _RPN_GOFF2_SOLVER:
-      goff2(true);
-      _setRedrawAndUpdateIOM( doUpdateIOM);
-      return;
-    default:
-      break;
-  }
-  return_ptr = _funs->Compute( _epar->lastMathFunction, _vars->getRPNStackPtr());
-  if( _epar->lastMathFunction->nArgs > 0) _vars->setRPNRegister( return_ptr[0]);
-  if( doPopPartial && _epar->lastMathFunction->nArgs > 1) _popPartial();
-  else _rsb->setStackRedrawAll();
-  updateIOM(doUpdateIOM);
-}
-
-//
-// Process other string commands, such as "roll" 
+// Process sume unimplemented string commands, such as "hex"
+// This is a kludge! TODO 
 //
 void RPNCalculator::_evaluateString(){
   byte *ptr;
   if( IsToken( _epar->nameParser.Name(), "cls", false)){
-    resetRPNLabels();
+    _rsb->resetRPNLabels();
     _clb->clearInput();
-    return;
-  }
-  if( IsToken( _epar->nameParser.Name(), "push", false)){
-    push();
-    _clb->clearInput();
-    return;
-  }
-  if( IsToken( _epar->nameParser.Name(), "pop", false)){
-    pop();
-    _clb->clearInput();
-    return;
-  }
-  if( IsToken( _epar->nameParser.Name(), "roll", false)){
-    roll();
-    _clb->clearInput();
+    updateIOM(true);
     return;
   }
   if( IsToken( _epar->nameParser.Name(), "hex", false)){
@@ -538,18 +291,6 @@ void RPNCalculator::_evaluateString(){
     _clb->clearInput();
     return;
   }
-  if( IsToken( _epar->nameParser.Name(), "cli", false)){
-    _clb->copyToPrevious();
-    _clb->clearInput();
-    nextUI = UI_CONSOLE;
-    return;
-  }
-  if( IsToken( _epar->nameParser.Name(), "fman", false)){
-    _clb->copyToPrevious();
-    _clb->clearInput();
-    nextUI = UI_FILEMAN;
-    return;
-  }
   if( IsToken( _epar->_getCurrentPosition(), "#scr prompt ", false)){
     _clb->copyToPrevious();
     _mbox->setLabel( _clb->getInput(12));
@@ -558,19 +299,22 @@ void RPNCalculator::_evaluateString(){
   }
   if( IsToken( _epar->_getCurrentPosition(), "#scr labelx ", false)){
     _clb->copyToPrevious();
-    setRPNLabel( 0, _clb->getInput(12));
+    _rsb->setRPNLabel( 0, _clb->getInput(12));
+    updateIOM(true);
     _clb->clearInput();
     return;
   }
   if( IsToken( _epar->_getCurrentPosition(), "#scr labely ", false)){
     _clb->copyToPrevious();
-    setRPNLabel( 1, _clb->getInput(12));
+    _rsb->setRPNLabel( 1, _clb->getInput(12));
+    updateIOM(true);
     _clb->clearInput();
     return;
   }
   if( IsToken( _epar->_getCurrentPosition(), "#scr labelz ", false)){
     _clb->copyToPrevious();
-    setRPNLabel( 2, _clb->getInput(12));
+    _rsb->setRPNLabel( 2, _clb->getInput(12));
+    updateIOM(true);
     _clb->clearInput();
     return;
   }
@@ -587,13 +331,4 @@ void RPNCalculator::_evaluateString(){
     return;
   }
   _mbox->setLabel( RPN_Error_Unknown, true);  
-}
-
-void RPNCalculator::_popPartial() {
-  _vars->popRPNStack(2);
-  _rsb->setStackRedrawAll();
-}
-void RPNCalculator::_popPartial( double v) {
-  _popPartial();
-  _vars->setRPNRegister( v);
 }

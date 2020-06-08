@@ -9,12 +9,10 @@
 #ifndef FILEMANAGER_HPP
 #define FILEMANAGER_HPP
 
-#include "./src/LCDManager.hpp"
-#include "./src/SDManager.hpp"
+#include "./src/Lexer.hpp"
 
 class FileManager{
   public:
-    byte nextUI = UI_UNDEFINED;
     unsigned long init(void *components[]);
     unsigned long tick();
     void show();
@@ -26,6 +24,7 @@ class FileManager{
     LCDManager *_lcd;
     SDManager *_sdm;
     ExpressionParser *_epar;
+    Lexer *_lex;
 };
 
 #endif // FILEMANAGER_HPP
