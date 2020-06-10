@@ -12,6 +12,8 @@
 
 const double _angleConversions[] PROGMEM = {1.74532925199e-2, 1.0, 1.5707963268e-2};
 
+const char _RPN_Error_NaN[] PROGMEM = "Err: NaN";
+const char _RPN_Error_Argument[] PROGMEM = "Err: Argument";
 const char _RPN_Mode_Degrees[] PROGMEM = "Mode: Degrees";
 const char _RPN_Mode_Radians[] PROGMEM = "Mode: Radians";
 const char _RPN_Mode_Gradians[] PROGMEM = "Mode: Gradians";
@@ -65,25 +67,28 @@ const char SD_root2[] PROGMEM = "/";
 
 void Variables::init( void *components[]){
   _kwds = (Keywords *)components[UI_COMP_Keywords];
-  _rpnStack = (double *)_getDataPtr( _placeVector( false, _VAR_stack, RPN_STACK));
-  _prev = (double *)_getDataPtr( _placeNumber( false, _VAR_prev));
   _amode = (int64_t *)_getDataPtr( _placeNumber( false, _VAR_amode, _MODE_DEGREES_));
+  nmean = (double *)_getDataPtr( _placeNumber( false, _VAR_nMean, 0.0));
   mean = (double *)_getDataPtr( _placeNumber( false, _VAR_Mean, 0.0));
   stdev = (double *)_getDataPtr( _placeNumber( false, _VAR_StDev, 1.0));
+  nmeanXY = (double *)_getDataPtr( _placeNumber( false, _VAR_nMeanXY, 0.0));
   meanX = (double *)_getDataPtr( _placeNumber( false, _VAR_MeanX, 0.0));
   stdevX = (double *)_getDataPtr( _placeNumber( false, _VAR_StDevX, 1.0));
   meanY = (double *)_getDataPtr( _placeNumber( false, _VAR_MeanY, 0.0));
   stdevY = (double *)_getDataPtr( _placeNumber( false, _VAR_StDevY, 1.0));
+  _read_only_bottom = _var_bottom; // the variables above cannot be written from BASIC
+  _rpnStack = (double *)_getDataPtr( _placeVector( false, _VAR_stack, RPN_STACK));
+  _prev = (double *)_getDataPtr( _placeNumber( false, _VAR_prev));
   gain = (double *)_getDataPtr( _placeNumber( false, _VAR_Gain, 1.0));
   offset = (double *)_getDataPtr( _placeNumber( false, _VAR_Offset, 0.0));
-  _placeNumber( false, _VAR_lcdPWM, 200);
   currentDir = (char *)_getDataPtr( _placeString( false,
       _VAR_current_dir, CURRENT_DIR_LEN, SD_root2));
   scrMessage = _getDataPtr( _placeString( false, _VAR_scrMessage, SCR_COLS));
   rpnLabelX = _getDataPtr( _placeString( false, _VAR_rpnLabelX, SCR_COLS));
   rpnLabelY = _getDataPtr( _placeString( false, _VAR_rpnLabelY, SCR_COLS));
   rpnLabelZ = _getDataPtr( _placeString( false, _VAR_rpnLabelZ, SCR_COLS));
-  _standard_bottom = _var_bottom;
+  _placeNumber( false, _VAR_lcdPWM, 200);
+  _standard_bottom = _var_bottom; // the variables above cannot be removed from BASIC
   #ifdef __DEBUG
   Serial.print( "Placed all standard variables, standard bottom: ");
   Serial.println( _standard_bottom);
@@ -103,11 +108,9 @@ void Variables::init( void *components[]){
   _placeNumber( true, _CON_GRAD, 2.0);
   _placeNumber( true, _CON_High, 1);
   _placeNumber( true, _CON_Low, 0);
-  nmean = (double *)_getDataPtr( _placeNumber( true, _VAR_nMean, 0.0));
-  nmeanXY = (double *)_getDataPtr( _placeNumber( true, _VAR_nMeanXY, 0.0));
   _varAvailble = (int64_t *)_getDataPtr( _placeNumber( true, _CON_varMemory));
   _prgAvailble = (int64_t *)_getDataPtr( _placeNumber( true, _CON_prgMemory));
-  _standard_top = _const_top;
+  _standard_top = _const_top; // the constants above cannot be removed or wriitten to from BASIC
   setMemoryAvailable();
   #ifdef __DEBUG
   Serial.print( "Placed all standard constants, standard top: ");
@@ -343,7 +346,6 @@ VariableToken Variables::getOrCreateNumber( bool asConstant, byte *name){
   if( _kwds->isKeyword( (byte *)name)) return 0; 
   VariableToken vt = findByName( name);
   if( vt){ // exists
-    if( isReadOnly(vt)) return 0; // standard constants
     return vt;
   }
   vt = _placeNumber( asConstant, (const char *)name);
@@ -439,6 +441,9 @@ void Variables::pushRPNStack(){
 void Variables::pushRPNStack( double v){
   pushRPNStack();
   *_rpnStack = v;
+}
+void Variables::rollRPNStack(){
+  pushRPNStack( _rpnStack[RPN_STACK-1]);
 }
 
 double Variables::getConvertedAngle( double a){
@@ -673,4 +678,49 @@ void Variables::addSample2RPNSumXY( double x, double y){
   stErrXY = 0.0;
   if( *nmeanXY > 2.5)
     stErrXY = sqrt((1.0 - rXY*rXY) * e_num / (*nmeanXY - 2.0));
+}
+
+//
+// Simple gain-offset conversion
+//
+byte Variables::_convert1_( double *args, double *rets, bool isRPN,
+    double Gain, double Offset){
+  mathError = _ERROR_;
+  double tmp = Gain * args[0] + Offset;
+  return _Universal_Mantra_( isRPN, tmp, rets, 0);
+}
+
+//
+// Inverse conversion
+//
+byte Variables::_convert2_( double *args, double *rets, bool isRPN,
+    double Gain, double Offset1, double Offset2){
+  mathError = _ERROR_;
+  double tmp = args[0] + Offset1;
+  if( tmp <= 0.0){
+    if( isRPN) setScrMessage( _RPN_Error_Argument);
+    return _REQUEST_REDRAW_MSG;
+  }
+  return _Universal_Mantra_( isRPN, tmp, rets, 0);
+}
+
+//
+// Standard proceedings for RPN and non-RPN operation completion
+//
+byte Variables::_RPN_Mantra_( double value, byte pops){
+  if( isnan(value)){
+    setScrMessage( _RPN_Error_NaN);
+    return _REQUEST_REDRAW_MSG;
+  }
+  saveRPNPrev();
+  for( byte i=0; i<pops; i++) popRPNStack();
+  _rpnStack[0] = value;
+  mathError = _NO_ERROR_;
+  return pops? 3: 1;
+}
+byte Variables::_nonRPN_Mantra_( double value, double *rets){
+  if( isnan(value)) return _REQUEST_REDRAW_MSG;
+  rets[0] = value;
+  mathError = _NO_ERROR_;
+  return 1;
 }

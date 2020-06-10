@@ -658,6 +658,12 @@ const char _OPR_fact[] PROGMEM = "fact";
 //#define _OPR_OOX_KW             215
 const char _OPR_CNK[] PROGMEM = "CNK";
 const char _OPR_cnk[] PROGMEM = "cnk";
+//#define _OPR_K2C_KW             216
+const char _OPR_K2C[] PROGMEM = "K2C";
+const char _OPR_k2c[] PROGMEM = "k2c";
+//#define _OPR_AIN_KW             217
+const char _OPR_AIN[] PROGMEM = "AIN";
+const char _OPR_ain[] PROGMEM = "ain";
 
 void Keywords::init(){
   _addKeyword( _OPR_ABS, _OPR_abs);                    // 0
@@ -876,7 +882,9 @@ void Keywords::init(){
   _addKeyword( _OPR_OOX, _OPR_oox);                    // 213
   _addKeyword( _OPR_FACT, _OPR_fact);                  // 214
   _addKeyword( _OPR_CNK, _OPR_cnk);                    // 215
-  //_addKeyword( Add here, Add here);                  // 216
+  _addKeyword( _OPR_K2C, _OPR_k2c);                    // 216
+  _addKeyword( _OPR_AIN, _OPR_ain);                    // 217
+  //_addKeyword( Add here, Add here);                  // 218
 };
 
 Keyword *Keywords::getKeyword(byte *str){

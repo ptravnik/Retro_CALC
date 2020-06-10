@@ -13,6 +13,8 @@
 
 #define NMATH_RETURNS       3
 #define _MATH_PI_           3.14159265359
+#define _MATH_PIo2_         1.5707963268
+#define _MATH_PIx2_         6.28318530718
 #define _MATH_SQ_PI_        1.77245385091
 #define _MATH_NDIS_NORM_    3.98942280402e-1
 

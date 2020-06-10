@@ -104,10 +104,7 @@ static byte _function_Solver_GOFF2_( Variables *_vars, double *args, double *ret
 // Gain and offset solver
 //
 static byte _function_Solver_LIN2_( Variables *_vars, double *args, double *rets, bool isRPN){
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = args[0] * _vars->gain[0] + _vars->offset[0];
-  return 1;
+  return _vars->_convert1_( args, rets, isRPN, _vars->gain[0], _vars->offset[0]);
 }
 
 //
@@ -116,17 +113,7 @@ static byte _function_Solver_LIN2_( Variables *_vars, double *args, double *rets
 static byte _function_Solver_RADIUS_( Variables *_vars, double *args, double *rets, bool isRPN){
   _vars->mathError = _ERROR_;
   double tmp = args[0]*args[0] + args[1]*args[1];
-  if( isnan(tmp)){
-    if( isRPN) _vars->setScrMessage( FUN_Error_Overflow);
-    return _REQUEST_REDRAW_MSG;
-  }
-  if( isRPN){
-    _vars->popRPNStack();
-    _vars->saveRPNPrev();
-  }
-  _vars->mathError = _NO_ERROR_;
-  rets[0] = sqrt( tmp);
-  return 1;
+  return _vars->_Universal_Mantra_( isRPN, sqrt( tmp), rets, 1);
 }
 
 static byte _function_Solver_CATH_( Variables *_vars, double *args, double *rets, bool isRPN){
@@ -137,73 +124,84 @@ static byte _function_Solver_CATH_( Variables *_vars, double *args, double *rets
     return _REQUEST_REDRAW_MSG;
   }
   if( tmp<0.0) tmp = -tmp;
-  if( isRPN){
-    _vars->popRPNStack();
-    _vars->saveRPNPrev();
-  }
-  _vars->mathError = _NO_ERROR_;
-  rets[0] = sqrt( tmp);
-  return 1;
+  return _vars->_Universal_Mantra_( isRPN, sqrt( tmp), rets, 1);
 }
 
 static byte _function_Solver_LCIRC_( Variables *_vars, double *args, double *rets, bool isRPN){
-  _vars->mathError = _ERROR_;
-  double tmp = 2.0 * _MATH_PI_ * args[0];
-  if( isnan(tmp)){
-    if( isRPN) _vars->setScrMessage( FUN_Error_Overflow);
-    return _REQUEST_REDRAW_MSG;
-  }
-  if( isRPN) _vars->saveRPNPrev();
-  _vars->mathError = _NO_ERROR_;
-  rets[0] = tmp;
-  return 1;
+  return _vars->_convert1_( args, rets, isRPN, 2.0 * _MATH_PI_);
 }
 
 static byte _function_Solver_SCIRC_( Variables *_vars, double *args, double *rets, bool isRPN){
-  _vars->mathError = _ERROR_;
-  double tmp = _MATH_PI_ * args[0] * args[0];
-  if( isnan(tmp)){
-    if( isRPN) _vars->setScrMessage( FUN_Error_Overflow);
-    return _REQUEST_REDRAW_MSG;
-  }
-  if( isRPN) _vars->saveRPNPrev();
-  _vars->mathError = _NO_ERROR_;
-  rets[0] = tmp;
-  return 1;
+  return _vars->_convert1_( args, rets, isRPN, _MATH_PI_* args[0]);
 }
 
 //
 // Sphere solvers
 //
 static byte _function_Solver_VSPHERE_( Variables *_vars, double *args, double *rets, bool isRPN){
-  _vars->mathError = _ERROR_;
-  double tmp = args[0]*args[0]*args[0] / 3.0 * 4.0 *_MATH_PI_;
-  if( isnan(tmp)){
-    if( isRPN) _vars->setScrMessage( FUN_Error_Overflow);
-    return _REQUEST_REDRAW_MSG;
-  }
-  if( tmp<0.0) tmp = -tmp;
-  if( isRPN){
-    _vars->popRPNStack();
-    _vars->saveRPNPrev();
-  }
-  _vars->mathError = _NO_ERROR_;
-  rets[0] = tmp;
-  return 1;
+  double tmp = args[0] * args[0] * _MATH_PI_ / 3.0 * 4.0;
+  return _vars->_convert1_( args, rets, isRPN, tmp);
 }
 
 static byte _function_Solver_SSPHERE_( Variables *_vars, double *args, double *rets, bool isRPN){
+  double tmp = args[0] * _MATH_PI_ * 4.0;
+  return _vars->_convert1_( args, rets, isRPN, tmp);
+}
+
+static byte _function_Solver_AZIMUTH_( Variables *_vars, double *args, double *rets, bool isRPN){
   _vars->mathError = _ERROR_;
-  double tmp = args[0]*args[0] * 4.0 *_MATH_PI_;
+  double E = args[0];
+  double N = args[1];
+  double tmp = E*E + N*N;
   if( isnan(tmp)){
     if( isRPN) _vars->setScrMessage( FUN_Error_Overflow);
     return _REQUEST_REDRAW_MSG;
   }
-  if( isRPN){
-    _vars->popRPNStack();
-    _vars->saveRPNPrev();
-  }
+  tmp = sqrt( tmp);
   _vars->mathError = _NO_ERROR_;
-  rets[0] = tmp;
-  return 1;
+  if( isRPN) _vars->pushRPNStack( 0.0);
+  else rets[0] = 0.0;
+  if( tmp > 1e-300){
+    N = acos( N/tmp);
+    if( E<0) N = _MATH_PIx2_ - N;
+    rets[0] = _vars->getUnconvertedAngle( N);
+  }
+  if( isRPN){
+    _vars->setScrMessage( _vars->getAMODEString());
+    _vars->setRPNLabelZ( FUN_Message_Northing);
+    _vars->setRPNLabelY( FUN_Message_Easting);
+    _vars->setRPNLabelX( FUN_Message_Azimuth);
+    _vars->setRPNPrev(tmp);
+  }
+  return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS;
+}
+
+static byte _function_Solver_AZIMUTH3_( Variables *_vars, double *args, double *rets, bool isRPN){
+  _vars->mathError = _ERROR_;
+  double E = args[1];
+  double N = args[0];
+  double Z = args[2];
+  double R = E*E + N*N;
+  if( isnan(R)){
+    if( isRPN) _vars->setScrMessage( FUN_Error_Overflow);
+    return _REQUEST_REDRAW_MSG;
+  }
+  R = sqrt( R);
+  _vars->mathError = _NO_ERROR_;
+  rets[1] = _vars->getUnconvertedAngle( _MATH_PIo2_);
+  rets[0] = 0.0;
+  if( R > 1e-300){
+    rets[1] = _vars->getUnconvertedAngle( atan(Z/R));
+    N = acos( N/R);
+    if( E<0) N = _MATH_PIx2_ - N;
+    rets[0] = _vars->getUnconvertedAngle( N);
+  }
+  if( isRPN){
+    _vars->setScrMessage( _vars->getAMODEString());
+    _vars->setRPNLabelZ( FUN_Message_Elevation);
+    _vars->setRPNLabelY( FUN_Message_AboveHorizon);
+    _vars->setRPNLabelX( FUN_Message_Azimuth);
+    _vars->setRPNPrev(R);
+  }
+  return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS;
 }

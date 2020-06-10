@@ -131,7 +131,7 @@ class IOManager{
     char _receiveFromSerial();
     bool _readNonlocking(char *ptr);
     char _sendToHost();
-    bool _wait_PM_active( byte waits=500);
+    bool _wait_PM_active( int16_t waits=500);
     void _print_io_buffer();
     inline bool _sendToSerial( byte dest){
       return dest & 1;

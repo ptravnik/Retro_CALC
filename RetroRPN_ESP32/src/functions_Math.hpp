@@ -22,14 +22,7 @@ static byte _function_Math_LG_( Variables *_vars, double *args, double *rets, bo
     return _REQUEST_REDRAW_MSG;
   }
   tmp = log10( tmp);
-  if( isnan(tmp)){
-    if( isRPN) _vars->setScrMessage( FUN_Error_NaN);
-    return _REQUEST_REDRAW_MSG;
-  }
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = tmp; 
-  return 1;
+  return _vars->_Universal_Mantra_( isRPN, tmp, rets);
 }
 
 static byte _function_Math_LN_( Variables *_vars, double *args, double *rets, bool isRPN){
@@ -40,14 +33,7 @@ static byte _function_Math_LN_( Variables *_vars, double *args, double *rets, bo
     return _REQUEST_REDRAW_MSG;
   }
   tmp = log( tmp);
-  if( isnan(tmp)){
-    if( isRPN) _vars->setScrMessage( FUN_Error_NaN);
-    return _REQUEST_REDRAW_MSG;
-  }
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = tmp; 
-  return 1;
+  return _vars->_Universal_Mantra_( isRPN, tmp, rets);
 }
 
 static byte _function_Math_LOG_( Variables *_vars, double *args, double *rets, bool isRPN){
@@ -59,17 +45,8 @@ static byte _function_Math_LOG_( Variables *_vars, double *args, double *rets, b
     return _REQUEST_REDRAW_MSG;
   }
   a = log(a) / log(b);
-  if( isnan(a)){
-    if( isRPN) _vars->setScrMessage( FUN_Error_NaN);
-    return _REQUEST_REDRAW_MSG;
-  }
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN){
-    _vars->popRPNStack();
-    _vars->saveRPNPrev();
-  }
-  rets[0] = a;
-  return 1;
+  _vars->swapRPNXY(); // we are saving the previous value
+  return _vars->_Universal_Mantra_( isRPN, a, rets, 1);
 }
 
 static byte _function_Math_EXP_( Variables *_vars, double *args, double *rets, bool isRPN){
@@ -79,15 +56,7 @@ static byte _function_Math_EXP_( Variables *_vars, double *args, double *rets, b
     if( isRPN) _vars->setScrMessage( FUN_Error_Overflow);
     return _REQUEST_REDRAW_MSG;
   }
-  tmp = exp( tmp);
-  if( isnan(tmp)){
-    if( isRPN) _vars->setScrMessage( FUN_Error_NaN);
-    return _REQUEST_REDRAW_MSG;
-  }
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = tmp; 
-  return 1;
+  return _vars->_Universal_Mantra_( isRPN, exp( tmp), rets);
 }
 
 //
@@ -96,31 +65,18 @@ static byte _function_Math_EXP_( Variables *_vars, double *args, double *rets, b
 static byte _function_Math_SQRT_( Variables *_vars, double *args, double *rets, bool isRPN){
   _vars->mathError = _ERROR_;
   double tmp = args[0];
-  if( tmp < 0 && isRPN){
+  if( tmp < 0.0 && isRPN){
     _vars->setScrMessage( FUN_Warning_Complex);
-    rets[0] = sqrt(-tmp); 
+    _vars->_RPN_Mantra_( sqrt(-tmp)); 
     return _REQUEST_REDRAW_X;
   }
   if( tmp < 0.0) return _REQUEST_REDRAW_MSG;
-  tmp = sqrt( tmp);
-  if( isnan(tmp)) return _REQUEST_REDRAW_MSG;
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = tmp; 
-  return 1;
+  return _vars->_Universal_Mantra_( isRPN, sqrt( tmp), rets);
 }
 static byte _function_Math_SQ_( Variables *_vars, double *args, double *rets, bool isRPN){
   _vars->mathError = _ERROR_;
   double tmp = args[0];
-  tmp *= tmp;
-  if( isnan(tmp)){
-    if( isRPN) _vars->setScrMessage( FUN_Error_NaN);
-    return _REQUEST_REDRAW_MSG;
-  }
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = tmp; 
-  return 1;
+  return _vars->_Universal_Mantra_( isRPN, tmp * tmp, rets);
 }
 
 //
@@ -134,14 +90,11 @@ static byte _function_Math_ACOS_( Variables *_vars, double *args, double *rets, 
     if( isRPN) _vars->setScrMessage( FUN_Error_InverseTrig);
     return _REQUEST_REDRAW_MSG;
   }
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = _vars->getUnconvertedAngle( acos( tmp)); 
-  return 1;
+  tmp = _vars->getUnconvertedAngle( acos( tmp));
+  return _vars->_Universal_Mantra_( isRPN, tmp, rets);
 }
 
 static byte _function_Math_COS_( Variables *_vars, double *args, double *rets, bool isRPN){
-  _vars->mathError = _NO_ERROR_;
   double tmp = _vars->getConvertedAngle( args[0]);
   byte rB = 1;
   if( abs( tmp) > 1e16){
@@ -149,8 +102,7 @@ static byte _function_Math_COS_( Variables *_vars, double *args, double *rets, b
     rB = _REQUEST_REDRAW_X; 
     _vars->mathError = _WARNING_;
   }
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = cos( tmp); 
+  _vars->_Universal_Mantra_( isRPN, cos(tmp), rets);
   return rB;
 }
 
@@ -161,14 +113,11 @@ static byte _function_Math_ASIN_( Variables *_vars, double *args, double *rets, 
     if( isRPN) _vars->setScrMessage( FUN_Error_InverseTrig);
     return _REQUEST_REDRAW_MSG;
   }
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = _vars->getUnconvertedAngle( asin( tmp)); 
-  return 1;
+  tmp = _vars->getUnconvertedAngle( asin( tmp));
+  return _vars->_Universal_Mantra_( isRPN, tmp, rets);
 }
 
 static byte _function_Math_SIN_( Variables *_vars, double *args, double *rets, bool isRPN){
-  _vars->mathError = _NO_ERROR_;
   double tmp = _vars->getConvertedAngle( args[0]);
   byte rB = 1;
   if( abs( tmp) > 1e16){
@@ -176,21 +125,16 @@ static byte _function_Math_SIN_( Variables *_vars, double *args, double *rets, b
     _vars->mathError = _WARNING_;
     rB = _REQUEST_REDRAW_X; 
   }
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = sin( tmp); 
+  _vars->_Universal_Mantra_( isRPN, sin(tmp), rets);
   return rB;
 }
 
 static byte _function_Math_ATAN_( Variables *_vars, double *args, double *rets, bool isRPN){
-  _vars->mathError = _NO_ERROR_;
-  double tmp = args[0];
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = _vars->getUnconvertedAngle( atan( tmp)); 
-  return 1;
+  double tmp = _vars->getUnconvertedAngle( atan( args[0]));
+  return _vars->_Universal_Mantra_( isRPN, tmp, rets);
 }
 
 static byte _function_Math_TAN_( Variables *_vars, double *args, double *rets, bool isRPN){
-  _vars->mathError = _NO_ERROR_;
   double tmp = _vars->getConvertedAngle( args[0]);
   byte rB = 1;
   if( abs( tmp) > 1e16){
@@ -204,13 +148,11 @@ static byte _function_Math_TAN_( Variables *_vars, double *args, double *rets, b
     _vars->mathError = _ERROR_;
     return _REQUEST_REDRAW_MSG;
   }
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = sin( tmp) / dv; 
+  _vars->_Universal_Mantra_( isRPN, sin(tmp) / dv, rets);
   return rB;
 }
 
 static byte _function_Math_COT_( Variables *_vars, double *args, double *rets, bool isRPN){
-  _vars->mathError = _NO_ERROR_;
   double tmp = _vars->getConvertedAngle( args[0]);
   byte rB = 1;
   if( abs( tmp) > 1e16){
@@ -224,8 +166,7 @@ static byte _function_Math_COT_( Variables *_vars, double *args, double *rets, b
     _vars->mathError = _ERROR_;
     return _REQUEST_REDRAW_MSG;
   }
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = cos( tmp) / dv; 
+  _vars->_Universal_Mantra_( isRPN, cos(tmp) / dv, rets);
   return rB;
 }
 
@@ -245,10 +186,7 @@ static byte _function_Math_ACOSH_( Variables *_vars, double *args, double *rets,
     if( isRPN) _vars->setScrMessage( FUN_Error_Underflow);
     return _REQUEST_REDRAW_MSG; 
   }
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = log( tmp); 
-  return 1;
+  return _vars->_Universal_Mantra_( isRPN, log( tmp), rets);
 }
 
 static byte _function_Math_COSH_( Variables *_vars, double *args, double *rets, bool isRPN){
@@ -257,11 +195,9 @@ static byte _function_Math_COSH_( Variables *_vars, double *args, double *rets, 
     if( isRPN) _vars->setScrMessage( FUN_Error_Overflow);
     return _REQUEST_REDRAW_MSG; 
   }
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = exp( args[0]); 
-  rets[0] = (rets[0] + 1/rets[0]) * 0.5;
-  return 1;
+  double tmp = exp( args[0]); 
+  tmp = (tmp + 1/tmp) * 0.5;
+  return _vars->_Universal_Mantra_( isRPN, tmp, rets);
 }
 
 static byte _function_Math_ASINH_( Variables *_vars, double *args, double *rets, bool isRPN){
@@ -272,10 +208,7 @@ static byte _function_Math_ASINH_( Variables *_vars, double *args, double *rets,
     if( isRPN) _vars->setScrMessage( FUN_Error_Underflow);
     return _REQUEST_REDRAW_MSG; 
   }
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = log( tmp); 
-  return 1;
+  return _vars->_Universal_Mantra_( isRPN, log( tmp), rets);
 }
 
 static byte _function_Math_SINH_( Variables *_vars, double *args, double *rets, bool isRPN){
@@ -284,11 +217,9 @@ static byte _function_Math_SINH_( Variables *_vars, double *args, double *rets, 
     if( isRPN) _vars->setScrMessage( FUN_Error_Overflow);
     return _REQUEST_REDRAW_MSG; 
   }
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = exp( args[0]); 
-  rets[0] = (rets[0] - 1/rets[0]) * 0.5;
-  return 1;
+  double tmp = exp( args[0]); 
+  tmp = (tmp - 1/tmp) * 0.5;
+  return _vars->_Universal_Mantra_( isRPN, tmp, rets);
 }
 
 static byte _function_Math_ATANH_( Variables *_vars, double *args, double *rets, bool isRPN){
@@ -303,10 +234,7 @@ static byte _function_Math_ATANH_( Variables *_vars, double *args, double *rets,
     if( isRPN) _vars->setScrMessage( FUN_Error_Underflow);
     return _REQUEST_REDRAW_MSG; 
   }
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = log( tmp) * 0.5; 
-  return 1;
+  return _vars->_Universal_Mantra_( isRPN, log( tmp) * 0.5, rets);
 }
 
 static byte _function_Math_TANH_( Variables *_vars, double *args, double *rets, bool isRPN){
@@ -315,11 +243,10 @@ static byte _function_Math_TANH_( Variables *_vars, double *args, double *rets, 
     if( isRPN) _vars->setScrMessage( FUN_Error_Overflow);
     return _REQUEST_REDRAW_MSG; 
   }
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = exp( args[0]); 
-  rets[0] = (rets[0] - 1/rets[0]) / (rets[0] + 1/rets[0]);
-  return 1;
+  double tmp1 = exp( args[0]);
+  double tmp2 = exp( -args[0]);
+  tmp1 = (tmp1 - tmp2) / (tmp1 + tmp2);
+  return _vars->_Universal_Mantra_( isRPN, tmp1, rets);
 }
 
 //
@@ -345,10 +272,7 @@ static byte _function_Math_NDIS_( Variables *_vars, double *args, double *rets, 
     if( isRPN) _vars->setScrMessage( FUN_Error_Overflow);
     return _REQUEST_REDRAW_MSG;
   }
-  _vars->mathError = _NO_ERROR_;
-  if( isRPN) _vars->saveRPNPrev();
-  rets[0] = tmp; 
-  return 1;
+  return _vars->_Universal_Mantra_( isRPN, tmp, rets);
 }
 
 //
@@ -369,7 +293,6 @@ static byte _function_Math_SIGN_( Variables *_vars, double *args, double *rets, 
 static byte _function_Math_ABS_( Variables *_vars, double *args, double *rets, bool isRPN){
   _vars->mathError = _NO_ERROR_;
   if( isRPN) _vars->saveRPNPrev();
-  double tmp = args[0];
-  rets[0] = abs( tmp);
+  rets[0] = abs( args[0]);
   return 1;
 }

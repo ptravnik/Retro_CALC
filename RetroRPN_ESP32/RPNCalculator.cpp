@@ -11,10 +11,8 @@
 //#define __DEBUG
 
 const char RPN_StatusMessage[] PROGMEM = "RPN Ready";
-
 const char RPN_Error_NAN[] PROGMEM = "Err: NaN";
 const char RPN_Error_Unknown[] PROGMEM = "Unknown:";
-//const char RPN_Message_Complex[] PROGMEM = "Complex: \xb1i";
  
 //
 // Inits calculator

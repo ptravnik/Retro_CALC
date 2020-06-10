@@ -99,7 +99,7 @@
 #define _RPN_STACK_GET    9
 
 #define _FUN_Variable_    -1
-#define _FUNCTION_COUNT    32
+#define _FUNCTION_COUNT    47
 
 // Keywords
 #define _OPR_ABS_KW             0
@@ -318,7 +318,9 @@
 #define _OPR_OOX_KW             213
 #define _OPR_FACT_KW            214
 #define _OPR_CNK_KW             215
-#define _OPERATOR_COUNT         216
+#define _OPR_K2C_KW             216
+#define _OPR_AIN_KW             217
+#define _OPERATOR_COUNT         218
 
 #define RPN_STACK             20
 

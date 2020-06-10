@@ -23,6 +23,9 @@ bool Lexer::operator_SUMXY(){
   #endif
   // parse expression
   byte nArgs = _parseList( 2);
+  //Serial.println( nArgs);
+  //Serial.println( _listValues[0]);
+  //Serial.println( _listValues[1]);
   if( nArgs == 2){
     _vars->addSample2RPNSumXY( _listValues[0], _listValues[1]);
     _vars->pushRPNStack( _vars->stErrXY);
@@ -33,14 +36,15 @@ bool Lexer::operator_SUMXY(){
     _vars->addSample2RPNSumXY( _vars->getRPNRegister(1), _vars->getRPNRegister(0));
     _vars->pushRPNStack( _vars->offset[0]);
     _vars->setRPNRegister( _vars->gain[0], 1);
-    _vars->setRPNRegister( _vars->offset[0], 2);
+    _vars->setRPNRegister( _vars->stErrXY, 2);
   }
+  _vars->setRPNLabelZ( LEX_Message_StdError);
+  _vars->setRPNLabelY( LEX_Message_Gain);
+  _vars->setRPNLabelX( LEX_Message_Offset);
+  _vars->setScrMessage( LEX_Message_SumUpdated);
+  _mbox->setRedrawRequired();
   _rsb->setStackRedrawAll();
-  _rsb->setRPNLabel( 2, LEX_Message_StdError);
-  _rsb->setRPNLabel( 1, LEX_Message_Gain);
-  _rsb->setRPNLabel( 0, LEX_Message_Offset);
-  _rsb->updateIOM();
-  _mbox->setLabel( LEX_Message_SumUpdated);
+  _rsb->setLabelRedrawAll();
   _skipToNextOperator( _lexer_position);
   return true;
 }

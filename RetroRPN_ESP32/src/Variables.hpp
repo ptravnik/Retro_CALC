@@ -45,6 +45,7 @@ class Variables{
   public:
     byte mathError = 0;
     size_t _var_bottom = 0;
+    size_t _read_only_bottom = 0;
     size_t _standard_bottom = 0;
     size_t _const_top = VARIABLE_SPACE;
     size_t _standard_top = VARIABLE_SPACE;
@@ -96,7 +97,9 @@ class Variables{
     uint16_t getRowSize( VariableToken vt);
     uint16_t getColumnSize( VariableToken vt);
     inline bool isConstant( VariableToken vt){ return vt>_const_top;};
-    inline bool isReadOnly( VariableToken vt){ return vt>_standard_top;};
+    inline bool isReadOnly( VariableToken vt){
+        if( vt-2 <=_read_only_bottom) return true;
+        return vt>_standard_top;};
     inline bool isUnremovable( VariableToken vt){
         if( vt < 2) return true; 
         if( vt-2 <=_standard_bottom) return true;
@@ -146,6 +149,9 @@ class Variables{
     inline VariableToken getOrCreate2( bool asConstant, const char *name){
         return getOrCreate2( asConstant, (byte *)name);}
 
+    //
+    // Variables and Constants removal
+    //
     void removeByToken( VariableToken vt);
     void removeByName( const char *name);
     inline void removeByName( byte *name){
@@ -160,6 +166,7 @@ class Variables{
     void popRPNStack(byte start=1);
     void pushRPNStack();
     void pushRPNStack( double v);
+    void rollRPNStack();
     inline double getRPNRegister( byte i=0){ return _rpnStack[i];};
     inline void setRPNRegister( double v, byte i=0){ _rpnStack[i] = v;};
     inline void negateRPNX(){ _rpnStack[0] = -_rpnStack[0];};    
@@ -181,7 +188,11 @@ class Variables{
     //
     // angle mode is used in trig computations
     //
-    inline byte getAngleMode(){ return (byte)(*_amode);};
+    inline byte getAngleMode(){
+        if( *_amode > _MODE_GRADIAN_) *_amode = _MODE_GRADIAN_;
+        if( *_amode < _MODE_DEGREES_) *_amode = _MODE_DEGREES_;
+        return (byte)(*_amode);
+        };
     inline void setAngleMode( byte m){
         if(m != _MODE_RADIAN_ && m != _MODE_GRADIAN_) m = _MODE_DEGREES_;
         *_amode = (int64_t)m;};
@@ -210,6 +221,20 @@ class Variables{
     inline void setMemoryAvailable( size_t prg = 0){
         *_varAvailble = (int64_t)getMemoryAvailable();
         *_prgAvailble = (int64_t)prg;};
+
+    //
+    // simple data converters and mantras
+    //
+    byte _convert1_( double *args, double *rets, bool isRPN,
+        double Gain, double Offset=0.0);
+    byte _convert2_( double *args, double *rets, bool isRPN,
+        double Gain, double Offset1=0.0, double Offset2=0.0);
+    byte _RPN_Mantra_( double value, byte pops=0);
+    byte _nonRPN_Mantra_( double value, double *rets);
+    byte _Universal_Mantra_( bool isRPN,  double value, double *rets, byte pops=0){
+        return isRPN?
+            _RPN_Mantra_( value, pops):
+            _nonRPN_Mantra_( value, rets);};
 
   private:
     Keywords *_kwds;

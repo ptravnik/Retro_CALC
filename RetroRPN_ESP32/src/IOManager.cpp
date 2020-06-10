@@ -358,10 +358,10 @@ void IOManager::sleepOff(){
 //
 // Waits for Pro Micro to wake up
 //
-bool IOManager::_wait_PM_active( byte waits){
-  for( byte i=0; i<waits; i++){
+bool IOManager::_wait_PM_active( int16_t waits){
+  for( int16_t i=0; i<waits; i++){
     if(digitalRead(IO_PM_ACTIVE)) return true;
-    delay(10);
+    delay(20);
   }
   return false;
 }

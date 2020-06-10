@@ -11,6 +11,7 @@
 //#define __DEBUG
 
 const char LEX_Error_OutOfMemory[] PROGMEM = "Err: Out of memory";
+const char LEX_Warning_ReadOnly[] PROGMEM = "Warn: Read-only";
 const char LEX_Message_VariableList[] PROGMEM = "Variables:";
 const char LEX_Message_ConstantsList[] PROGMEM = "Constants:";
 const char LEX_Message_ProgMemory[] PROGMEM = "Program Memory:";
@@ -246,6 +247,11 @@ bool Lexer::_processVariable( bool asConstant){
     _skipToNextOperator( _lexer_position);
     return true;
   }
+  if( _vars->isReadOnly( lastVariable)){
+    _mbox->setLabel(LEX_Warning_ReadOnly);
+    _skipToNextOperator( _lexer_position);
+    return true;
+  }
 
   // parse from assignment
   _lexer_position = _epar->parse(_lexer_position);
@@ -315,18 +321,18 @@ bool Lexer::_validate_NextCharacter( byte c){
 // TODO: this is a kludge; change into the normal list parser
 //
 byte Lexer::_parseList( byte maxVal){
-  for( byte i=0; i<10; i++){
+  for( byte i=0, j=0; i<10; i++){
     _lexer_position = _epar->parse(_lexer_position);
     switch( _epar->result ){
       case _RESULT_INTEGER_:
       case _RESULT_REAL_:
-      _listValues[i++] = _epar->numberParser.realValue();
-      if(i>= maxVal) return i;
+      _listValues[j++] = _epar->numberParser.realValue();
+      if(j>= maxVal) return j;
       break;
     default:
-      return i;
+      return j;
     }
-    if( !_validate_NextCharacter(',')) return i;
+    if( _validate_NextCharacter(',')) return j;
   }
   return maxVal;
 }
