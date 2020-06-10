@@ -175,7 +175,7 @@ kbd = Keyboard(encoding='cp1251')
 
 kbd.addButton([("#CODE=027", 0), ("#CODE=027",0), ("\t",2), ("\t",3),
                ("#CODE=027", 4), ("#CODE=027",4), ("\t",6), ("\t",7)]) # 01 ESC
-kbd.addButtonNoSwitch(["#CODE=031+","+","#CODE=010rpn#CODE=013","+",
+kbd.addButtonNoSwitch(["#CODE=031+","+","#CODE=010rpn#CODE=013","#CODE=010ain#CODE=013",
                        "э","Э","#CODE=010rpn#CODE=013","+"])          # 02
 kbd.addButtonNoSwitch(["#CODE=031-","-","#CODE=010cli#CODE=013","-",
                        "ю","Ю","#CODE=010cli#CODE=013","-"])          # 03
