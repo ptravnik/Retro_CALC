@@ -39,6 +39,7 @@ const char FUN_Message_Easting[] PROGMEM = "Easting:";
 const char FUN_Message_Azimuth[] PROGMEM = "Azimuth:";
 const char FUN_Message_Elevation[] PROGMEM = "Elevation:";
 const char FUN_Message_AboveHorizon[] PROGMEM = "Above horizon:";
+const char FUN_Message_DMMSS[] PROGMEM = "DDDMM.SS";
 
 // add function includes here
 #include "functions_RPN.hpp"
@@ -64,8 +65,10 @@ void Functions::init( void *components[]){
   _setFunction( _OPR_ATANH_KW, (void *)_function_Math_ATANH_, 1);
   _setFunction( _OPR_AZIMUTH_KW, (void *)_function_Solver_AZIMUTH_, 2);
   _setFunction( _OPR_AZIMUTH3_KW, (void *)_function_Solver_AZIMUTH3_, 2);
+  
   _setFunction( _OPR_BAR2PSI_KW, (void *)_function_Convert_BAR2PSI_, 1);
   _setFunction( _OPR_BBL2CM_KW, (void *)_function_Convert_BBL2CM_, 1);
+  
   _setFunction( _OPR_C2F_KW, (void *)_function_Convert_C2F_, 1);
   _setFunction( _OPR_C2K_KW, (void *)_function_Convert_C2K_, 1);
   _setFunction( _OPR_CATH_KW, (void *)_function_Solver_CATH_, 2);
@@ -75,38 +78,81 @@ void Functions::init( void *components[]){
   _setFunction( _OPR_COS_KW, (void *)_function_Math_COS_, 1);
   _setFunction( _OPR_COSH_KW, (void *)_function_Math_COSH_, 1);
   _setFunction( _OPR_COT_KW, (void *)_function_Math_COT_, 1);
+  
+  _setFunction( _OPR_D2DMS_KW, (void *)_function_Convert_D2DMS_, 1);
   _setFunction( _OPR_DIV_KW, (void *)_function_RPN_DIV_, 0);
+  _setFunction( _OPR_DMS2D_KW, (void *)_function_Convert_DMS2D_, 1);
+  
   _setFunction( _OPR_EXP_KW, (void *)_function_Math_EXP_, 1);
+  
   _setFunction( _OPR_F2C_KW, (void *)_function_Convert_F2C_, 1);
+  _setFunction( _OPR_FT2M_KW, (void *)_function_Convert_FT2M_, 1);
+  
+  _setFunction( _OPR_GAL2L_KW, (void *)_function_Convert_GAL2L_, 1);
   _setFunction( _OPR_GCC2API_KW, (void *)_function_Convert_GCC2API_, 1);
   _setFunction( _OPR_GOFF2_KW, (void *)_function_Solver_GOFF2_, 0);
+
+  _setFunction( _OPR_IN2MM_KW, (void *)_function_Convert_IN2MM_, 1);
+  
   _setFunction( _OPR_K2C_KW, (void *)_function_Convert_K2C_, 1);
+  _setFunction( _OPR_KG2LBS_KW, (void *)_function_Convert_KG2LBS_, 1);
+  _setFunction( _OPR_KM2MI_KW, (void *)_function_Convert_KM2MI_, 1);
+  _setFunction( _OPR_KM2NM_KW, (void *)_function_Convert_KM2NM_, 1);
+  _setFunction( _OPR_KMH2MS_KW, (void *)_function_Convert_KMH2MS_, 1);
+  
+  _setFunction( _OPR_L2GAL_KW, (void *)_function_Convert_L2GAL_, 1);
+  _setFunction( _OPR_LBS2KG_KW, (void *)_function_Convert_LBS2KG_, 1);
   _setFunction( _OPR_LCIRC_KW, (void *)_function_Solver_LCIRC_, 1);
-  _setFunction( _OPR_LIN2_KW, (void *)_function_Solver_LIN2_, 0);
   _setFunction( _OPR_LG_KW, (void *)_function_Math_LG_, 1);
+  _setFunction( _OPR_LIN2_KW, (void *)_function_Solver_LIN2_, 0);
   _setFunction( _OPR_LN_KW, (void *)_function_Math_LN_, 1);
   _setFunction( _OPR_LOG_KW, (void *)_function_Math_LOG_, 2);
-  _setFunction( _OPR_NDIS_KW, (void *)_function_Math_NDIS_, 1);
-  _setFunction( _OPR_NEG_KW, (void *)_function_RPN_NEG_, 0);
+  _setFunction( _OPR_LT2MT_KW, (void *)_function_Convert_LT2MT_, 1);
+
+  _setFunction( _OPR_M2FT_KW, (void *)_function_Convert_M2FT_, 1);
+  _setFunction( _OPR_MI2KM_KW, (void *)_function_Convert_MI2KM_, 1);
+  _setFunction( _OPR_MM2IN_KW, (void *)_function_Convert_MM2IN_, 1);
+  _setFunction( _OPR_MPA2PSI_KW, (void *)_function_Convert_MPA2PSI_, 1);
+  _setFunction( _OPR_MS2KMH_KW, (void *)_function_Convert_MS2KMH_, 1);
+  _setFunction( _OPR_MT2LT_KW, (void *)_function_Convert_MT2LT_, 1);
+  _setFunction( _OPR_MT2ST_KW, (void *)_function_Convert_MT2ST_, 1);
   _setFunction( _OPR_MUL_KW, (void *)_function_RPN_MUL_, 0);
+  
+  _setFunction( _OPR_NDIS_KW, (void *)_function_Math_NDIS_, 1);
+  _setFunction( _OPR_NM2KM_KW, (void *)_function_Convert_NM2KM_, 1);
+  _setFunction( _OPR_NEG_KW, (void *)_function_RPN_NEG_, 0);
+
   _setFunction( _OPR_OOX_KW, (void *)_function_RPN_OOX_, 0);
+
+  _setFunction( _OPR_PA2PSI_KW, (void *)_function_Convert_PA2PSI_, 1);
   _setFunction( _OPR_POP_KW, (void *)_function_RPN_POP_, 0);
   _setFunction( _OPR_POW_KW, (void *)_function_RPN_POW_, 2);
   _setFunction( _OPR_PSI2BAR_KW, (void *)_function_Convert_PSI2BAR_, 1);
+  _setFunction( _OPR_PSI2MPA_KW, (void *)_function_Convert_PSI2MPA_, 1);
+  _setFunction( _OPR_PSI2PA_KW, (void *)_function_Convert_PSI2PA_, 1);
+  _setFunction( _OPR_PSIA2PSIG_KW, (void *)_function_Convert_PSIA2PSIG_, 1);
+  _setFunction( _OPR_PSIG2PSIA_KW, (void *)_function_Convert_PSIG2PSIA_, 1);
+  
   _setFunction( _OPR_QUAD_KW, (void *)_function_Solver_QUAD_, 0);
+  
   _setFunction( _OPR_RADIUS_KW, (void *)_function_Solver_RADIUS_, 2);
   _setFunction( _OPR_ROLL_KW, (void *)_function_RPN_ROLL_, 0);
   _setFunction( _OPR_ROOT_KW, (void *)_function_RPN_ROOT_, 2);
+  
   _setFunction( _OPR_SCIRC_KW, (void *)_function_Solver_SCIRC_, 1);
-  _setFunction( _OPR_SIN_KW, (void *)_function_Math_SIN_, 1);
   _setFunction( _OPR_SIGN_KW, (void *)_function_Math_SIGN_, 1);
+  _setFunction( _OPR_SIN_KW, (void *)_function_Math_SIN_, 1);
   _setFunction( _OPR_SINH_KW, (void *)_function_Math_SINH_, 1);
+  _setFunction( _OPR_SFT2SM_KW, (void *)_function_Convert_SFT2SM_, 1);
+  _setFunction( _OPR_SM2SFT_KW, (void *)_function_Convert_SM2SFT_, 1);
   _setFunction( _OPR_SQ_KW, (void *)_function_Math_SQ_, 1);
   _setFunction( _OPR_SQRT_KW, (void *)_function_Math_SQRT_, 1);
   _setFunction( _OPR_SSPHERE_KW, (void *)_function_Solver_SSPHERE_, 1);
+  _setFunction( _OPR_ST2MT_KW, (void *)_function_Convert_ST2MT_, 1);
   _setFunction( _OPR_STACK_KW, (void *)_function_RPN_STACK_, 1);
   _setFunction( _OPR_SUB_KW, (void *)_function_RPN_SUB_, 0);
   _setFunction( _OPR_SWAP_KW, (void *)_function_RPN_SWAP_, 0);
+  
   _setFunction( _OPR_TAN_KW, (void *)_function_Math_TAN_, 1);
   _setFunction( _OPR_TANH_KW, (void *)_function_Math_TANH_, 1);
   _setFunction( _OPR_VSPHERE_KW, (void *)_function_Solver_VSPHERE_, 1);
@@ -137,36 +183,68 @@ void Functions::init( void *components[]){
 
   _addFunction( _OPR_COSH_KW, 1);
   _addFunction( _OPR_COT_KW, 1);
-  _addFunction( _OPR_EXP_KW, 1);
+  _addFunction( _OPR_D2DMS_KW, 1);
+  _addFunction( _OPR_DMS2D_KW, 1);
+  _addFunction( _OPR_EXP_KW, 1); // 25
+
   _addFunction( _OPR_F2C_KW, 1);
-  _addFunction( _OPR_GCC2API_KW, 1); // 25
+  _addFunction( _OPR_FT2M_KW, 1);
+  _addFunction( _OPR_GAL2L_KW, 1);
+  _addFunction( _OPR_GCC2API_KW, 1);
+  _addFunction( _OPR_IN2MM_KW, 1); // 30
 
   _addFunction( _OPR_K2C_KW, 1);
-  _addFunction( _OPR_LCIRC_KW, 1);
+  _addFunction( _OPR_KG2LBS_KW, 1);
+  _addFunction( _OPR_KM2MI_KW, 1);
+  _addFunction( _OPR_KM2NM_KW, 1);
+  _addFunction( _OPR_KMH2MS_KW, 1);
+  _addFunction( _OPR_L2GAL_KW, 1);
+  _addFunction( _OPR_LCIRC_KW, 1); // 37
+
   _addFunction( _OPR_LIN2_KW, 1);
   _addFunction( _OPR_LG_KW, 1);
-  _addFunction( _OPR_LN_KW, 1); // 30
+  _addFunction( _OPR_LN_KW, 1);
+  _addFunction( _OPR_LOG_KW, 2);
+  _addFunction( _OPR_LT2MT_KW, 1); // 42
 
-  _addFunction( _OPR_LOG_KW, 1);
+  _addFunction( _OPR_M2FT_KW, 1);
+  _addFunction( _OPR_MI2KM_KW, 1);
+  _addFunction( _OPR_MM2IN_KW, 1);
+  _addFunction( _OPR_MPA2PSI_KW, 1);
+  _addFunction( _OPR_MT2LT_KW, 1); // 47
+
+  _addFunction( _OPR_MT2ST_KW, 1);
   _addFunction( _OPR_NDIS_KW, 1);
+  _addFunction( _OPR_NM2KM_KW, 1);
   _addFunction( _OPR_POW_KW,2);
-  _addFunction( _OPR_PSI2BAR_KW, 1);
-  _addFunction( _OPR_RADIUS_KW,2); // 35
-
+  _addFunction( _OPR_PSI2BAR_KW, 1); // 52
+  
+  _addFunction( _OPR_PA2PSI_KW, 1);
+  _addFunction( _OPR_PSI2MPA_KW, 1);
+  _addFunction( _OPR_PSI2PA_KW, 1);
+  _addFunction( _OPR_PSIA2PSIG_KW, 1);
+  _addFunction( _OPR_PSIG2PSIA_KW, 1); // 57
+  
+  _addFunction( _OPR_RADIUS_KW,2);
   _addFunction( _OPR_ROOT_KW,2);
   _addFunction( _OPR_SCIRC_KW, 1);
-  _addFunction( _OPR_SIN_KW, 1);
-  _addFunction( _OPR_SIGN_KW, 1);
-  _addFunction( _OPR_SINH_KW, 1); // 40
+  _addFunction( _OPR_SFT2SM_KW, 1);
+  _addFunction( _OPR_SIN_KW, 1); // 62
 
-  _addFunction( _OPR_SQ_KW, 1);
+  _addFunction( _OPR_SIGN_KW, 1);
+  _addFunction( _OPR_SINH_KW, 1);
+  _addFunction( _OPR_SM2SFT_KW, 1);
+  _addFunction( _OPR_SINH_KW, 1);
+  _addFunction( _OPR_SQ_KW, 1); // 67
+
   _addFunction( _OPR_SQRT_KW, 1);
   _addFunction( _OPR_SSPHERE_KW, 1);
+  _addFunction( _OPR_ST2MT_KW, 1);  
   _addFunction( _OPR_STACK_KW, 1);
-  _addFunction( _OPR_TAN_KW, 1); // 45
+  _addFunction( _OPR_TAN_KW, 1); // 72
 
   _addFunction( _OPR_TANH_KW, 1);
-  _addFunction( _OPR_VSPHERE_KW, 1); // 47
+  _addFunction( _OPR_VSPHERE_KW, 1); // 74
 }
 
 Function *Functions::getFunction(byte *str){
@@ -245,13 +323,12 @@ byte Functions::ComputeRPN( Keyword *kw){
   return myFunction( _vars, args, args, true);
 }
 
-void Functions::_addFunction( int16_t kwid, byte nArgs, byte RPNtag){
+void Functions::_addFunction( int16_t kwid, byte nArgs){
   if( _id >= _FUNCTION_COUNT) return;
   Function *tmp = _functions+_id;
   tmp->id = _id++;
   tmp->kwid = kwid;
   tmp->nArgs = nArgs;
-  tmp->RPNtag = RPNtag;
   #ifdef __DEBUG
   Keyword *kwd = _kwds->getKeywordById( kwid);
   Serial.print( tmp->id+1);
@@ -263,21 +340,6 @@ void Functions::_addFunction( int16_t kwid, byte nArgs, byte RPNtag){
   Serial.print( tmp->nArgs);
   Serial.println( " argument(s)");
   #endif
-}
-
-//
-// Solves gain-offset
-//
-double *Functions::goff2( double *stack) {
-  // Trivial solution with the same X1, X2
-  _clearRets();
-  double dx = stack[3] - stack[1];
-  if( dx == 0.0) return _rets;
-  _rets[1] = (stack[2] - stack[0])/dx;
-  _rets[0] = stack[0] - _rets[1]*stack[1];
-  _vars->gain[0] = _rets[1];
-  _vars->offset[0] = _rets[0];
-  return _rets;
 }
 
 //

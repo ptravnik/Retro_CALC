@@ -33,6 +33,7 @@ bool Lexer::operator_AMODE(){
       break;
   }
   _mbox->setLabel( _vars->getAMODEString());
+  result = _RESULT_EXECUTED_;
   _skipToNextOperator( _lexer_position);
   return true;
 }

@@ -210,7 +210,8 @@ bool Lexer::_processRPNKeyword( Keyword *kwd){
   if( ret & 0x80) _mbox->setRedrawRequired();
   if( ret & 0x40) _rsb->setLabelRedrawAll();
   if( ret & 0x20) _rsb->resetRPNLabels();
-  switch( ret & 0x1F){
+  if( ret & 0x10) _rsb->updateIOM();
+  switch( ret & 0x0F){
     case 0:
       break;
     case 2:

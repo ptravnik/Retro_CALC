@@ -33,6 +33,7 @@
 #define _REQUEST_REDRAW_ALL    0x83
 #define _REQUEST_REDRAW_LABELS 0x40
 #define _REQUEST_RESET_LABELS  0x20
+#define _REQUEST_DO_IOM        0x10
 
 #define _MODE_DEGREES_  0
 #define _MODE_RADIAN_   1 
@@ -93,13 +94,8 @@
 #define _VARIABLE_     3
 #define _KEYWORD_      4
 
-#define _RPN_COMMON_      0
-#define _RPN_SQRT_CHECK_  4
-#define _RPN_GOFF2_SOLVER 8
-#define _RPN_STACK_GET    9
-
 #define _FUN_Variable_    -1
-#define _FUNCTION_COUNT    47
+#define _FUNCTION_COUNT    74
 
 // Keywords
 #define _OPR_ABS_KW             0
@@ -320,15 +316,19 @@
 #define _OPR_CNK_KW             215
 #define _OPR_K2C_KW             216
 #define _OPR_AIN_KW             217
-#define _OPERATOR_COUNT         218
+#define _OPR_KM2MI_KW           218
+#define _OPR_MI2KM_KW           219
+#define _OPR_IN2MM_KW           220
+#define _OPR_SFT2SM_KW          221
+#define _OPERATOR_COUNT         222
 
-#define RPN_STACK             20
+#define RPN_STACK               20
 
-#define _KEYWORD_ONLY_       -1
-#define _RPN_FUNCTION_ONLY_   0
-#define _ONE_ARGUMENT_        1
-#define _TWO_ARGUMENTS_       2
-#define _THREE_ARGUMENTS_     3
+#define _KEYWORD_ONLY_         -1
+#define _RPN_FUNCTION_ONLY_     0
+#define _ONE_ARGUMENT_          1
+#define _TWO_ARGUMENTS_         2
+#define _THREE_ARGUMENTS_       3
 
 struct Keyword{
   int16_t id = 0;

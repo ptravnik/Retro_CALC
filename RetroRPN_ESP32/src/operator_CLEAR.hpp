@@ -17,20 +17,23 @@ static bool _operator_CLEAR_( Lexer *lex){
 }
 void Lexer::_operatorClearProgramCode(uint16_t lFrom, uint16_t lTo){
   Serial.print("These lines will be gone: ");
-  char *buff = (char *)_iom->getIOBuffer();
-  ProgramLine pl = _code->getFirstLine();
-  while( true){
-    if( pl.line == NULL) return;
-    if( pl.lineNumber > lTo) return;
-    if( pl.lineNumber < lFrom){
-      pl = _code->getNextLine( pl);
-      continue;
-    }
-    int n = snprintf( buff, INPUT_COLS, "%05u ", pl.lineNumber);
-    convertToUTF8( buff+n, pl.line, INPUT_COLS-n);
-    _iom->sendStringUTF8Ln( buff);
-    pl = _code->getNextLine( pl);
-  }
+  Serial.print( lFrom);
+  Serial.print( " to ");
+  Serial.println( lTo);
+  // char *buff = (char *)_iom->getIOBuffer();
+  // ProgramLine pl = _code->getFirstLine();
+  // while( true){
+  //   if( pl.line == NULL) return;
+  //   if( pl.lineNumber > lTo) return;
+  //   if( pl.lineNumber < lFrom){
+  //     pl = _code->getNextLine( pl);
+  //     continue;
+  //   }
+  //   int n = snprintf( buff, INPUT_COLS, "%05u ", pl.lineNumber);
+  //   convertToUTF8( buff+n, pl.line, INPUT_COLS-n);
+  //   _iom->sendStringUTF8Ln( buff);
+  //   pl = _code->getNextLine( pl);
+  // }
 }
 bool Lexer::operator_CLEAR(){
   #ifdef __DEBUG
@@ -46,13 +49,15 @@ bool Lexer::operator_CLEAR(){
   switch(_kwds->lastKeywordFound->id){
     case _OPR_PROGRAM_KW:
       return operator_CLEAR_Program();
+    case _OPR_VARS_KW:
+      return operator_CLEAR_Vars( false);
     case _OPR_CONST_KW:
       return operator_CLEAR_Vars( true);
     case _OPR_STACK_KW:
       _vars->clearRPNStack();
       _rsb->setStackRedrawAll();
       _skipToNextOperator( _lexer_position);
-    return true;
+      return true;
     case _OPR_SUM_KW:
       _vars->clearRPNSum();
       _skipToNextOperator( _lexer_position);

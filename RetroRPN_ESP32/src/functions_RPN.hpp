@@ -106,8 +106,7 @@ static byte _function_RPN_ROOT_( Variables *_vars, double *args, double *rets, b
 
 static byte _function_RPN_NEG_( Variables *_vars, double *args, double *rets, bool isRPN){
   _vars->mathError = _NO_ERROR_;
-  rets[0] = -args[0];
-  return 3;
+  return _vars->_Universal_Mantra_( isRPN, -args[0], rets, 1);
 }
 
 static byte _function_RPN_OOX_( Variables *_vars, double *args, double *rets, bool isRPN){
@@ -117,8 +116,7 @@ static byte _function_RPN_OOX_( Variables *_vars, double *args, double *rets, bo
     if( isRPN) _vars->setScrMessage( FUN_Error_DivZero);
     return _REQUEST_REDRAW_MSG;
   }
-  rets[0] = 1.0/tmp;
-  return 3;
+  return _vars->_Universal_Mantra_( isRPN, 1.0/tmp, rets, 1);
 }
 
 static byte _function_RPN_AIN_( Variables *_vars, double *args, double *rets, bool isRPN){

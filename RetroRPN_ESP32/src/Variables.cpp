@@ -701,6 +701,7 @@ byte Variables::_convert2_( double *args, double *rets, bool isRPN,
     if( isRPN) setScrMessage( _RPN_Error_Argument);
     return _REQUEST_REDRAW_MSG;
   }
+  tmp = Gain/tmp + Offset2;
   return _Universal_Mantra_( isRPN, tmp, rets, 0);
 }
 
@@ -716,7 +717,7 @@ byte Variables::_RPN_Mantra_( double value, byte pops){
   for( byte i=0; i<pops; i++) popRPNStack();
   _rpnStack[0] = value;
   mathError = _NO_ERROR_;
-  return pops? 3: 1;
+  return _REQUEST_DO_IOM + (pops? 3: 1);
 }
 byte Variables::_nonRPN_Mantra_( double value, double *rets){
   if( isnan(value)) return _REQUEST_REDRAW_MSG;
