@@ -1,8 +1,7 @@
-00010 #ABS() #
-00011 #ABS() #
-00012 #abs() #
-00013 #abs() #
-00014 #abs() #
+00010 ABS(-10.1) # 10.1
+00011 ABS( 5.5) # 5.5
+00012 abs( 0.0) # 0.0
+00013 abs(0.0001) # 1.0e-004
 00020 ACOS( -0.5) # 120
 00021 ACOS( 0.5)  # 60
 00022 acos( -1.5) # error
@@ -12,21 +11,19 @@
 00031 ACOSH(2) # ca 1.32
 00032 acosh(-2) # error
 00033 acosh(2) # ca 1.32
-00040 push 1 #
-00041 push 2 #
-00042 ADD # 3
-00043 push 3 #
-00044 add #
-00050 AMODE RAD #
+00040 push 1 # Stack displayed
+00041 push 2 # Stack displayed
+00042 ADD # Stack displayed: 3
+00043 push 3 # Stack displayed
+00044 add # Stack displayed 6
+00050 AMODE RAD # Mode: Radians
 00051 amode% # 1
-00052 amode grad #
+00052 amode grad # Mode: Gradians
 00053 amode% # 2
-00054 amode% = 1 # back to radians
-00060 #API2GCC() #
-00061 #API2GCC() #
-00062 #api2gcc() #
-00063 #api2gcc() #
-00064 #api2gcc() #
+00054 amode% = 1 # Warn: Read-only
+00055 amode rad # Mode: Radians
+00060 API2GCC( 10) # 1.0
+00062 api2gcc( 45) # ca 0.80
 00070 #APPEND() #
 00071 #APPEND() #
 00072 #append() #
@@ -48,9 +45,9 @@
 00103 #asc() #
 00104 #asc() #
 00110 ASIN(1) / PI # 0.5
-00111 ASIN(-1)*2 # 3.14
+00111 ASIN(-1)*2 # ca 3.14
 00112 asin( 1.5) # error
-00113 asin( 0.5)*4 # 3.14
+00113 asin( 0.5)*4 # ca 2.09
 00120 ASINH(1) # ca 0.88
 00121 ASINH(0) # 0.0
 00122 asinh(-1) # ca -0.88
@@ -63,7 +60,7 @@
 00141 ATAN( 1) # 50
 00142 atan( 0) # 0
 00143 atan( -1) # -50
-00144 atan( -100) # -99.36
+00144 atan( -100) # ca -99.36
 00150 ATANH( 1) # error
 00151 ATANH( 0.76) # ca 1.00
 00152 atanh( -0.1) # ca -0.1
@@ -73,51 +70,28 @@
 00162 #awrite() #
 00163 #awrite() #
 00164 #awrite() #
-00170 #AZIMUTH() #
-00171 #AZIMUTH() #
-00172 #azimuth() #
-00173 #azimuth() #
-00174 #azimuth() #
-00180 #AZIMUTH3() #
-00181 #AZIMUTH3() #
-00182 #azimuth3() #
-00183 #azimuth3() #
-00184 #azimuth3() #
-00190 #BAR2PSI() #
-00191 #BAR2PSI() #
-00192 #bar2psi() #
-00193 #bar2psi() #
-00194 #bar2psi() #
-00200 #BBL2CM() #
-00201 #BBL2CM() #
-00202 #bbl2cm() #
-00203 #bbl2cm() #
-00204 #bbl2cm() #
+00170 AZIMUTH( 100, 300) #  ca -20.500 gradian 
+00171 amode deg # back to degrees
+00172 azimuth( 642.787610, -766.044443) # ca 140 degrees
+00180 AZIMUTH3( 939.692621, 342.020143, 100) # 20.0000 deg azimuth, 5.7 elevation
+00182 azimuth3(939.692621, 342.020143, -100) #
+00190 BAR2PSI(10) # ca 145.04
+00193 bar2psi( PSI2BAR(100)) # 100
+00200 BBL2CM(1000) # ca 159
+00202 bbl2cm(100) # ca 15.9
 00210 #BREAK() #
 00211 #BREAK() #
 00212 #break() #
 00213 #break() #
 00214 #break() #
-00220 #C2F() #
-00221 #C2F() #
-00222 #c2f() #
-00223 #c2f() #
-00224 #c2f() #
-00230 #C2K() #
-00231 #C2K() #
-00232 #c2k() #
-00233 #c2k() #
-00234 #c2k() #
-00240 #CATH() #
-00241 #CATH() #
-00242 #cath() #
-00243 #cath() #
-00244 #cath() #
-00250 #CF2CM() #
-00251 #CF2CM() #
-00252 #cf2cm() #
-00253 #cf2cm() #
-00254 #cf2cm() #
+00220 C2F(0) # 32
+00222 c2f(-40) # -40
+00230 C2K(0) # 273.15
+00232 c2k(-273.15) # 0
+00240 CATH(3,5) # 4
+00242 cath(50,30) # 40
+00250 CF2CM(35) # ca 1
+00252 cf2cm( CM2CF(11)) # 11
 00260 #CHAIN() #
 00261 #CHAIN() #
 00262 #chain() #
@@ -133,11 +107,12 @@
 00282 #circle() #
 00283 #circle() #
 00284 #circle() #
-00290 #CLEAR() #
-00291 #CLEAR() #
-00292 #clear() #
-00293 #clear() #
-00294 #clear() #
+00290 CLEAR CONST *** # erases user constants
+00291 CLEAR VARS *** # erases user variables
+00292 clear const TheUltimateAnswer # fails silently
+00293 clear stack #
+00294 CLEAR STACK #
+00295 CLEAR PROGRAM 10, 110 # Reports lines (clear disabled)
 00300 CLI # change to command line
 00301 RPN # change to RPN
 00302 cli #
@@ -152,16 +127,10 @@
 00322 #cls() #
 00323 #cls() #
 00324 #cls() #
-00330 #CM2BBL() #
-00331 #CM2BBL() #
-00332 #cm2bbl() #
-00333 #cm2bbl() #
-00334 #cm2bbl() #
-00340 #CM2CF() #
-00341 #CM2CF() #
-00342 #cm2cf() #
-00343 #cm2cf() #
-00344 #cm2cf() #
+00330 CM2BBL( 159) # ca 1000
+00332 cm2bbl(BBL2CM(1)) # 1
+00340 CM2CF( 1) # ca 35
+00342 cm2cf( 100) # ca 3500
 00350 #COLOR() #
 00351 #COLOR() #
 00352 #color() #
@@ -175,9 +144,10 @@
 00370 CONST TheAnswer=42.0 #
 00371 CONST TheAnswer%=42 #
 00372 const WrongAnswer=46 #
-00373 const amode% = 10 # fails silently
-00374 amode% # should be 2
-00375 amode rad #
+00373 amode grad # Radians
+00374 const amode% = 10 # should faila silently
+00375 amode% # should be 2
+00376 amode rad #
 00380 #CONT() #
 00381 #CONT() #
 00382 #cont() #
@@ -188,9 +158,8 @@
 00392 #continue() #
 00393 #continue() #
 00394 #continue() #
-00400 #COORDS() #
-00401 #COORDS() #
-00402 #coords() #
+00400 #COORDS(1,1) #
+00402 #coords(2,2) #
 00403 #coords() #
 00404 #coords() #
 00410 #COORDS3() #
@@ -201,11 +170,11 @@
 00420 COS( PI/4) # ca 0.71
 00421 COS( PI) # -1
 00422 cos( -pi/2) # ca 0
-00423 cos( 1e35) # accuracy warning, 0.17
+00423 cos( 1e35) # accuracy warning, 0.53
 00430 COSH( 1) # ca 1.54
 00431 COSH( -1) # ca 1.54
 00432 cosh( 0) # 1
-00433 cosh(-10) # ca 11.01
+00433 cosh(-10) # ca 11013
 00440 amode deg #
 00441 COT( 45) # 1
 00442 cot( 90) # 0
@@ -215,11 +184,8 @@
 00452 #cursor() #
 00453 #cursor() #
 00454 #cursor() #
-00460 #D2DMS() #
-00461 #D2DMS() #
-00462 #d2dms() #
-00463 #d2dms() #
-00464 #d2dms() #
+00460 D2DMS(10.5) # 1000.30
+00462 d2dms(-20.25) # -2015.00
 00470 #DATA() #
 00471 #DATA() #
 00472 #data() #
@@ -255,21 +221,16 @@
 00532 #directory() #
 00533 #directory() #
 00534 #directory() #
-00540 #DIV() #
-00541 #DIV() #
-00542 #div() #
-00543 #div() #
-00544 #div() #
+00540 push 5 #
+00542 push 2 #
+00543 DIV #
+00544 push 0.2 #
+00545 div #
 00550 #DMODE() #
 00551 #DMODE() #
 00552 #dmode() #
 00553 #dmode() #
 00554 #dmode() #
-00560 #DMS2D() #
-00561 #DMS2D() #
-00562 #dms2d() #
-00563 #dms2d() #
-00564 #dms2d() #
 00570 #DNOTONE() #
 00571 #DNOTONE() #
 00572 #dnotone() #
@@ -333,18 +294,15 @@
 00690 EXP( 1) # 2.72
 00691 exp( 1) # 2.72
 00692 exp( 700) # error
-00700 #F2C() #
-00701 #F2C() #
-00702 #f2c() #
-00703 #f2c() #
-00704 #f2c() #
+00700 F2C(-40) # -40
+00701 f2c(100) # 37.7
 00710 #FLOAT() #
 00711 #FLOAT() #
 00712 #float() #
 00713 #float() #
 00714 #float() #
-00720 FMAN # list root
-00721 fman #
+00720 #FMAN # list root
+00721 #fman #
 00730 #FN() #
 00731 #FN() #
 00732 #fn() #
@@ -370,26 +328,17 @@
 00772 #fsize() #
 00773 #fsize() #
 00774 #fsize() #
-00780 #FT2M() #
-00781 #FT2M() #
-00782 #ft2m() #
-00783 #ft2m() #
-00784 #ft2m() #
-00790 #GAL2L() #
-00791 #GAL2L() #
-00792 #gal2l() #
-00793 #gal2l() #
-00794 #gal2l() #
-00800 #GCC2API() #
-00801 #GCC2API() #
-00802 #gcc2api() #
-00803 #gcc2api() #
-00804 #gcc2api() #
+00780 FT2M( 10) # 3.048
+00782 ft2m(-10) # -3.048
+00790 GAL2L(1) # ca 3.78
+00792 gal2l(-1) # ca -3.78
+00800 GCC2API( 1) # 1 g/cc = 10 API
+00802 gcc2api(.8) # 45.375 API
 00810 push 1 #
 00811 push 2 #
 00812 push 2 #
 00813 push 3 #
-00814 goff2 # gain 1, offset 1
+00814 goff2 # gain 1, offset 1 (LCD)
 00820 #GOSUB() #
 00821 #GOSUB() #
 00822 #gosub() #
@@ -477,41 +426,20 @@
 00984 push 3 #
 00985 OOX #
 00986 oox #
-00990 #KG2LBS() #
-00991 #KG2LBS() #
-00992 #kg2lbs() #
-00993 #kg2lbs() #
-00994 #kg2lbs() #
-01000 #KM2M() #
-01001 #KM2M() #
-01002 #km2m() #
-01003 #km2m() #
-01004 #km2m() #
-01010 #KM2NM() #
-01011 #KM2NM() #
-01012 #km2nm() #
-01013 #km2nm() #
-01014 #km2nm() #
-01020 #KMH2MS() #
-01021 #KMH2MS() #
-01022 #kmh2ms() #
-01023 #kmh2ms() #
-01024 #kmh2ms() #
-01030 #L2GAL() #
-01031 #L2GAL() #
-01032 #l2gal() #
-01033 #l2gal() #
-01034 #l2gal() #
-01040 #LBS2KG() #
-01041 #LBS2KG() #
-01042 #lbs2kg() #
-01043 #lbs2kg() #
-01044 #lbs2kg() #
-01050 #LCIRC() #
-01051 #LCIRC() #
-01052 #lcirc() #
-01053 #lcirc() #
-01054 #lcirc() #
+00990 KG2LBS( 1) # ca 2.2
+00992 kg2lbs( -1) # ca -2.2
+01000 KM2MI(1.6) # ca 1
+01002 km2mi(-1.6) # ca -1
+01010 KM2NM(1.852) # 1.0
+01012 km2nm( -1.852) # ca -1
+01020 KMH2MS(3.6) # 1
+01022 kmh2ms(-36) # -10
+01030 L2GAL(4) # ca 1
+01032 l2gal(-40) # ca-10
+01040 LBS2KG(1) # ca 0.4
+01043 lbs2kg(-1) # ca -0.4
+01050 LCIRC(0.5) # 3.14
+01053 lcirc(-5) # -31.4
 01060 #LEFT$() #
 01061 #LEFT$() #
 01062 #left$() #
@@ -521,7 +449,8 @@
 01071 LET yyy = 7 #
 01072 let yyy = TheAnswer #
 01073 let zzz = pi #
-01074 let ttt = zzz * yyy #
+01074 let ttt = xxx * yyy #
+01075 ttt # 42*5=210
 01080 LG(1000) # 3
 01081 lg(0.1) # -1
 01082 lg(-1) # error
@@ -544,14 +473,14 @@
 01123 #linew() #
 01124 #linew() #
 01130 LIST VARS #
-01131 LIST COST #
-01132 list 1120, 1120+20 #
+01131 LIST CONST #
+01132 list 1120, 1120+20 # lists program
 01133 list vars #
 01134 list CONST #
 01140 LN( exp(20)) # 20
 01141 LN( 2.71) # ca 1
 01142 ln(-2.71) # error
-01143 ln( 10) #
+01143 ln( 10) # ca 2.30
 01150 #LOAD() #
 01151 #LOAD() #
 01152 #load() #
@@ -567,16 +496,10 @@
 01172 #loop() #
 01173 #loop() #
 01174 #loop() #
-01180 #LT2MT() #
-01181 #LT2MT() #
-01182 #lt2mt() #
-01183 #lt2mt() #
-01184 #lt2mt() #
-01190 #M2FT() #
-01191 #M2FT() #
-01192 #m2ft() #
-01193 #m2ft() #
-01194 #m2ft() #
+01180 LT2MT( 1) #
+01182 lt2mt( -1) #
+01190 M2FT(1) #
+01192 m2ft(-1) #
 01200 #M2KM() #
 01201 #M2KM() #
 01202 #m2km() #
@@ -599,42 +522,31 @@
 01242 #mid$() #
 01243 #mid$() #
 01244 #mid$() #
-01250 #MM2IN() #
-01251 #MM2IN() #
-01252 #mm2in() #
-01253 #mm2in() #
-01254 #mm2in() #
+01250 MM2IN(25.4) # 1
+01252 mm2in(-50) # ca -2
 01260 #MOD() #
 01261 #MOD() #
 01262 #mod() #
 01263 #mod() #
 01264 #mod() #
-01270 #MPA2PSI() #
-01271 #MPA2PSI() #
-01272 #mpa2psi() #
-01273 #mpa2psi() #
-01274 #mpa2psi() #
-01280 #MS2KMH() #
-01281 #MS2KMH() #
-01282 #ms2kmh() #
-01283 #ms2kmh() #
-01284 #ms2kmh() #
-01290 #MT2LT() #
-01291 #MT2LT() #
-01292 #mt2lt() #
-01293 #mt2lt() #
-01294 #mt2lt() #
-01300 #MT2ST() #
-01301 #MT2ST() #
-01302 #mt2st() #
-01303 #mt2st() #
-01304 #mt2st() #
+01270 MPA2PSI( 100) # 14.7
+01272 mpa2psi( 100) # 14.7
+01280 MS2KMH(1) # 3.6
+01282 ms2kmh(-10) # -36
+01290 MT2LT(1) #
+01292 mt2lt(1) #
+01300 MT2ST(1) #
+01302 mt2st(1) #
 01310 push 2 #
 01311 push 2.5 #
-01312 MUL:push7 #
+01312 MUL:push 7 #
 01313 mul # 35
-01320 NDIS(0) # 1/sqrt(pi)
-01322 ndis(1) # 
+01320 StDev = 1.0
+01321 Mean = 0.0
+01322 StDev
+01323 Mean
+01324 NDIS(0) # 1/sqrt(pi)
+01325 ndis(1) # 
 01330 NEG #
 01331 neg #
 01340 #NEW() #
@@ -647,21 +559,15 @@
 01352 #next() #
 01353 #next() #
 01354 #next() #
-01360 #NM2KM() #
-01361 #NM2KM() #
-01362 #nm2km() #
-01363 #nm2km() #
-01364 #nm2km() #
+01360 NM2KM(1) # 1.824
+01362 nm2km(1) #
 01370 #OPEN() #
 01371 #OPEN() #
 01372 #open() #
 01373 #open() #
 01374 #open() #
-01380 #PA2PSI() #
-01381 #PA2PSI() #
-01382 #pa2psi() #
-01383 #pa2psi() #
-01384 #pa2psi() #
+01380 PA2PSI(101300) # 14.7
+01382 pa2psi(101300) # 14.7
 01390 #PAUSE() #
 01391 #PAUSE() #
 01392 #pause() #
@@ -686,7 +592,7 @@
 01434 pow( 2, 10) # 1024
 01435 pow( 2, -3) # 0.125
 01436 pow( -2, -3) # -0.125
-01437 pow( -2, -3) # error
+01437 pow( -2, -3.2) # error
 01440 #PRINT() #
 01441 #PRINT() #
 01442 #print() #
@@ -717,31 +623,16 @@
 01492 #program() #
 01493 #program() #
 01494 #program() #
-01500 #PSI2BAR() #
-01501 #PSI2BAR() #
-01502 #psi2bar() #
-01503 #psi2bar() #
-01504 #psi2bar() #
-01510 #PSI2MPA() #
-01511 #PSI2MPA() #
-01512 #psi2mpa() #
-01513 #psi2mpa() #
-01514 #psi2mpa() #
-01520 #PSI2PA() #
-01521 #PSI2PA() #
-01522 #psi2pa() #
-01523 #psi2pa() #
-01524 #psi2pa() #
-01530 #PSIA2PSIG() #
-01531 #PSIA2PSIG() #
-01532 #psia2psig() #
-01533 #psia2psig() #
-01534 #psia2psig() #
-01540 #PSIG2PSIA() #
-01541 #PSIG2PSIA() #
-01542 #psig2psia() #
-01543 #psig2psia() #
-01544 #psig2psia() #
+01500 PSI2BAR(-145.04) # -10
+01502 psi2bar( BAR2PSI(3+3)) # 6
+01510 PSI2MPA(14.7) # 100
+01512 psi2mpa(14.7) # 100
+01520 PSI2PA( 14.7) # 101300
+01522 psi2pa(14.7) # 101300
+01530 PSIA2PSIG(14.7) # 0
+01532 psia2psig(114.7) # 100
+01540 PSIG2PSIA(0) # 14.7
+01542 psig2psia(10) # 24.7
 01550 PUSH 1 #
 01551 PUSH 2 #
 01552 push 1 #
@@ -749,11 +640,8 @@
 01561 QUAD # Single root
 01562 push 5 #
 01563 quad # Two roots: -2.79, 1.79
-01570 #RADIUS() #
-01571 #RADIUS() #
-01572 #radius() #
-01573 #radius() #
-01574 #radius() #
+01570 RADIUS( 3, 4) # 5
+01572 #radius( 3,2+2) # 5
 01580 #RANDOM() #
 01581 #RANDOM() #
 01582 #random() #
@@ -780,7 +668,7 @@
 01623 #regr() #
 01624 #regr() #
 01630 REM Remark
-01631 sin(45) :REM should be ca 0.71
+01631 sin(45) :rem should be ca 0.71
 01650 #RESET() #
 01651 #RESET() #
 01652 #reset() #
@@ -811,11 +699,8 @@
 01702 roll #
 01703 roll #
 01704 roll #
-01710 #ROOT() #
-01711 #ROOT() #
-01712 #root() #
-01713 #root() #
-01714 #root() #
+01710 ROOT( 1024, 10) # 2
+01712 root( 42^2.3, 2.3) # 42
 01720 #ROT() #
 01721 #ROT() #
 01722 #rot() #
@@ -851,11 +736,8 @@
 01782 #save() #
 01783 #save() #
 01784 #save() #
-01790 #SCIRC() #
-01791 #SCIRC() #
-01792 #scirc() #
-01793 #scirc() #
-01794 #scirc() #
+01790 SCIRC(1) # 3.14
+01792 scirc(-1) # 3.14
 01800 #SCREEN() #
 01801 #SCREEN() #
 01802 #screen() #
@@ -866,11 +748,9 @@
 01812 #seed() #
 01813 #seed() #
 01814 #seed() #
-01820 #SIGN() #
-01821 #SIGN() #
-01822 #sign() #
-01823 #sign() #
-01824 #sign() #
+01820 SIGN(-100) # -1
+01821 SIGN( 0) # 0
+01822 sign(340) # 1
 01830 SIN( 15*3) # ca 0.71
 01831 SIN( -45) # ca 0.71
 01832 sin(0) # 0
@@ -879,37 +759,22 @@
 01841 SINH(2) # 3.63
 01842 sinh(1000) # overflow
 01843 sinh(1) # -1.18
-01850 #SM2SFT() #
-01851 #SM2SFT() #
-01852 #sm2sft() #
-01853 #sm2sft() #
-01854 #sm2sft() #
-01860 #SQ() #
-01861 #SQ() #
-01862 #sq() #
-01863 #sq() #
-01864 #sq() #
-01870 #SQRT() #
-01871 #SQRT() #
-01872 #sqrt() #
-01873 #sqrt() #
-01874 #sqrt() #
-01880 #SSPHERE() #
-01881 #SSPHERE() #
-01882 #ssphere() #
-01883 #ssphere() #
-01884 #ssphere() #
-01890 #ST2MT() #
-01891 #ST2MT() #
-01892 #st2mt() #
-01893 #st2mt() #
-01894 #st2mt() #
-01900 #STACK() #
-01901 #STACK() #
-01902 #stack() #
-01903 #stack() #
-01904 #stack() #
-01910 #STAT() #
+01850 SM2SFT(1) # 10.7
+01852 sm2sft(-1) # -10.7
+01860 SQ(3) # 9
+01862 sq(4) # 16
+01870 SQRT(9) # 3
+01872 sqrt( 16) # 4
+01880 SSPHERE(1) #
+01882 ssphere(10) #
+01890 ST2MT(1) #
+01892 st2mt(1) #
+01900 STACK(1) #
+01901 STACK(2) #
+01902 stack(3) #
+01903 stack(4) #
+01904 stack(20) #
+01910 #STAT #
 01911 #STAT() #
 01912 #stat() #
 01913 #stat() #
@@ -939,11 +804,9 @@
 01962 #str$() #
 01963 #str$() #
 01964 #str$() #
-01970 #SUB() #
-01971 #SUB() #
-01972 #sub() #
-01973 #sub() #
-01974 #sub() #
+01970 SUB #
+01971 SUB #
+01972 sub #
 01980 SUM 10 #
 01981 SUM 10.1 #
 01982 sum 9.9 #
