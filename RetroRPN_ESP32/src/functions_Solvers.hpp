@@ -176,6 +176,37 @@ static byte _function_Solver_AZIMUTH_( Variables *_vars, double *args, double *r
   return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS;
 }
 
+static byte _function_Solver_COORDS_( Variables *_vars, double *args, double *rets, bool isRPN){
+  _vars->mathError = _ERROR_;
+  double Az = _vars->getConvertedAngle( args[0]);
+  double Az1 = args[0];
+  double R = args[1];
+  if( R<0){
+    if( isRPN) _vars->setScrMessage( FUN_Error_Argument);
+    return _REQUEST_REDRAW_MSG;
+  }
+  _vars->mathError = _NO_ERROR_;
+  if( isRPN){
+    _vars->pushRPNStack( 0.0);
+    _vars->setRPNRegister( R, 2);
+    _vars->setRPNPrev( Az1);
+    _vars->setScrMessage( _vars->getAMODEString());
+    _vars->setRPNLabelY( FUN_Message_Northing);
+    _vars->setRPNLabelX( FUN_Message_Easting);
+    _vars->setRPNLabelZ( FUN_Message_Range);
+  }
+  else{
+    rets[0] = 0.0;
+    rets[1] = 0.0;
+    rets[2] = R;
+  }
+  if( R > 1e-300){
+    rets[0] = R * sin( Az);
+    rets[1] = R * cos( Az);
+  }
+  return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS;
+}
+
 static byte _function_Solver_AZIMUTH3_( Variables *_vars, double *args, double *rets, bool isRPN){
   _vars->mathError = _ERROR_;
   double E = args[1];
@@ -204,4 +235,99 @@ static byte _function_Solver_AZIMUTH3_( Variables *_vars, double *args, double *
     _vars->setRPNPrev(R);
   }
   return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS;
+}
+
+static byte _function_Solver_COORDS3_( Variables *_vars, double *args, double *rets, bool isRPN){
+  _vars->mathError = _ERROR_;
+  double El = _vars->getConvertedAngle( args[0]);
+  double Az = _vars->getConvertedAngle( args[1]);
+  double Az1 = args[1];
+  double R = args[2] * cos(El);
+  if( R<0){
+    if( isRPN) _vars->setScrMessage( FUN_Error_Argument);
+    return _REQUEST_REDRAW_MSG;
+  }
+  _vars->mathError = _NO_ERROR_;
+  if( isRPN){
+    _vars->setRPNRegister( R, 2);
+    _vars->setRPNPrev( Az1);
+    _vars->setScrMessage( _vars->getAMODEString());
+    _vars->setRPNLabelY( FUN_Message_Northing);
+    _vars->setRPNLabelX( FUN_Message_Easting);
+    _vars->setRPNLabelZ( FUN_Message_Range);
+  }
+  else{
+    rets[0] = 0.0;
+    rets[1] = 0.0;
+    rets[2] = R;
+  }
+  if( R > 1e-300){
+    rets[0] = R * sin( Az);
+    rets[1] = R * cos( Az);
+  }
+  return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS;
+}
+
+//
+// Zelen and Severo algorithm (1964) is 7.5e-8 accurate 
+//
+static double _PDF_ZelenSevero_( double x){
+  bool negative = x<0;
+  if( negative) x = -x;
+  double t = 1.0/(1.0 + 0.2316419 * x);
+  double tv = 0.5307027142649737 * t;
+  tv = (tv - 0.7265760130580615) * t;
+  tv = (tv + 0.7107068706716199) * t;
+  tv = (tv - 0.14224836829963933) * t;
+  tv = (tv + 0.1274147958962986) * t;
+  tv *= exp( - 0.5 * x * x);
+  if( negative) return tv;
+  return 1.0-tv;
+}
+
+//
+// Zelen and Severo inverse 1e-6 accurate 
+//
+static double _PROBIT_ZelenSevero_( double p){
+  double x0 = -4.0;
+  double x2 = 4.0;
+  if( p < 0.5) x2 = 0.0;
+  else x0 = 0.0;
+  while( true){
+    double x1 = (x0+x2) * 0.5;
+    double pc = _PDF_ZelenSevero_(x1);
+    if( abs( pc-p) < 0.0000001) return x1;
+    if( p<pc) x2 = x1;
+    else x0 = x1;
+  }
+}
+
+static byte _function_Solver_PROB_( Variables *_vars, double *args, double *rets, bool isRPN){
+  _vars->mathError = _ERROR_;
+  double x = args[0];
+  if( _vars->stdev[0] <= 0.0)
+      return _vars->_Universal_Mantra_( isRPN, 0.0, rets, 1);
+  x = (x - _vars->mean[0]) / _vars->stdev[0];
+  if( x <= -4.0)
+      return _vars->_Universal_Mantra_( isRPN, 0.0, rets, 1);
+  if( x >= 4.0)
+      return _vars->_Universal_Mantra_( isRPN, 1.0, rets, 1);
+  return _vars->_Universal_Mantra_( isRPN, _PDF_ZelenSevero_(x), rets, 1);
+}
+
+static byte _function_Solver_PROBIT_( Variables *_vars, double *args, double *rets, bool isRPN){
+  _vars->mathError = _ERROR_;
+  double p = args[0];
+  if( p == 0.5)
+      return _vars->_Universal_Mantra_( isRPN, _vars->mean[0], rets, 1);
+  if( p <0.0 || p>1.0){
+    if( isRPN) _vars->setScrMessage( FUN_Error_Domain);
+    return _REQUEST_REDRAW_MSG;
+  }
+  if( p <= 0.0)
+      return _vars->_Universal_Mantra_( isRPN, _vars->mean[0] - 4.0*_vars->stdev[0], rets, 1);
+  if( p >= 1.0)
+      return _vars->_Universal_Mantra_( isRPN, _vars->mean[0] + 4.0*_vars->stdev[0], rets, 1);
+  double x = _PROBIT_ZelenSevero_( p);
+  return _vars->_Universal_Mantra_( isRPN, _vars->mean[0] + x*_vars->stdev[0], rets, 1);
 }

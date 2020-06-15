@@ -229,7 +229,8 @@ bool Lexer::processRPNKeywordByID( int16_t id, bool refresh){
   Keyword *kwd = _kwds->getKeywordById( id);
   if( !kwd) return false; // no such id
   _processRPNKeyword( kwd);
-  _rsb->updateIOM( refresh);
+  //TODO: make silent if not in RPN mode (also check _processRPNKeyword)
+  //_rsb->updateIOM( refresh);
 }
 
 //

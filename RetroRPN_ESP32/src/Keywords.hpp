@@ -95,7 +95,7 @@
 #define _KEYWORD_      4
 
 #define _FUN_Variable_    -1
-#define _FUNCTION_COUNT    74
+#define _FUNCTION_COUNT    76
 
 // Keywords
 #define _OPR_ABS_KW             0

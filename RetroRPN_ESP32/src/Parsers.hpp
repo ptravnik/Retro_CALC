@@ -71,6 +71,11 @@ private:
     byte * _convertDouble(double n, byte *ptr, byte max_len);
 };
 
+//
+// Encapsulates name parsing
+// A name starts with a letter or an undescore and contains only letters, digits and underscores
+// A vaiable name may end with symbols $ for strings and % for integers
+//
 class NameParser{
   public:
     bool result = false;
@@ -96,6 +101,34 @@ class NameParser{
     };
 };
 
+//
+// Encapsulates filename parsing
+// A valid filename contains symbols "/", "-" space, ",", "."
+//
+// class FilenameParser{
+//   public:
+//     bool result = false;
+//     byte *parse( byte *str);
+//     inline byte * Name(){
+//       return _name;
+//     }
+//     inline void _reset_name(){
+//       result = false;
+//       *_name = _NUL_;
+//       _name_position = 0;
+//     };
+//   private:
+//     byte _name[_MAX_IDENTIFIER_ + 2];
+//     byte _name_position;
+//     inline void _add_char_to_name( byte *ptr){
+//       _name[_name_position++] = *ptr;
+//       _name[_name_position] = _NUL_;
+//     };
+// };
+
+//
+// Encapsulates algebraic formula parsing
+//
 class ExpressionParser{
   public:
     byte result = _RESULT_UNDEFINED_;
