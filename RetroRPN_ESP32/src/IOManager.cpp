@@ -7,7 +7,7 @@
 //////////////////////////////////////////////////////////
 
 #include <Arduino.h>
-#include "HWKbd.h"
+#include <HWKbd.h>
 #include "CP1251_mod.h"
 
 // Use the appropriate hardware definition
@@ -141,6 +141,10 @@ char IOManager::input(){
     return c;
   }
   return _NUL_;
+}
+
+byte IOManager::scan(){
+  return hwKeyboard.scan();
 }
 
 //

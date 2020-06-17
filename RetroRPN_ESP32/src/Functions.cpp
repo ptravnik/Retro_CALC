@@ -76,6 +76,7 @@ void Functions::init( void *components[]){
   _setFunction( _OPR_CF2CM_KW, (void *)_function_Convert_CF2CM_, 1);
   _setFunction( _OPR_CM2BBL_KW, (void *)_function_Convert_CM2BBL_, 1);
   _setFunction( _OPR_CM2CF_KW, (void *)_function_Convert_CM2CF_, 1);
+  _setFunction( _OPR_CNK_KW, (void *)_function_Solver_CNK_, 2);
   _setFunction( _OPR_COS_KW, (void *)_function_Math_COS_, 1);
   _setFunction( _OPR_COORDS_KW, (void *)_function_Solver_COORDS_, 2);
   _setFunction( _OPR_COORDS3_KW, (void *)_function_Solver_COORDS3_, 3);
@@ -89,6 +90,7 @@ void Functions::init( void *components[]){
   _setFunction( _OPR_EXP_KW, (void *)_function_Math_EXP_, 1);
   
   _setFunction( _OPR_F2C_KW, (void *)_function_Convert_F2C_, 1);
+  _setFunction( _OPR_FACT_KW, (void *)_function_Solver_FACT_, 1);
   _setFunction( _OPR_FT2M_KW, (void *)_function_Convert_FT2M_, 1);
   
   _setFunction( _OPR_GAL2L_KW, (void *)_function_Convert_GAL2L_, 1);
@@ -184,74 +186,77 @@ void Functions::init( void *components[]){
   _addFunction( _OPR_CF2CM_KW, 1);
   _addFunction( _OPR_CM2BBL_KW, 1);
   _addFunction( _OPR_CM2CF_KW, 1);
-  _addFunction( _OPR_COS_KW, 1); // 20
+  _addFunction( _OPR_CNK_KW, 2); // 20
 
+  _addFunction( _OPR_COS_KW, 1);
   _addFunction( _OPR_COSH_KW, 1);
   _addFunction( _OPR_COT_KW, 1);
   _addFunction( _OPR_D2DMS_KW, 1);
-  _addFunction( _OPR_DMS2D_KW, 1);
-  _addFunction( _OPR_EXP_KW, 1); // 25
+  _addFunction( _OPR_DMS2D_KW, 1); // 25
 
+  _addFunction( _OPR_EXP_KW, 1);
   _addFunction( _OPR_F2C_KW, 1);
+  _addFunction( _OPR_FACT_KW, 1);
   _addFunction( _OPR_FT2M_KW, 1);
-  _addFunction( _OPR_GAL2L_KW, 1);
-  _addFunction( _OPR_GCC2API_KW, 1);
-  _addFunction( _OPR_IN2MM_KW, 1); // 30
+  _addFunction( _OPR_GAL2L_KW, 1); // 30
 
+  _addFunction( _OPR_GCC2API_KW, 1);
+  _addFunction( _OPR_IN2MM_KW, 1);
   _addFunction( _OPR_K2C_KW, 1);
   _addFunction( _OPR_KG2LBS_KW, 1);
-  _addFunction( _OPR_KM2MI_KW, 1);
+  _addFunction( _OPR_KM2MI_KW, 1); // 35
+
   _addFunction( _OPR_KM2NM_KW, 1);
   _addFunction( _OPR_KMH2MS_KW, 1);
   _addFunction( _OPR_L2GAL_KW, 1);
-  _addFunction( _OPR_LCIRC_KW, 1); // 37
+  _addFunction( _OPR_LCIRC_KW, 1);
+  _addFunction( _OPR_LIN2_KW, 1); // 40
 
-  _addFunction( _OPR_LIN2_KW, 1);
   _addFunction( _OPR_LG_KW, 1);
   _addFunction( _OPR_LN_KW, 1);
   _addFunction( _OPR_LOG_KW, 2);
-  _addFunction( _OPR_LT2MT_KW, 1); // 42
+  _addFunction( _OPR_LT2MT_KW, 1);
+  _addFunction( _OPR_M2FT_KW, 1); // 45
 
-  _addFunction( _OPR_M2FT_KW, 1);
   _addFunction( _OPR_MI2KM_KW, 1);
   _addFunction( _OPR_MM2IN_KW, 1);
   _addFunction( _OPR_MPA2PSI_KW, 1);
-  _addFunction( _OPR_MT2LT_KW, 1); // 47
+  _addFunction( _OPR_MT2LT_KW, 1);
+  _addFunction( _OPR_MT2ST_KW, 1); // 50
 
-  _addFunction( _OPR_MT2ST_KW, 1);
   _addFunction( _OPR_NDIS_KW, 1);
   _addFunction( _OPR_NM2KM_KW, 1);
   _addFunction( _OPR_POW_KW,2);
-  _addFunction( _OPR_PSI2BAR_KW, 1); // 52
-  
-  _addFunction( _OPR_PA2PSI_KW, 1);
+  _addFunction( _OPR_PSI2BAR_KW, 1);
+  _addFunction( _OPR_PA2PSI_KW, 1); // 55
+
   _addFunction( _OPR_PROB_KW, 1);
   _addFunction( _OPR_PROBIT_KW, 1);
   _addFunction( _OPR_PSI2MPA_KW, 1);
   _addFunction( _OPR_PSI2PA_KW, 1);
-  _addFunction( _OPR_PSIA2PSIG_KW, 1);
-  _addFunction( _OPR_PSIG2PSIA_KW, 1); // 59
-  
+  _addFunction( _OPR_PSIA2PSIG_KW, 1); // 60
+
+  _addFunction( _OPR_PSIG2PSIA_KW, 1);
   _addFunction( _OPR_RADIUS_KW,2);
   _addFunction( _OPR_ROOT_KW,2);
   _addFunction( _OPR_SCIRC_KW, 1);
-  _addFunction( _OPR_SFT2SM_KW, 1);
-  _addFunction( _OPR_SIN_KW, 1); // 64
+  _addFunction( _OPR_SFT2SM_KW, 1); // 65
 
+  _addFunction( _OPR_SIN_KW, 1);
   _addFunction( _OPR_SIGN_KW, 1);
   _addFunction( _OPR_SINH_KW, 1);
   _addFunction( _OPR_SM2SFT_KW, 1);
-  _addFunction( _OPR_SINH_KW, 1);
-  _addFunction( _OPR_SQ_KW, 1); // 69
+  _addFunction( _OPR_SINH_KW, 1); // 70
 
+  _addFunction( _OPR_SQ_KW, 1);
   _addFunction( _OPR_SQRT_KW, 1);
   _addFunction( _OPR_SSPHERE_KW, 1);
   _addFunction( _OPR_ST2MT_KW, 1);  
-  _addFunction( _OPR_STACK_KW, 1);
-  _addFunction( _OPR_TAN_KW, 1); // 74
+  _addFunction( _OPR_STACK_KW, 1); // 75
 
+  _addFunction( _OPR_TAN_KW, 1);
   _addFunction( _OPR_TANH_KW, 1);
-  _addFunction( _OPR_VSPHERE_KW, 1); // 76
+  _addFunction( _OPR_VSPHERE_KW, 1); // 78
 }
 
 Function *Functions::getFunction(byte *str){

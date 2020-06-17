@@ -64,28 +64,6 @@ void TerminalBox::updateIOM( bool refresh) {
 //  }
 }
 
-////
-//// Resets all calculator labels
-////
-//void TerminalBox::resetRPNLabels() {
-//  for( byte i=0; i<3; i++){
-//    convertToCP1251( _messages[i], RPN_Message_Table[i], HSCROLL_LIMIT);
-//    _messageRedrawRequired[i] = true;
-//  }
-//}
-//
-////
-//// Sets one label: 0 - X, 1 - Y, 2 - Z
-////
-//void TerminalBox::setRPNLabel( byte label, byte *message) {
-//  if( label > 2) label = 0;
-//  if( message)
-//    strncpy( (char *)_messages[label], (char *)message, HSCROLL_LIMIT);  
-//  else
-//    convertToCP1251( _messages[label], RPN_Message_Table[label], HSCROLL_LIMIT);
-//  _messageRedrawRequired[label] = true;
-//}
-
 void TerminalBox::sendChar( byte c, byte dest, bool wait_for_host){
   if(c == _CR_){
     byte *ptr1 = _virtualScreen + VIRTUAL_SCREEN_END1;

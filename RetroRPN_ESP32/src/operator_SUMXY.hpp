@@ -10,7 +10,7 @@
 //#include "Lexer.hpp"
 
 //
-// Creates a constant
+// 2-D statistics
 //
 static bool _operator_SUMXY_( Lexer *lex){
   return lex->operator_SUMXY();
@@ -23,9 +23,6 @@ bool Lexer::operator_SUMXY(){
   #endif
   // parse expression
   byte nArgs = _parseList( 2);
-  //Serial.println( nArgs);
-  //Serial.println( _listValues[0]);
-  //Serial.println( _listValues[1]);
   if( nArgs == 2){
     _vars->addSample2RPNSumXY( _listValues[0], _listValues[1]);
     _vars->pushRPNStack( _vars->stErrXY);

@@ -23,6 +23,7 @@ const char *const _RPN_AMODE_Table[] PROGMEM = {
   _RPN_Mode_Gradians
   };
 
+const char _VAR_prgCounter[] PROGMEM = "prgCounter%";
 const char _VAR_stack[] PROGMEM = "stack";
 const char _VAR_prev[] PROGMEM = "prev";
 const char _VAR_amode[] PROGMEM = "amode%";
@@ -66,17 +67,21 @@ const char _CON_prgMemory[] PROGMEM = "prgMemory%";
 const char SD_root2[] PROGMEM = "/";
 
 void Variables::init( void *components[]){
+  _buffer = (byte *)malloc( VARIABLE_SPACE);
   _kwds = (Keywords *)components[UI_COMP_Keywords];
+
+  _prgCounter = (int64_t *)_getDataPtr( _placeNumber( false, _VAR_prgCounter, 0));
   _amode = (int64_t *)_getDataPtr( _placeNumber( false, _VAR_amode, _MODE_DEGREES_));
   nmean = (double *)_getDataPtr( _placeNumber( false, _VAR_nMean, 0.0));
+  nmeanXY = (double *)_getDataPtr( _placeNumber( false, _VAR_nMeanXY, 0.0));
+  _read_only_bottom = _var_bottom; // the variables above cannot be written from BASIC
+
   mean = (double *)_getDataPtr( _placeNumber( false, _VAR_Mean, 0.0));
   stdev = (double *)_getDataPtr( _placeNumber( false, _VAR_StDev, 1.0));
-  nmeanXY = (double *)_getDataPtr( _placeNumber( false, _VAR_nMeanXY, 0.0));
   meanX = (double *)_getDataPtr( _placeNumber( false, _VAR_MeanX, 0.0));
   stdevX = (double *)_getDataPtr( _placeNumber( false, _VAR_StDevX, 1.0));
   meanY = (double *)_getDataPtr( _placeNumber( false, _VAR_MeanY, 0.0));
   stdevY = (double *)_getDataPtr( _placeNumber( false, _VAR_StDevY, 1.0));
-  _read_only_bottom = _var_bottom; // the variables above cannot be written from BASIC
   _rpnStack = (double *)_getDataPtr( _placeVector( false, _VAR_stack, RPN_STACK));
   _prev = (double *)_getDataPtr( _placeNumber( false, _VAR_prev));
   gain = (double *)_getDataPtr( _placeNumber( false, _VAR_Gain, 1.0));
@@ -218,7 +223,7 @@ void Variables::setValueString( VariableToken vt, const char *v){
   if( getVarType(vt) != VARTYPE_STRING) return;
   uint16_t totalSize = getTotalSize(vt);
   char *ptr = (char *)_getDataPtr( vt);
-  strncpy(ptr, v, totalSize);  
+  strncat2(ptr, v, totalSize);  
 }
 void Variables::setValueRealArray( VariableToken vt, double v){
   if( vt < 2) return;
@@ -353,40 +358,6 @@ VariableToken Variables::getOrCreateNumber( bool asConstant, byte *name){
   return vt;
 }
 
-
-//
-// Creates a variable or a constant;
-// creation of runtime variables in which the name matches one of the
-// keywords is not allowed 
-//
-VariableToken Variables::getOrCreate2( bool asConstant, byte *name ){
-  // if( _kwds->isKeyword( name)) return 0;
-  // VariableToken vt = findByName( name);
-  // if( !vt){ // on the fly can be created only scalars and strings
-  //   uint16_t nameLen = 
-  //   if( isConstant(vt) != asConstant) return 0;
-  //   if( isReadOnly(vt)) return 0;
-  //   byte t = getVarType(vt); 
-  //   if( t != vtype) return 0;
-  //   switch(t){
-  //     case VARTYPE_NUMBER:
-  //       return vt:
-  //     case VARTYPE_NUMBER:
-  //       return vt:
-  //   }
-  // }
-
-  // VariableToken vt = asConstant?
-  //   _findConstantByName( name):
-  //   _findVariableByName( name);
-  // if( vt != 0) return vt;
-  // return asConstant?
-  //   placeNewConstant( name, vtype, row_size, column_size):
-  //   placeNewVariable( name, vtype, row_size, column_size);
-  return 0;
-}
-
-
 void Variables::_removeVariable( VariableToken vt){
   VariableToken vt2 = _getNextVar( vt);
   if( vt2>_var_bottom){
@@ -494,7 +465,7 @@ uint16_t Variables::_getVarLength( uint16_t nameLen, byte vtype,
 byte * Variables::_getLengthBlockPtr( VariableToken vt){
   if( vt < 2) return NULL;
   if( vt >= VARIABLE_SPACE) return NULL;
-  return _buffer + vt - 2;
+  return (byte *)_buffer + vt - 2;
 }
 byte * Variables::_getVarBlockPtr( VariableToken vt){
   byte *ptr = _getLengthBlockPtr(vt);
@@ -548,7 +519,7 @@ VariableToken Variables::_placeVarName( bool isConst, const char *name,
   byte *ptr = _getLengthBlockPtr(vt);
   *ptr++ = varType;
   *ptr++ = (byte)nameLen;
-  strncpy( (char *)ptr, name, nameLen);
+  strncat2( (char *)ptr, name, nameLen+1);
   return vt;
 }
 VariableToken Variables::_placeNumber( bool isConst,
@@ -588,7 +559,7 @@ VariableToken Variables::_placeString( bool isConst,
   uint16_t *ptr = (uint16_t *)_getVarBlockPtr( vt);
   *ptr++ = length;
   char *dataPtr = (char *)ptr;
-  if( value) strncpy( dataPtr, value, length);
+  if( value) strncat2( dataPtr, value, length);
   else *dataPtr = _NUL_;
   return vt;
 }

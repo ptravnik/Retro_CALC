@@ -61,7 +61,7 @@ void MessageBox::updateIOM( bool refresh) {
 //
 void MessageBox::setLabel( byte *message, bool refresh) {
   if( message)
-    strncpy( (char *)_message, (char *)message, HSCROLL_LIMIT);  
+    strncat2( (char *)_message, (char *)message, HSCROLL_LIMIT);  
   else
     convertToCP1251( _message, MB_StatusMessage, HSCROLL_LIMIT);
   _messageRedrawRequired = true;
@@ -71,7 +71,7 @@ void MessageBox::appendLabel( byte *message, bool refresh) {
   if( !message) return;
   size_t i = strlen( _message);
   if( i>= HSCROLL_LIMIT) return; 
-  strncpy( (char *)(_message+i), (char *)message, HSCROLL_LIMIT-i);  
+  strncat2( (char *)(_message+i), (char *)message, HSCROLL_LIMIT-i);  
   _messageRedrawRequired = true;
   updateIOM(refresh);
 }

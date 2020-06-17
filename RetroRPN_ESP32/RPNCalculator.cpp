@@ -173,6 +173,15 @@ void RPNCalculator::_processCommand(byte c){
     case _RESULT_INTEGER_  :
     case _RESULT_REAL_     :
       _vars->pushRPNStack(_epar->numberParser.realValue());
+      _rsb->setStackRedrawAll();
+      _clb->clearInput();
+      _processCommand( c);
+      return;
+    //case _RESULT_STRING_  :
+    //  _vars->pushRPNStack(_epar->numberParser.realValue());
+    //_clb->;
+    // ptr = _clb->getInput();
+    //_epar->numberParser.stringHex( _vars->getRPNRegister(), ptr);
     default:
       _clb->clearInput();
       _processCommand( c);

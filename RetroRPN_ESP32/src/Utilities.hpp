@@ -176,6 +176,14 @@ inline bool startsWithC(byte *ptr, const char *val){
 };
 
 //
+// Safe version of strncpy
+//
+inline char *strncat2(  char * destination, const char * source, size_t num){
+  *destination = _NUL_;
+  return strncat( destination, source, num);
+};
+
+//
 // Converts double properly
 // Note that the buffer length must be sufficient to acommodate at least 
 // the sign, 9 characters of the number, 6 characters of the exponent and 

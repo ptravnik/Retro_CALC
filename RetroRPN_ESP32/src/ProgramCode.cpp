@@ -11,6 +11,7 @@
 //#define __DEBUG
 
 void ProgramCode::init( void *components[]){
+  _buffer = (byte *)malloc( BASIC_SPACE);
   _kwds = (Keywords *)components[UI_COMP_Keywords];
   _vars = (Variables *)components[UI_COMP_Variables];
   _epar = (ExpressionParser *)components[UI_COMP_ExpressionParser];

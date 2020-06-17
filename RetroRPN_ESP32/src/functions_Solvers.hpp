@@ -331,3 +331,45 @@ static byte _function_Solver_PROBIT_( Variables *_vars, double *args, double *re
   double x = _PROBIT_ZelenSevero_( p);
   return _vars->_Universal_Mantra_( isRPN, _vars->mean[0] + x*_vars->stdev[0], rets, 1);
 }
+
+static byte _function_Solver_FACT_( Variables *_vars, double *args, double *rets, bool isRPN){
+  _vars->mathError = _ERROR_;
+  double n = args[0];
+  if( n > 142){
+    if( isRPN) _vars->setScrMessage( FUN_Error_Overflow);
+    return _REQUEST_REDRAW_MSG;
+  }
+  if( n < 0){
+    if( isRPN) _vars->setScrMessage( FUN_Error_Domain);
+    return _REQUEST_REDRAW_MSG;
+  }
+  int cnt = (int)floor( n);
+  n = 1.0;
+  for( int i=1; i<=cnt; i++) n *= i;
+  return _vars->_Universal_Mantra_( isRPN, n, rets, 0);
+}
+
+static byte _function_Solver_CNK_( Variables *_vars, double *args, double *rets, bool isRPN){
+  _vars->mathError = _ERROR_;
+  double n = args[1];
+  double k = args[0];
+  if( n > 142.0){
+    if( isRPN) _vars->setScrMessage( FUN_Error_Overflow);
+    return _REQUEST_REDRAW_MSG;
+  }
+  if( n < 0.0 || k < 0.0){
+    if( isRPN) _vars->setScrMessage( FUN_Error_Domain);
+    return _REQUEST_REDRAW_MSG;
+  }
+  if( n <= 0 || k >= n){
+    return _vars->_Universal_Mantra_( isRPN, 1, rets, 1);
+  }
+  int c1 = (int)floor( k) + 2;
+  int c2 = (int)floor( n);
+  n = floor( k) + 1.0;
+  for( int i=c1; i<=c2; i++){
+    n *= i;
+    n /= -k + i;
+  }
+  return _vars->_Universal_Mantra_( isRPN, n, rets, 1);
+}

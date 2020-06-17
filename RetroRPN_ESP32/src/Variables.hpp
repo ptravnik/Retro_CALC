@@ -49,7 +49,7 @@ class Variables{
     size_t _standard_bottom = 0;
     size_t _const_top = VARIABLE_SPACE;
     size_t _standard_top = VARIABLE_SPACE;
-    byte _buffer[ VARIABLE_SPACE];
+    byte *_buffer = NULL;
     char *currentDir;
     byte *scrMessage;
     byte *rpnLabelX;
@@ -92,7 +92,7 @@ class Variables{
     VariableToken getNextVar( VariableToken vt);
     inline byte getVarType( VariableToken vt){ return _buffer[vt-2];};
     inline byte getVarNameLength( VariableToken vt){ return _buffer[vt-1];};
-    inline byte *getVarName( VariableToken vt){ return _buffer + vt;};
+    inline byte *getVarName( VariableToken vt){ return (byte *)_buffer + vt;};
     uint16_t getTotalSize( VariableToken vt);
     uint16_t getRowSize( VariableToken vt);
     uint16_t getColumnSize( VariableToken vt);
@@ -128,6 +128,8 @@ class Variables{
     double realValue( VariableToken vt, uint16_t i=0, uint16_t j=0);
     int64_t integerValue( VariableToken vt, uint16_t i=0, uint16_t j=0);
     byte *stringValue( VariableToken vt);
+    inline uint16_t getPrgCounter(){ return (uint16_t)(_prgCounter[0]);};
+    inline void setPrgCounter(uint16_t ln){ _prgCounter[0] = (int64_t)ln;};
 
     //
     // Looks for constants and variables
@@ -143,11 +145,6 @@ class Variables{
         return _findVariableByName( (const char *)name);};
     VariableToken getOrCreateNumber( bool asConstant, byte *name);
     byte *findDataPtr( const char * name, uint16_t i=0, uint16_t j=0);
-
-    // TODO
-    VariableToken getOrCreate2( bool asConstant, byte *name);
-    inline VariableToken getOrCreate2( bool asConstant, const char *name){
-        return getOrCreate2( asConstant, (byte *)name);}
 
     //
     // Variables and Constants removal
@@ -205,13 +202,13 @@ class Variables{
     // safe access to screen messages 
     //
     inline void setScrMessage( const char *mess){
-        strncpy( (char *)scrMessage, mess, HSCROLL_LIMIT);};
+        strncat2( (char *)scrMessage, mess, HSCROLL_LIMIT);};
     inline void setRPNLabelX( const char *mess){
-        strncpy( (char *)rpnLabelX, mess, HSCROLL_LIMIT);};
+        strncat2( (char *)rpnLabelX, mess, HSCROLL_LIMIT);};
     inline void setRPNLabelY( const char *mess){
-        strncpy( (char *)rpnLabelY, mess, HSCROLL_LIMIT);};
+        strncat2( (char *)rpnLabelY, mess, HSCROLL_LIMIT);};
     inline void setRPNLabelZ( const char *mess){
-        strncpy( (char *)rpnLabelZ, mess, HSCROLL_LIMIT);};
+        strncat2( (char *)rpnLabelZ, mess, HSCROLL_LIMIT);};
 
     //
     // returns available variable memory
@@ -243,6 +240,7 @@ class Variables{
     int64_t *_amode = NULL;
     int64_t *_varAvailble = NULL;
     int64_t *_prgAvailble = NULL;
+    int64_t *_prgCounter = NULL;
 
     int64_t _limitHuge( double v);
     uint16_t _getVarLength( uint16_t nameLen, byte vtype=VARTYPE_NONE,

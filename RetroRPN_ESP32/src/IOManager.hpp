@@ -72,6 +72,7 @@ class IOManager{
     unsigned long init( byte *io_buffer);
     unsigned long tick();
     char input();
+    byte scan();
     
     void setKBDLEDs( bool L0=false, bool L1=false, bool L2=false, bool L3=false);
     void setKBDLEDs( byte val);

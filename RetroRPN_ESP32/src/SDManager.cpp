@@ -130,14 +130,14 @@ void SDManager::_checkRoot(){
     #ifdef __DEBUG
     Serial.println("Failed to open directory, reset to root");
     #endif
-    strncpy( _vars->currentDir, SD_root, CURRENT_DIR_LEN);
+    strncat2( _vars->currentDir, SD_root, CURRENT_DIR_LEN);
     return;
   }
   if(!root.isDirectory()){
     #ifdef __DEBUG
     Serial.println("Not a directory, reset to root");
     #endif
-    strncpy( _vars->currentDir, SD_root, CURRENT_DIR_LEN);
+    strncat2( _vars->currentDir, SD_root, CURRENT_DIR_LEN);
   }
   root.close();
 }
@@ -184,11 +184,13 @@ void SDManager::loadState(){
     #endif
     return;
   }
-  size_t tmpsize = file.size();
-  if( tmpsize > VARIABLE_SPACE) tmpsize = VARIABLE_SPACE;
-  file.read( _vars->_buffer, tmpsize);
+  size_t tmpSize = file.size();
+  size_t maxSize = _vars->_const_top - 2;
+  if( tmpSize >= maxSize) tmpSize = maxSize;
+  file.read( (byte *)_vars->_buffer, tmpSize);
   file.close();
-  _vars->_var_bottom = tmpsize;
+  _vars->_buffer[tmpSize] = _NUL_; // prevents name overflow
+  _vars->_var_bottom = tmpSize;
   #ifdef __DEBUG
   Serial.print("Loaded status: ");
   Serial.print(_vars->_var_bottom);
@@ -207,6 +209,7 @@ void SDManager::loadState(){
     if( !_ReadLn_( file, _io_buffer)) break;
     if( _code->addLine( _io_buffer)) break;
   }
+  _vars->setPrgCounter( _code->getFirstLine().lineNumber);
   file.close();
 }
 
@@ -228,7 +231,7 @@ void SDManager::saveState(){
     Serial.print(_vars->_var_bottom);
     Serial.println(" bytes");
   #else
-  file.write( _vars->_buffer, _vars->_var_bottom);
+  file.write( (byte *)_vars->_buffer, _vars->_var_bottom);
   #endif
   file.close();
 }

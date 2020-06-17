@@ -92,9 +92,6 @@ class Lexer{
     bool _findAssignment();
     bool _validate_NextCharacter( byte c);
 
-    void _operatorListProgramCode(uint16_t lFrom, uint16_t lTo=MAX_LINE_NUMBER);
-    void _operatorClearProgramCode(uint16_t lFrom, uint16_t lTo=MAX_LINE_NUMBER);
-
     inline void _ignore_Blanks(){
       while(IsSpacer(*_lexer_position))
         _lexer_position++;

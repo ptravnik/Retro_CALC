@@ -32,7 +32,7 @@ struct ProgramLine{
 class ProgramCode{
   public:
     size_t _program_bottom = 0;
-    byte _buffer[ BASIC_SPACE];
+    byte *_buffer;
     LineNumber currentLine = 0;
     LineNumber lastLine = 0;
     

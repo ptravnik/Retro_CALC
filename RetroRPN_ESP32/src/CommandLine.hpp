@@ -60,7 +60,7 @@ class CommandLine{
       return strlen(_input);
     };
     inline void copyToPrevious(){
-      strncpy( (char *)_inputPrevious, (char *)_input, INPUT_COLS);
+      strncat2( (char *)_inputPrevious, (char *)_input, INPUT_COLS);
     };
     inline bool isInputEmpty(){
       return *_input == _NUL_;

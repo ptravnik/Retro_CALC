@@ -99,7 +99,7 @@ void RPNStackBox::resetRPNLabels() {
 void RPNStackBox::setRPNLabel( byte label, byte *message) {
   if( label > 2) label = 0;
   if( message)
-    strncpy( (char *)_labels[label], (char *)message, HSCROLL_LIMIT);  
+    strncat2( (char *)_labels[label], (char *)message, HSCROLL_LIMIT);  
   else
     convertToCP1251( _labels[label], RPN_Message_Table[label], HSCROLL_LIMIT);
   _labelRedrawRequired[label] = true;

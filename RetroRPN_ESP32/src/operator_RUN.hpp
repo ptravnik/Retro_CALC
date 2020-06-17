@@ -26,10 +26,17 @@ bool Lexer::operator_RUN(){
   byte *ptr = _lexer_position;
   char *buff = (char *)_iom->getIOBuffer();
   ProgramLine pl = _code->getFirstLine();
+  _vars->setPrgCounter( pl.lineNumber);
   while( pl.line){
+    if( _iom->scan() == 10){
+      Serial.println("HALT!");
+      while( _iom->scan());
+      break;
+    };
     int n = snprintf( buff, INPUT_COLS, "%05u ", pl.lineNumber);
     convertToUTF8( buff+n, pl.line, INPUT_COLS-n);
     _iom->sendStringUTF8Ln( buff);
+    _vars->setPrgCounter( pl.lineNumber);
     parse( pl.line);
     switch( result){
       case _RESULT_EXECUTED_:

@@ -15,26 +15,7 @@
 static bool _operator_CLEAR_( Lexer *lex){
   return lex->operator_CLEAR();
 }
-void Lexer::_operatorClearProgramCode(uint16_t lFrom, uint16_t lTo){
-  Serial.print("These lines will be gone: ");
-  Serial.print( lFrom);
-  Serial.print( " to ");
-  Serial.println( lTo);
-  // char *buff = (char *)_iom->getIOBuffer();
-  // ProgramLine pl = _code->getFirstLine();
-  // while( true){
-  //   if( pl.line == NULL) return;
-  //   if( pl.lineNumber > lTo) return;
-  //   if( pl.lineNumber < lFrom){
-  //     pl = _code->getNextLine( pl);
-  //     continue;
-  //   }
-  //   int n = snprintf( buff, INPUT_COLS, "%05u ", pl.lineNumber);
-  //   convertToUTF8( buff+n, pl.line, INPUT_COLS-n);
-  //   _iom->sendStringUTF8Ln( buff);
-  //   pl = _code->getNextLine( pl);
-  // }
-}
+
 bool Lexer::operator_CLEAR(){
   #ifdef __DEBUG
   Serial.println("CLEAR called");
@@ -79,32 +60,33 @@ bool Lexer::operator_CLEAR(){
 
 bool Lexer::operator_CLEAR_Program(){
   // TODO
-  Serial.println("CLEAR PROGRAM not yet implemented (Program class undefined)");
-  byte *ptr = _epar->parse( _lexer_position);
-  size_t lFrom = 0;
-  if( _epar->result != _RESULT_INTEGER_){
-    _operatorClearProgramCode( lFrom);
-    _skipToNextOperator( _lexer_position);
-    return true;
+  Serial.println("CLEAR PROGRAM (not really, test only):");
+  byte nParsed = _parseList( 2);
+  uint16_t lFrom = 0;
+  uint16_t lTo = MAX_LINE_NUMBER;
+  switch(nParsed){
+    case 2:
+      lTo = (uint16_t)floor( _listValues[1]);
+    case 1:
+      lFrom = (uint16_t)floor( _listValues[0]);
+    default:
+      break;
   }
-  else{
-    _lexer_position = ptr;
-    _ignore_Blanks();
-    lFrom = clipLineNumber(_epar->numberParser.integerValue());
+  char *buff = (char *)_iom->getIOBuffer();
+  ProgramLine pl = _code->getFirstLine();
+  while( true){
+    if( pl.line == NULL) break;
+    if( pl.lineNumber > lTo) break;
+    if( pl.lineNumber < lFrom){
+      pl = _code->getNextLine( pl);
+      continue;
+    }
+    int n = snprintf( buff, INPUT_COLS, "%05u ", pl.lineNumber);
+    convertToUTF8( buff+n, pl.line, INPUT_COLS-n);
+    _iom->sendStringUTF8Ln( buff);
+    pl = _code->getNextLine( pl);
   }
-  if( _validate_NextCharacter( _COMMA_)){
-    _operatorClearProgramCode( lFrom);
-    _skipToNextOperator( _lexer_position);
-    return true;
-  }
-  ptr = _epar->parse( _lexer_position);
-  if( _epar->result == _RESULT_INTEGER_){
-    _operatorClearProgramCode( lFrom, clipLineNumber(_epar->numberParser.integerValue(), lFrom));
-    _skipToNextOperator( ptr);
-    return true;
-  }
-  _operatorClearProgramCode( lFrom);
-  _skipToNextOperator( ptr);
+  _skipToNextOperator( _lexer_position);
   return true;
 }
 

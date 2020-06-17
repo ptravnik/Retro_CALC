@@ -10,7 +10,7 @@
 //#include "Lexer.hpp"
 
 //
-// Creates a constant
+// 1-D statistics
 //
 static bool _operator_SUM_( Lexer *lex){
   return lex->operator_SUM();
@@ -22,17 +22,14 @@ bool Lexer::operator_SUM(){
   Serial.println((char *)_lexer_position);
   #endif
   // parse expression
-  _lexer_position = _epar->parse(_lexer_position);
-  switch( _epar->result ){
-    case _RESULT_INTEGER_:
-    case _RESULT_REAL_:
-      _vars->addSample2RPNSum( _epar->numberParser.realValue());
-      break;
-    default:
+  byte nArgs = _parseList( 1);
+  if( nArgs == 1){
+    _vars->addSample2RPNSum( _listValues[0]);
+  }
+  else{
       _vars->saveRPNPrev();
       _vars->addSample2RPNSum( _vars->getRPNRegister());
       _vars->popRPNStack();
-      break;
   }
   _vars->pushRPNStack( _vars->nmean[0]);
   _vars->pushRPNStack( _vars->stdev[0]);

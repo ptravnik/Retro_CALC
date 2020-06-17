@@ -79,7 +79,7 @@ byte *NumberParser::stringValue( byte *ptr, byte max_len){
     case _RESULT_REAL_    :
       return _convertDouble(_dValue, ptr, max_len);
     default:
-      strncpy( (char *)ptr, _not_a_Number, max_len);
+      strncat2( (char *)ptr, _not_a_Number, max_len);
       break;
   }
   return ptr;

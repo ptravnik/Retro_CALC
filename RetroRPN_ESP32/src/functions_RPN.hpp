@@ -106,7 +106,7 @@ static byte _function_RPN_ROOT_( Variables *_vars, double *args, double *rets, b
 
 static byte _function_RPN_NEG_( Variables *_vars, double *args, double *rets, bool isRPN){
   _vars->mathError = _NO_ERROR_;
-  return _vars->_Universal_Mantra_( isRPN, -args[0], rets, 1);
+  return _vars->_Universal_Mantra_( isRPN, -args[0], rets, 0);
 }
 
 static byte _function_RPN_OOX_( Variables *_vars, double *args, double *rets, bool isRPN){
