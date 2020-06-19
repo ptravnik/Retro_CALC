@@ -51,7 +51,7 @@ bool Lexer::operator_LIST_Program(){
     default:
       break;
   }
-  char *buff = (char *)_iom->getIOBuffer();
+  //char *buff = (char *)_iom->getIOBuffer();
   ProgramLine pl = _code->getFirstLine();
   while( true){
     if( pl.line == NULL) break;
@@ -60,9 +60,9 @@ bool Lexer::operator_LIST_Program(){
       pl = _code->getNextLine( pl);
       continue;
     }
-    int n = snprintf( buff, INPUT_COLS, "%05u ", pl.lineNumber);
-    convertToUTF8( buff+n, pl.line, INPUT_COLS-n);
-    _iom->sendStringUTF8Ln( buff);
+    //int n = snprintf( buff, INPUT_COLS, "%05u ", pl.lineNumber);
+    //convertToUTF8( buff+n, pl.line, INPUT_COLS-n);
+    _iom->sendStringUTF8Ln( _code->getLineString( pl, true));
     pl = _code->getNextLine( pl);
   }
   _skipToNextOperator( _lexer_position);

@@ -126,6 +126,7 @@ unsigned long ESP32Host::init() {
 
 unsigned long ESP32Host::tick() {
   _checkSleepPin();
+  myLexer.tick();
   mySDManager.tick();
   myIOManager.tick();
   myLCDManager.tick();

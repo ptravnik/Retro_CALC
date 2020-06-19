@@ -18,6 +18,13 @@ const char RPN_SaveStatusFile2[] PROGMEM = "/_RPN_SaveStatus.bin";
 const char RPN_SaveConstantsFile[] PROGMEM = "/_RPN_Constants.txt";
 const char RPN_AutoexecFile[] PROGMEM = "/autotest.bas";
 
+const char SD_Error_NotInserted[] PROGMEM = "No SD card";
+const char SD_Error_NotMounted[] PROGMEM = "SD not mounted";
+const char SD_Error_FileNameTooLong[] PROGMEM = "Name too long";
+const char SD_Error_FileNotFound[] PROGMEM = "File not found";
+const char SD_Error_FileAccessError[] PROGMEM = "Cannot access file";
+const char SD_Error_OutOfMemory[] PROGMEM = "Out of memory";
+
 const char SD_Message0[] PROGMEM = "+ SD inserted";
 const char SD_Message1[] PROGMEM = "+ SD removed";
 const char SD_Message2[] PROGMEM = "+ SD mounted";
@@ -35,6 +42,8 @@ const char *const SD_Message_Table[] PROGMEM = {
   };
 const char SD_root[] PROGMEM = "/";
 const char ConstantFileFormat[] PROGMEM = "%05d CONST ";
+const char SD_DefaultExt1[] PROGMEM = ".bas";
+const char SD_DefaultExt2[] PROGMEM = ".BAS";
 
 //
 // Timer to check the SD status
@@ -85,6 +94,7 @@ bool SDManager::_detectSDCard(){
 //
 unsigned long SDManager::init(void *components[]){
   _iom = (IOManager *)components[UI_COMP_IOManager];
+  _kwds = (Keywords *)components[UI_COMP_Keywords];
   _vars = (Variables *)components[UI_COMP_Variables];
   _code = (ProgramCode *)components[UI_COMP_ProgramCode];
   _mbox = (MessageBox *)components[UI_COMP_MessageBox];
@@ -162,6 +172,7 @@ void SDManager::sleepOff(){
 //
 // TODO: load and save functionality here
 //
+
 static uint16_t _ReadLn_( File file, byte *ptr){
   uint16_t nBytes = 0;
   while(file.available()){
@@ -174,6 +185,7 @@ static uint16_t _ReadLn_( File file, byte *ptr){
   ptr[nBytes] = _NUL_;
   return nBytes;
 }
+
 void SDManager::loadState(){
   if(!SDInserted) return;
   if(!SDMounted) return;
@@ -624,3 +636,278 @@ size_t SDManager::_writeVariable(void *f, const char *fmt, size_t lineNumber, Va
 //    Serial.printf("Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
 //    Serial.printf("Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
 //}
+
+//
+// Opens a data file for reading
+//
+bool SDManager::openDataFileRead( const char *name){
+  if( _cardCheckMantra()) return true;
+
+  #ifdef __DEBUG
+  Serial.print("Will be reading: ");
+  Serial.println( name);
+  #endif
+  size_t len = strlen( name);
+
+  // first, try the absolute name; no memory allocation needed
+  if( len > 2 && name[0] == '/'){
+    _currentDataFile = SD.open( name);
+    return !_currentDataFile;
+  }
+  
+  // next, try directory + name
+  LastError = SD_Error_FileNotFound;
+  len += strlen( _vars->currentDir) + 5;
+  char *tmpName = (char *) malloc( len);
+  if( tmpName == NULL){
+    LastError = SD_Error_OutOfMemory;
+    return true;
+  }
+  strcpy( tmpName, _vars->currentDir);
+  while( *name == '/') name++;
+  strcat( tmpName, name);
+  if( _lookForFileMantra1( tmpName)) return LastError == NULL; // note it frees tmpName
+
+  // next, try directory + name + ".bas"
+  size_t eos = strlen( tmpName);
+  strcat( tmpName, SD_DefaultExt1);
+  if( _lookForFileMantra1( tmpName)) return LastError == NULL; // note it frees tmpName
+
+  // finally, try directory + name + ".BAS"
+  tmpName[eos] = _NUL_;
+  strcat( tmpName, SD_DefaultExt2);
+  if( _lookForFileMantra1( tmpName)) return LastError == NULL; // note it frees tmpName
+
+  // if we are here, nobody freed the memory
+  free( tmpName);
+  return true;
+}
+
+//
+// Opens a program file for reading; it must initialize the current program file
+//
+bool SDManager::openProgramFileRead( const char *name){
+  if( _cardCheckMantra()) return true;
+
+  // first, try the absolute name; no memory allocation needed
+  if( name == NULL){
+    _currentProgramFile = SD.open( _vars->currentFile);
+    if(!_currentProgramFile){
+      LastError = SD_Error_FileAccessError;
+      return true;
+    }
+    return false;
+  }
+
+  if( _locateBASICFile( name)) return true;
+  #ifdef __DEBUG
+  Serial.print("Will be loading: ");
+  Serial.println( _vars->currentFile);
+  #endif
+
+  if( !SD.exists(_vars->currentFile)){
+    LastError = SD_Error_FileNotFound;
+    return true;
+  }
+  _currentProgramFile = SD.open( _vars->currentFile);
+  if(!_currentProgramFile){
+    LastError = SD_Error_FileAccessError;
+    return true;
+  }
+  return false;
+}
+
+//
+// Opens a data file for writing
+//
+bool SDManager::openDataFileWrite( const char *name){
+  if( _cardCheckMantra()) return true;
+  uint16_t len = strlen( name);
+
+  // first, try the absolute name; no memory allocation needed
+  if( len > 1 && name[0] == '/'){
+    _currentDataFile = SD.open( name, "w");
+    if(!_currentDataFile){
+      LastError = SD_Error_FileAccessError;
+      return true;
+    }
+    return false;
+  }
+
+  len += strlen( _vars->currentDir) + 1;
+  char *tmpName = (char *) malloc( len);
+  if( tmpName == NULL){
+    LastError = SD_Error_OutOfMemory;
+    return true;
+  }
+  strcpy( tmpName, _vars->currentDir);
+  while( *name == '/') name++;
+  strcat( tmpName, name);
+
+  if( _directoryCheckMantra( tmpName)){
+    free( tmpName);
+    return true;
+  }
+  _currentDataFile = SD.open( tmpName, "w");
+  free( tmpName);
+  if(!_currentDataFile){
+    LastError = SD_Error_FileAccessError;
+    return true;
+  }
+  return false;
+}
+
+//
+// Opens a program file for writing
+//
+bool SDManager::openProgramFileWrite( const char *name){
+  if( _cardCheckMantra()) return true;
+  if( _formFileMantra( name, _vars->currentFile)) return true;
+  Serial.println("Current file set: ");
+  Serial.println(( const char*)_vars->currentFile);
+  if( SD.exists(_vars->currentFile)){
+    _currentProgramFile = SD.open( _vars->currentFile, "w");
+    if(!_currentProgramFile){
+      LastError = SD_Error_FileAccessError;
+      return true;
+    }
+    return false;
+  }
+  if( _directoryCheckMantra( _vars->currentFile)) return true;
+  _currentProgramFile = SD.open( _vars->currentFile, "w");
+  if(!_currentProgramFile){
+    LastError = SD_Error_FileAccessError;
+    return true;
+  }
+  return false;
+}
+
+//
+// Locates an existing BASIC file on disk
+//
+bool SDManager::_locateBASICFile( const char *name){
+  size_t len = strlen( name);
+  if( _nameLengthCheckMantra( len)) return true;
+
+  // first, try the absolute name; no memory allocation needed
+  if( SD.exists(name)){
+    strncat2( _vars->currentFile, name, CURRENT_FILE_LEN);
+    return false;
+  }
+  
+  // next, try directory + name
+  len += strlen( _vars->currentDir) + 5;
+  if( _nameLengthCheckMantra( len)) return true;
+  char *tmpName = (char *) malloc( len);
+  if( tmpName == NULL){
+    LastError = SD_Error_OutOfMemory;
+    return true;
+  }
+  strcpy( tmpName, _vars->currentDir);
+  while( *name == '/') name++;
+  strcat( tmpName, name);
+  if( _lookForFileMantra2( tmpName)) return false; // note it frees tmpName
+
+  // next, try directory + name + ".bas"
+  size_t eos = strlen( tmpName);
+  strcat( tmpName, SD_DefaultExt1);
+  if( _lookForFileMantra2( tmpName)) return false; // note it frees tmpName
+
+  // finally, try directory + name + ".BAS"
+  tmpName[eos] = _NUL_;
+  strcat( tmpName, SD_DefaultExt2);
+  if( _lookForFileMantra2( tmpName)) return false; // note it frees tmpName
+
+  // if we are here, nobody freed the memory
+  free( tmpName);
+  return true;
+}
+
+//
+// Short mantras for file handling
+//
+bool SDManager::_cardCheckMantra(){
+  LastError = SD_Error_NotInserted;
+  if(!SDInserted) return true;
+  LastError = SD_Error_NotMounted;
+  if(!SDMounted) return true;
+  LastError = NULL;
+  return false;
+}
+bool SDManager::_nameLengthCheckMantra( size_t len){
+  if( len <= CURRENT_FILE_LEN) return false;
+  LastError = SD_Error_FileNameTooLong;
+  return true;
+}
+bool SDManager::_lookForFileMantra1( char *tmpName){
+  #ifdef __DEBUG
+  Serial.print( "Looking for file: ");
+  Serial.println( tmpName);
+  #endif
+  if( !SD.exists(tmpName)) return false;
+  _currentDataFile = SD.open( tmpName);
+  free( tmpName);
+  if( !_currentDataFile) LastError = NULL;
+  return true;
+}
+bool SDManager::_lookForFileMantra2( char *tmpName){
+  #ifdef __DEBUG
+  Serial.print( "Looking for file: ");
+  Serial.println( tmpName);
+  #endif
+  if( !SD.exists(tmpName)) return false;
+  strncat2( _vars->currentFile, tmpName, CURRENT_FILE_LEN);
+  free( tmpName);
+  return true;
+}
+bool SDManager::_formFileMantra( const char *name, char *dest){
+  if( name == NULL) return false;
+  int16_t len = strlen( name);
+  if( len<2){
+    LastError = SD_Error_FileAccessError;
+    return true;
+  }
+  if( name[0] != '/') len += strlen( _vars->currentDir) + 1;
+  if( _nameLengthCheckMantra( len)) return true;
+  dest[0] = _NUL_;
+  if( name[0] != '/') strcat( dest, _vars->currentDir);
+  strcat( dest, name);
+  return false;
+}
+bool SDManager::_directoryCheckMantra( char *name){
+  if( SD.exists( name)) return false;
+  int16_t i = strlen( name) - 1;
+  while( i>0 && name[i] != '/') i--;
+  if( i<=0) return false; // no directory found
+  char tmp = name[i];
+  name[i] = _NUL_;
+  Serial.println("Will create directory: ");
+  Serial.println(name);
+  bool ret = SD.mkdir( (const char*)name);
+  name[i] = tmp;
+  if( !ret){
+    LastError = SD_Error_FileAccessError;
+    return true;
+  }
+  return false;
+}
+
+//
+// Read/write functions
+//
+uint16_t SDManager::readln( byte *buff){
+  uint16_t nBytes = 0;
+  while(_currentProgramFile.available()){
+    byte b = _currentProgramFile.read();
+    if( b==_CR_) continue;
+    if( b==_LF_) break;
+    buff[nBytes++] = b;
+    if( nBytes >= INPUT_LIMIT) break;
+  }
+  buff[nBytes] = _NUL_;
+  return nBytes;
+}
+uint16_t SDManager::writeln( char *buff){
+  uint16_t ret = _currentProgramFile.print( buff);
+  return ret + _currentProgramFile.print( "\r\n");
+}

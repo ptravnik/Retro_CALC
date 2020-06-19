@@ -10,33 +10,36 @@
 //#include "Lexer.hpp"
 
 //
-// Loads program code from file
+// Saves program code
 //
-static bool _operator_LOAD_( Lexer *lex){
-  return lex->operator_LOAD();
+static bool _operator_SAVE_( Lexer *lex){
+  return lex->operator_SAVE();
 }
 
-bool Lexer::operator_LOAD(){
+bool Lexer::operator_SAVE(){
+  #ifdef __DEBUG
+  Serial.println("SAVE called");
+  Serial.print("Evaluating: |");
+  Serial.println((char *)_lexer_position);
+  #endif
   // TODO: if this called from a running program, need to stop gracefully
-  // For now, LOAD is only allowed from parseInteractive.
+  // For now, SAVE is only allowed from parseInteractive.
   isRunning = false;
   _ignore_Blanks();
   _lexer_position = _epar->filenameParser.parse( _lexer_position);
-  bool rs = _sdm->openProgramFileRead( _epar->filenameParser.result?
-      (char *)_epar->filenameParser.Name(): NULL);
+  bool rs = _sdm->openProgramFileWrite( _epar->filenameParser.result?
+      (char *)_epar->filenameParser.Name(): NULL); 
   if( rs){
     if( _sdm->LastError != NULL) _mbox->setLabel( _sdm->LastError);
-    else _mbox->setLabel( "Not found");
     return true;
   }
-  _vars->removeAllVariables();
-  _code->clearProgram();
+  ProgramLine pl = _code->getFirstLine();
   while( true){
-    if( !_sdm->readln(_io_buffer)) break;
-    if( _code->addLine( _io_buffer)) break;
+    if( pl.line == NULL) break;
+    _sdm->writeln( (char *)_code->getLineString( pl, true));
+    pl = _code->getNextLine( pl);
   }
   _sdm->closeProgramFile();
-  _vars->setPrgCounter( _code->getFirstLine().lineNumber);
   _mbox->setLabel( ( _sdm->LastError == NULL)?
       LEX_Message_Loaded: _sdm->LastError);
   _skipToEOL(_lexer_position);

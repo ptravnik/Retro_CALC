@@ -144,7 +144,7 @@ void BasicConsole::processInput( bool silent) {
   _iom->sendLn();
   #endif
   _clb->copyToPrevious();
-  _lex->parse(_clb->getInput()); 
+  _lex->parseInteractive(_clb->getInput()); 
   switch(_lex->result){
     case _RESULT_STRING_:
       Serial.println("Console: String");

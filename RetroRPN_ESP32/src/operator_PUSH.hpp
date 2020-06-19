@@ -10,7 +10,7 @@
 //#include "Lexer.hpp"
 
 //
-// Creates a constant
+// Pushes value int stack
 //
 static bool _operator_PUSH_( Lexer *lex){
   return lex->operator_PUSH();

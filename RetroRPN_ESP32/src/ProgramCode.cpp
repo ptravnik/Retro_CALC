@@ -12,9 +12,11 @@
 
 void ProgramCode::init( void *components[]){
   _buffer = (byte *)malloc( BASIC_SPACE);
+  _iom = (IOManager *)components[UI_COMP_IOManager];
   _kwds = (Keywords *)components[UI_COMP_Keywords];
   _vars = (Variables *)components[UI_COMP_Variables];
   _epar = (ExpressionParser *)components[UI_COMP_ExpressionParser];
+  _io_buffer = _iom->getIOBuffer();
 }
 
 void ProgramCode::clearProgram(){
@@ -25,8 +27,9 @@ void ProgramCode::clearProgram(){
 
 //
 // Returns true if an error or no more memory
+// utf8 is set to true if the on-the-fly conversion is desired
 //
-bool ProgramCode::addLine( byte *line){
+bool ProgramCode::addLine( byte *line, bool utf8){
   byte *ptr = _epar->numberParser.parse( line);
   if( *ptr == _SP_) ptr++;
   if( _epar->numberParser.result != _RESULT_INTEGER_ ) return true;
@@ -38,7 +41,11 @@ bool ProgramCode::addLine( byte *line){
   uint16_t *linePtr = (uint16_t *)getBottom();
   linePtr[0] = (uint16_t)lineNum;
   linePtr[1] = (uint16_t)lineLen;
-  strcpy( (char*)getBottom() + 2*sizeof(uint16_t), (const char*)ptr);
+  byte *dest = getBottom() + 2*sizeof(uint16_t);
+  if( utf8)
+    convertToCP1251( dest, (const char*)ptr, lineLen+1);
+  else
+    strcpy( (char*)dest, (const char*)ptr);
   #ifdef __DEBUG
   Serial.print("Placed at ");
   Serial.print( _program_bottom);
@@ -78,9 +85,14 @@ ProgramLine ProgramCode::getNextLine( ProgramLine pl){
   return pl2;
 }
 
-// byte *getLineString( ProgramLine pl, byte *buffer){
-
-// }
+byte *ProgramCode::getLineString( ProgramLine pl, bool utf8){
+  int n = snprintf( (char *)_io_buffer, INPUT_COLS, "%05u ", pl.lineNumber);
+  if( utf8)
+    convertToUTF8( (char *)(_io_buffer+n), pl.line, INPUT_COLS-n);
+  else
+    strncat( (char *)_io_buffer, (const char *)pl.line, INPUT_COLS-n);
+  return _io_buffer;
+}
 
 
 // //

@@ -10,7 +10,7 @@
 //#include "Lexer.hpp"
 
 //
-// Implements comments
+// Rudimentary RUN; TODO
 //
 static bool _operator_RUN_( Lexer *lex){
   return lex->operator_RUN();

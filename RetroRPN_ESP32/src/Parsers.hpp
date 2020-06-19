@@ -93,7 +93,7 @@ class NameParser{
     };
     byte VarType();
   private:
-    byte _name[_MAX_IDENTIFIER_ + 2];
+    byte _name[_MAX_IDENTIFIER_ + 2]; // TODO: replace with dynamic
     byte _name_position;
     inline void _add_char_to_name( byte *ptr){
       _name[_name_position++] = *ptr;
@@ -105,26 +105,34 @@ class NameParser{
 // Encapsulates filename parsing
 // A valid filename contains symbols "/", "-" space, ",", "."
 //
-// class FilenameParser{
-//   public:
-//     bool result = false;
-//     byte *parse( byte *str);
-//     inline byte * Name(){
-//       return _name;
-//     }
-//     inline void _reset_name(){
-//       result = false;
-//       *_name = _NUL_;
-//       _name_position = 0;
-//     };
-//   private:
-//     byte _name[_MAX_IDENTIFIER_ + 2];
-//     byte _name_position;
-//     inline void _add_char_to_name( byte *ptr){
-//       _name[_name_position++] = *ptr;
-//       _name[_name_position] = _NUL_;
-//     };
-// };
+class FilenameParser{
+  public:
+    bool result = false;
+    inline void init( Variables *vars){
+      _vars = vars;
+    };
+    byte *parse( byte *str);
+    inline byte * Name(){
+      return _name;
+    }
+    inline void _reset_name(){
+      result = false;
+      *_name = _NUL_;
+      _name_position = 0;
+    };
+  private:
+    Variables *_vars;
+    byte _name[INPUT_COLS+1]; // TODO: replace with dynamic
+    byte *_parser_start = NULL;
+    byte *_parser_end = NULL;
+    void _locateTerminator( byte *start);
+    void _backpedalDirectory();
+    uint16_t _name_position;
+    inline void _add_char_to_name( byte *ptr){
+      _name[_name_position++] = *ptr;
+      _name[_name_position] = _NUL_;
+    };
+};
 
 //
 // Encapsulates algebraic formula parsing
@@ -136,6 +144,7 @@ class ExpressionParser{
     byte *parse( byte *str);
     NumberParser numberParser;
     NameParser nameParser;
+    FilenameParser filenameParser;
     Function *lastMathFunction;
     inline byte *_getCurrentPosition(){
       return _parser_position;

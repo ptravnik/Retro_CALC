@@ -168,7 +168,7 @@ void RPNCalculator::_processCommand(byte c){
     default:
       break;
   }
-  _lex->parse(_clb->getInput());
+  _lex->parseInteractive(_clb->getInput());
   switch(_lex->result){
     case _RESULT_INTEGER_  :
     case _RESULT_REAL_     :
@@ -212,7 +212,7 @@ void RPNCalculator::processInput( bool silent) {
     return;
   }
   _clb->copyToPrevious();
-  _lex->parse(_clb->getInput()); 
+  _lex->parseInteractive(_clb->getInput()); 
   switch(_lex->result){
     case _RESULT_INTEGER_:
     case _RESULT_REAL_:

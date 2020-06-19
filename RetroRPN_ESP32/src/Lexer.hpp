@@ -17,12 +17,17 @@
 
 class Lexer{
   public:
+    bool isRunning = false;
     byte currentUI = UI_UNDEFINED;
     byte nextUI = UI_UNDEFINED;
     Keyword *lastKeyword = NULL;
     VariableToken lastVariable = 0;
     byte result = _RESULT_UNDEFINED_;
     void init( void *components[]);
+    inline unsigned long tick(){ return millis();};
+    inline byte *parseInteractive( byte *str){
+      return parse( str);
+    };
     byte *parse( byte *str);
 
     // Operator declarations here
@@ -39,12 +44,11 @@ class Lexer{
     bool operator_LIST();
     bool operator_LIST_Program();
     bool operator_LIST_Vars( bool constants);
-
     bool operator_LOAD();
-    bool operator_LOAD_Program();
-    bool operator_LOAD_Vars( bool constants);
 
     bool operator_MEM();
+
+    bool operator_NEW();
 
     bool operator_REM();
 
@@ -52,6 +56,7 @@ class Lexer{
 
     bool operator_RUN();
 
+    bool operator_SAVE();
     bool operator_STORE();
     bool operator_STORE_Vars( bool constants);
 
@@ -99,6 +104,8 @@ class Lexer{
     bool _check_NextToken( byte c);
     bool _peek_NextToken( byte c);
     byte _parseList( byte maxVal=10);
+
+    void _saveBASICFile( const char *name);
 };
 
 #endif // _LEXER_HPP

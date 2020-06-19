@@ -15,6 +15,7 @@
 #define RPN_PI            3.14159265359
 #define NEAR_ZERO         1.0e-100
 #define CURRENT_DIR_LEN   255
+#define CURRENT_FILE_LEN  255
 
 #define VARTYPE_NONE      0
 #define VARTYPE_NUMBER    1
@@ -51,6 +52,7 @@ class Variables{
     size_t _standard_top = VARIABLE_SPACE;
     byte *_buffer = NULL;
     char *currentDir;
+    char *currentFile;
     byte *scrMessage;
     byte *rpnLabelX;
     byte *rpnLabelY;

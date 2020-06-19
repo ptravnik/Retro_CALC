@@ -10,7 +10,7 @@
 //#include "Lexer.hpp"
 
 //
-// Creates a constant
+// Sets the angle mode for trigonometry
 //
 static bool _operator_AMODE_( Lexer *lex){
   return lex->operator_AMODE();

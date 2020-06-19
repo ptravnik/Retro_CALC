@@ -22,8 +22,6 @@
 
 #include "./src/Lexer.hpp"
 
-#define INPUT_COLS    256
-#define INPUT_LIMIT   255
 #define HSCROLL_LIMIT  18
 
 // Move must be one less than RPN_STACK times sizeof( double)

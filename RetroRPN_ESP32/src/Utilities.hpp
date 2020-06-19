@@ -89,6 +89,10 @@ bool IsNameStarter(byte b);
 inline bool IsNameStarter(char b){
   return IsNameStarter((byte)b);
 };
+bool IsFilenameStarter(byte b);
+inline bool IsFilenameStarter(char b){
+  return IsFilenameStarter((byte)b);
+};
 
 //
 // A valid name can contain an underscore,
@@ -106,18 +110,22 @@ inline bool IsNameCharacter(char b){
   if(IsDigit(b)) return true;
   return (b == '%') || (b=='$');
 };
+inline bool IsFilenameCharacter(byte b){
+  if(IsFilenameStarter( b)) return true;
+  return b == _SP_;
+};
+inline bool IsFilenameCharacter(char b){
+  if(IsFilenameStarter( (byte)b)) return true;
+  return b == _SP_;
+};
 
 //
-// Returns true if a valid number terminator
+// Returns true if a valid terminator
 //
 bool IsNumberTerm(byte b);
 inline bool IsNumberTerm(char b){
   return IsNumberTerm((byte)b);
 };
-
-//
-// Returns true if a valid name terminator
-//
 bool IsNameTerm(byte b);
 inline bool IsNameTerm(char b){
   return IsNameTerm((byte)b);

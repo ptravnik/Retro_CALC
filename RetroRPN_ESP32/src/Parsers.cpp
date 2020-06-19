@@ -436,12 +436,71 @@ inline byte NameParser::VarType(){
 }
 
 //
+// Gets the filename string into list memory
+//
+byte *FilenameParser::parse( byte *str){
+  _reset_name();
+  _locateTerminator( str);
+  if( !IsOperatorTerm( *_parser_end)) return _parser_start;
+  size_t len = _parser_end - _parser_start;
+  if( len == 0 ) return _parser_start;
+
+  // up one directory
+  if( IsToken( _parser_start, "../", false)){
+    strncat2( (char*)_name, (const char *)_vars->currentDir, INPUT_COLS+1);
+    while( IsToken( _parser_start, "../", false)){
+      _backpedalDirectory();
+      _parser_start += 3;
+    }
+  }
+
+  // use the same directory
+  if( IsToken( _parser_start, "./", false)){
+    strncat2( (char*)_name, (const char *)_vars->currentDir, INPUT_COLS+1);
+    _parser_start += 2;
+  }
+
+  len = _parser_end - _parser_start;
+  if( len == 0 ) return _parser_start;
+  strncat( (char*)_name, (const char *)_parser_start, INPUT_COLS - len);
+  result = true;
+  return _parser_end;
+}
+
+//
+// Locates a valid terminator for filename
+//
+void FilenameParser::_locateTerminator( byte *start){
+  _parser_start = start;
+  _parser_end = _parser_start;
+  if( !IsFilenameStarter( *_parser_end)) return;
+  while( IsFilenameCharacter( *_parser_end )) _parser_end++;
+}
+
+//
+// Locates a previous directory marker and chops the string at it
+//
+void FilenameParser::_backpedalDirectory(){
+  int16_t end = strlen( _name)-1;
+  while( end >= 0 && _name[end] == '/') end--;
+  if( end<=0) return;
+  end--;
+  while( end >= 0 && _name[end] != '/') end--;
+  if( end<=0){
+    _name[0] = _NUL_;
+    return;
+  }
+  _name[end+1] = _NUL_;
+}
+
+//
 // Inits ExpressionParser
 //
 void ExpressionParser::init(void *components[]){
   _kwds = (Keywords *)components[UI_COMP_Keywords];
   _vars = (Variables *)components[UI_COMP_Variables];
   _funs = (Functions *)components[UI_COMP_Functions];
+  filenameParser.init( _vars);
 }
 
 //

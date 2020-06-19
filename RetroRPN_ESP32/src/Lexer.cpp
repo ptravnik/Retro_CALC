@@ -16,6 +16,7 @@ const char LEX_Message_VariableList[] PROGMEM = "Variables:";
 const char LEX_Message_ConstantsList[] PROGMEM = "Constants:";
 const char LEX_Message_ProgMemory[] PROGMEM = "Program Memory:";
 const char LEX_Message_VarsMemory[] PROGMEM = "Variable Memory:";
+const char LEX_Message_Loaded[] PROGMEM = "Loaded";
 const char LEX_Message_Saved[] PROGMEM = "Saved";
 const char LEX_Message_SumUpdated[] PROGMEM = "Sum Updated";
 const char LEX_Message_N[] PROGMEM = "N:";
@@ -24,7 +25,10 @@ const char LEX_Message_Mean[] PROGMEM = "Mean:";
 const char LEX_Message_StdError[] PROGMEM = "Std Error:";
 const char LEX_Message_Gain[] PROGMEM = "Gain:";
 const char LEX_Message_Offset[] PROGMEM = "Offset:";
+const char LEX_Message_NewProgram[] PROGMEM = "New program";
 
+const char LEX_Standard_Variables[] PROGMEM = "/_VARS_.bas";
+const char LEX_Standard_Constants[] PROGMEM = "/_CONST_.bas";
 
 // add operator includes here
 #include "operator_AMODE.hpp"
@@ -48,6 +52,7 @@ static bool _operator_FMAN_( Lexer *lex){
 #include "operator_LIST.hpp"
 #include "operator_LOAD.hpp"
 #include "operator_MEM.hpp"
+#include "operator_NEW.hpp"
 #include "operator_PUSH.hpp"
 #include "operator_REM.hpp"
 
@@ -58,6 +63,7 @@ static bool _operator_RPN_( Lexer *lex){
 }
 
 #include "operator_RUN.hpp"
+#include "operator_SAVE.hpp"
 #include "operator_STORE.hpp"
 #include "operator_SUM.hpp"
 #include "operator_SUMXY.hpp"
@@ -85,12 +91,15 @@ void Lexer::init(void *components[]){
   _kwds->getKeywordById( _OPR_FMAN_KW)->operator_ptr = (void *)_operator_FMAN_;
   _kwds->getKeywordById( _OPR_LET_KW)->operator_ptr = (void *)_operator_LET_;
   _kwds->getKeywordById( _OPR_LIST_KW)->operator_ptr = (void *)_operator_LIST_;
+  _kwds->getKeywordById( _OPR_LOAD_KW)->operator_ptr = (void *)_operator_LOAD_;
   _kwds->getKeywordById( _OPR_MEM_KW)->operator_ptr = (void *)_operator_MEM_;
+  _kwds->getKeywordById( _OPR_NEW_KW)->operator_ptr = (void *)_operator_NEW_;
   _kwds->getKeywordById( _OPR_REM_KW)->operator_ptr = (void *)_operator_REM_;
   _kwds->getKeywordById( _OPR_REMALT_KW)->operator_ptr = (void *)_operator_REM_;
   _kwds->getKeywordById( _OPR_PUSH_KW)->operator_ptr = (void *)_operator_PUSH_;
   _kwds->getKeywordById( _OPR_RPN_KW)->operator_ptr = (void *)_operator_RPN_;
   _kwds->getKeywordById( _OPR_RUN_KW)->operator_ptr = (void *)_operator_RUN_;
+  _kwds->getKeywordById( _OPR_SAVE_KW)->operator_ptr = (void *)_operator_SAVE_;
   _kwds->getKeywordById( _OPR_STORE_KW)->operator_ptr = (void *)_operator_STORE_;
   _kwds->getKeywordById( _OPR_SUM_KW)->operator_ptr = (void *)_operator_SUM_;
   _kwds->getKeywordById( _OPR_SUMXY_KW)->operator_ptr = (void *)_operator_SUMXY_;

@@ -676,6 +676,13 @@ const char _OPR_in2mm[] PROGMEM = "in2mm";
 //#define _OPR_SFT2SM_KW          221
 const char _OPR_SFT2SM[] PROGMEM = "SFT2SM";
 const char _OPR_sft2sm[] PROGMEM = "sft2sm";
+//#define _OPR_R2D_KW             222
+const char _OPR_R2D[] PROGMEM = "R2D";
+const char _OPR_r2d[] PROGMEM = "r2d";
+//#define _OPR_D2R_KW             223
+const char _OPR_D2R[] PROGMEM = "D2R";
+const char _OPR_d2r[] PROGMEM = "d2r";
+
 
 
 void Keywords::init(){
@@ -901,7 +908,9 @@ void Keywords::init(){
   _addKeyword( _OPR_MI2KM, _OPR_mi2km);                // 219
   _addKeyword( _OPR_IN2MM, _OPR_in2mm);                // 220
   _addKeyword( _OPR_SFT2SM, _OPR_sft2sm);              // 221
-  //_addKeyword( Add here, Add here);                  // 222
+  _addKeyword( _OPR_R2D, _OPR_r2d);                    // 222
+  _addKeyword( _OPR_D2R, _OPR_d2r);                    // 223
+  //_addKeyword( Add here, Add here);                  // 224
 };
 
 Keyword *Keywords::getKeyword(byte *str){

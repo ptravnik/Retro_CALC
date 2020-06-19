@@ -95,7 +95,7 @@
 #define _KEYWORD_      4
 
 #define _FUN_Variable_    -1
-#define _FUNCTION_COUNT    78
+#define _FUNCTION_COUNT    80
 
 // Keywords
 #define _OPR_ABS_KW             0
@@ -320,7 +320,9 @@
 #define _OPR_MI2KM_KW           219
 #define _OPR_IN2MM_KW           220
 #define _OPR_SFT2SM_KW          221
-#define _OPERATOR_COUNT         222
+#define _OPR_R2D_KW             222
+#define _OPR_D2R_KW             223
+#define _OPERATOR_COUNT         224
 
 #define RPN_STACK               20
 

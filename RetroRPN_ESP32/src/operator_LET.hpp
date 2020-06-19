@@ -10,7 +10,7 @@
 //#include "Lexer.hpp"
 
 //
-// Creates a constant
+// Creates a variable
 //
 static bool _operator_LET_( Lexer *lex){
   return lex->operator_LET();

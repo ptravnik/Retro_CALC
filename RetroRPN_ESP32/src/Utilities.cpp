@@ -51,6 +51,19 @@ bool IsNameStarter(byte b){
   return (b == _YO_) || (b == _YO_C_); // Yo
 }
 
+//
+// A filename can start with a forward slash, a dot, an underscore,
+// a decimal or a character. It may not contain leading spaces.
+// Only Latin letters are allowed to maintain compatibility.
+//
+bool IsFilenameStarter(byte b){
+  const char list[] = "._0123456789/\"\'";
+  if( b == _NUL_) return false;
+  if( _ALPHA_ <= b && b <= _ZULU_) return true; // a-z
+  if( _ALPHA_C_ <= b && b <= _ZULU_C_) return true; // A-Z
+  return strchr(list, (char)b) != NULL;
+}
+
 bool IsEndStatement( byte b){
   if( b == _NUL_) return true;
   if( b == _CR_) return true;
@@ -243,70 +256,3 @@ byte *convertToCP1251( byte *buff, const char *message, size_t limit){
   // safe string termination
   return _addCh(ptr1, ++ptr_limit, (byte)0);
 }
-
-
-//#define MAX_COMMAND 256
-//static char Command[MAX_COMMAND];
-//static char Command2[MAX_COMMAND];
-//static size_t Command_Position = 0;
-//  c = host.iom.input();
-//  if( !c){
-//    delay(5);
-//    return;
-//  }
-//  if(c>=32) Serial.write(c);
-//  if(c==_CR_ || c==_LF_) Serial.println();
-//  host.rpn.sendChar((byte)c);
-
-//  if( Command_Position < MAX_COMMAND-1){
-//    Command[ Command_Position++] = c;    
-//    Command[ Command_Position] = 0;    
-//  }
-//  if( c == 0x0D || c == 0x0A){
-//    Serial.println(Command);
-//    //lcd.sendStringUTF8( Command);
-//    convertToCP1251( (byte *)Command2, Command, MAX_COMMAND);
-//    ExecuteCommand( Command2);
-//    Command_Position = 0;
-//    Command[0] = 0;
-//  }
-//void ExecuteCommand( const char *comm){
-//  if( IsToken( (char *)comm, "$b", false)){
-//    Serial.println("To bottom line");
-//    lcd.cursorBottom();
-//    return;
-//  }
-
-//  if( IsToken( (char *)comm, "$su", false)){
-//    Serial.println("Scroll up");
-//    lcd.scrollUp(1);
-//    return;
-//  }
-
-//  if( IsToken( (char *)comm, "$sd", false)){
-//    Serial.println("Scroll down");
-//    lcd.scrollDown(1);
-//    return;
-//  }
-//  if( IsToken( (char *)comm, "help")){
-//    lcd.sendString( comm);
-//    lcd.sendString("\rcls - clear screen\r");
-//    lcd.sendString("wrap=on/off\r");
-//    lcd.sendString("scroll=on/off\r");
-//    lcd.sendString("$h or $b\r");
-//    lcd.sendString("$u/d/l/r - move cursor\r");
-//    lcd.sendString("$su/d - scroll up/down\r");
-//    Serial.println("cls - clear screen");
-//    Serial.println("wrap=on/off");
-//    Serial.println("scroll=on/off");
-//    Serial.println("$h - home");
-//    Serial.println("$b - bottom line");
-//    Serial.println("$u/d - cursor up/down");
-//    Serial.println("$l/r - cursor left/right");
-//    Serial.println("$su/d - scroll up/down");
-//    return;
-//  }
-//  for( size_t i=0; i<strlen(comm); i++){
-//    host.rpn.sendChar( (byte)comm[i]);
-//  }
-//}

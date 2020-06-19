@@ -10,7 +10,7 @@
 //#include "Lexer.hpp"
 
 //
-// Implements comments
+// Reports memory usage
 //
 static bool _operator_MEM_( Lexer *lex){
   return lex->operator_MEM();

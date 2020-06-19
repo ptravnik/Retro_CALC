@@ -42,6 +42,7 @@ class SDManager{
     volatile bool SDMounted = false;
     volatile bool SDPrevMounted = false;
     volatile uint64_t cardSize = 0;
+    const char *LastError = NULL;
 
     unsigned long init(void *components[]);
     unsigned long tick();
@@ -53,6 +54,7 @@ class SDManager{
     void sleepOff();
     void loadState();
     void saveState();
+
     void storeVariables();
     void storeConstants();
     void listDir();
@@ -67,13 +69,31 @@ class SDManager{
       SDPrevMounted = SDMounted;
       return false;
     }
+
+    bool openProgramFileRead( const char *name);
+    bool openProgramFileWrite( const char *name);
+    bool openDataFileRead( const char *name);
+    bool openDataFileWrite( const char *name);
+    uint16_t readln( byte *buff);
+    uint16_t writeln( char *buff);
+    inline void closeProgramFile(){
+      _currentProgramFile.close();
+    };
+    inline void closeDataFile(){
+      _currentDataFile.close();
+    };
+
   private:
     byte *_io_buffer;
     IOManager *_iom;
+    Keywords *_kwds;
     Variables *_vars;
     ProgramCode *_code;
     MessageBox *_mbox;
     ExpressionParser *_epar;
+    File _currentProgramFile;
+    File _currentDataFile;
+
     void _checkSDPin();
     void _checkRoot();
     File _getCurrentDir();
@@ -84,6 +104,15 @@ class SDManager{
     bool _readString( void *f, byte *buff, size_t limit);
     bool _writeString( void *f, byte *v);
     size_t _writeVariable(void *f, const char *fmt, size_t lineNumber, VariableToken vt);
+
+    bool _locateBASICFile( const char *name);
+    bool _locateExistingFile( const char *name);
+    bool _cardCheckMantra();
+    bool _nameLengthCheckMantra( size_t len);
+    bool _lookForFileMantra1( char *tmpName);
+    bool _lookForFileMantra2( char *tmpName);
+    bool _formFileMantra( const char *name, char *dest);
+    bool _directoryCheckMantra( char *name);
 };
 
 #endif // SDMANAGER_HPP

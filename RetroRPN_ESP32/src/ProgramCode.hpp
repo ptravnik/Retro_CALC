@@ -10,6 +10,7 @@
 #define _PROGRAMCODE_HPP
 
 #include "Parsers.hpp"
+#include "IOManager.hpp"
 
 #define BASIC_SPACE       64000
 #define LineNumber        uint16_t
@@ -40,10 +41,10 @@ class ProgramCode{
     inline byte *getBottom(){ return _buffer + _program_bottom;};
     inline size_t getMemoryAvailable(){ return  BASIC_SPACE - _program_bottom  - 2*sizeof(uint16_t);};
     void clearProgram();
-    bool addLine( byte *line);
+    bool addLine( byte *line, bool utf8=true);
     ProgramLine getFirstLine();
     ProgramLine getNextLine( ProgramLine pl);
-
+    byte *getLineString( ProgramLine pl, bool utf8=true);
 
     // VariableToken placeNewVariable( const char *name, byte type=VARTYPE_NUMBER,
     //         size_t row_size = 1, size_t column_size = 1);
@@ -136,6 +137,8 @@ class ProgramCode{
     // };
 
   private:
+    byte *_io_buffer;
+    IOManager *_iom;
     Keywords *_kwds;
     Variables *_vars;
     ExpressionParser *_epar;

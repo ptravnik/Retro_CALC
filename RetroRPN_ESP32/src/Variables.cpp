@@ -42,6 +42,7 @@ const char _VAR_Offset[] PROGMEM = "Offset";
 
 const char _VAR_lcdPWM[] PROGMEM = "lcdPWM%";
 const char _VAR_current_dir[] PROGMEM = "current_dir$";
+const char _VAR_current_file[] PROGMEM = "current_file$";
 const char _VAR_scrMessage[] PROGMEM = "scrMessage$";
 const char _VAR_rpnLabelX[] PROGMEM = "rpnLabelX$";
 const char _VAR_rpnLabelY[] PROGMEM = "rpnLabelY$";
@@ -65,6 +66,7 @@ const char _CON_varMemory[] PROGMEM = "varMemory%";
 const char _CON_prgMemory[] PROGMEM = "prgMemory%";
 
 const char SD_root2[] PROGMEM = "/";
+const char SD_default_file[] PROGMEM = "/autotest.bas";
 
 void Variables::init( void *components[]){
   _buffer = (byte *)malloc( VARIABLE_SPACE);
@@ -88,6 +90,8 @@ void Variables::init( void *components[]){
   offset = (double *)_getDataPtr( _placeNumber( false, _VAR_Offset, 0.0));
   currentDir = (char *)_getDataPtr( _placeString( false,
       _VAR_current_dir, CURRENT_DIR_LEN, SD_root2));
+  currentFile = (char *)_getDataPtr( _placeString( false,
+      _VAR_current_file, CURRENT_FILE_LEN, SD_default_file));
   scrMessage = _getDataPtr( _placeString( false, _VAR_scrMessage, SCR_COLS));
   rpnLabelX = _getDataPtr( _placeString( false, _VAR_rpnLabelX, SCR_COLS));
   rpnLabelY = _getDataPtr( _placeString( false, _VAR_rpnLabelY, SCR_COLS));
@@ -559,7 +563,7 @@ VariableToken Variables::_placeString( bool isConst,
   uint16_t *ptr = (uint16_t *)_getVarBlockPtr( vt);
   *ptr++ = length;
   char *dataPtr = (char *)ptr;
-  if( value) strncat2( dataPtr, value, length);
+  if( value) strncat2( dataPtr, value, length-1);
   else *dataPtr = _NUL_;
   return vt;
 }
