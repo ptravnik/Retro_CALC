@@ -28,6 +28,7 @@ static TerminalBox myTerminalBox;
 static FileManager myFileManager;
 static RPNCalculator myRPNCalculator;
 static BasicConsole myBasicConsole;
+static Editor myEditor;
 
 
 // Damn VSCode does not understand UTF8 !
@@ -83,6 +84,7 @@ unsigned long ESP32Host::init() {
   _host_Components[UI_COMP_FileManager] = &myFileManager;
   _host_Components[UI_COMP_RPNCalculator] = &myRPNCalculator;
   _host_Components[UI_COMP_BasicConsole] = &myBasicConsole;
+  _host_Components[UI_COMP_Editor] = &myEditor;
 
   // Warm-up LCD, show splash, while showing splash, do the rest
   myLCDManager.init(_host_Components);
@@ -113,6 +115,7 @@ unsigned long ESP32Host::init() {
   myTerminalBox.init(_host_Components);
   myFileManager.init(_host_Components);
   myBasicConsole.init(_host_Components);
+  myEditor.init(_host_Components);
   myRPNCalculator.init(_host_Components);
   mySDManager.loadState();
   
@@ -138,6 +141,8 @@ unsigned long ESP32Host::tick() {
       myFileManager.tick();
       break;
     case UI_EDITOR:
+      myEditor.tick();
+      break;
     case UI_CONSOLE:
       myBasicConsole.tick();
     default:
@@ -194,6 +199,8 @@ void ESP32Host::show(){
       myFileManager.show();
       break;
     case UI_EDITOR:
+      myEditor.show();
+      break;
     case UI_CONSOLE:
       myBasicConsole.show();
       break;
@@ -212,6 +219,8 @@ void ESP32Host::redraw(){
       myFileManager.redraw();
       break;
     case UI_EDITOR:
+      myEditor.redraw();
+      break;
     case UI_CONSOLE:
       myBasicConsole.redraw();
     default:

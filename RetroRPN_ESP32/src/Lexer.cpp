@@ -12,12 +12,14 @@
 
 const char LEX_Error_OutOfMemory[] PROGMEM = "Err: Out of memory";
 const char LEX_Warning_ReadOnly[] PROGMEM = "Warn: Read-only";
+const char LEX_Warning_NoSuchFolder[] PROGMEM = "Warn: No such folder";
 const char LEX_Message_VariableList[] PROGMEM = "Variables:";
 const char LEX_Message_ConstantsList[] PROGMEM = "Constants:";
 const char LEX_Message_ProgMemory[] PROGMEM = "Program Memory:";
 const char LEX_Message_VarsMemory[] PROGMEM = "Variable Memory:";
 const char LEX_Message_Loaded[] PROGMEM = "Loaded";
 const char LEX_Message_Saved[] PROGMEM = "Saved";
+const char LEX_Message_Deleted[] PROGMEM = "Deleted";
 const char LEX_Message_SumUpdated[] PROGMEM = "Sum Updated";
 const char LEX_Message_N[] PROGMEM = "N:";
 const char LEX_Message_stDev[] PROGMEM = "StDev:";
@@ -26,6 +28,7 @@ const char LEX_Message_StdError[] PROGMEM = "Std Error:";
 const char LEX_Message_Gain[] PROGMEM = "Gain:";
 const char LEX_Message_Offset[] PROGMEM = "Offset:";
 const char LEX_Message_NewProgram[] PROGMEM = "New program";
+const char LEX_Message_FolderSet[] PROGMEM = "Folder set";
 
 const char LEX_Standard_Variables[] PROGMEM = "/_VARS_.bas";
 const char LEX_Standard_Constants[] PROGMEM = "/_CONST_.bas";
@@ -42,6 +45,16 @@ static bool _operator_CLI_( Lexer *lex){
 
 #include "operator_CONST.hpp"
 
+#include "operator_DATA.hpp"
+#include "operator_DELETE.hpp"
+#include "operator_DIRECTORY.hpp"
+
+static bool _operator_EDIT_( Lexer *lex){
+  if( lex->currentUI != UI_EDITOR) lex->nextUI = UI_EDITOR;
+  lex->_skipToNextOperator();
+  return true;
+}
+
 static bool _operator_FMAN_( Lexer *lex){
   if( lex->currentUI != UI_FILEMAN) lex->nextUI = UI_FILEMAN;
   lex->_skipToNextOperator();
@@ -55,6 +68,7 @@ static bool _operator_FMAN_( Lexer *lex){
 #include "operator_NEW.hpp"
 #include "operator_PUSH.hpp"
 #include "operator_REM.hpp"
+#include "operator_RESTORE.hpp"
 
 static bool _operator_RPN_( Lexer *lex){
   if( lex->currentUI != UI_RPNCALC) lex->nextUI = UI_RPNCALC;
@@ -88,6 +102,11 @@ void Lexer::init(void *components[]){
   _kwds->getKeywordById( _OPR_CLEAR_KW)->operator_ptr = (void *)_operator_CLEAR_;
   _kwds->getKeywordById( _OPR_CLI_KW)->operator_ptr = (void *)_operator_CLI_;
   _kwds->getKeywordById( _OPR_CONST_KW)->operator_ptr = (void *)_operator_CONST_;
+  _kwds->getKeywordById( _OPR_DATA_KW)->operator_ptr = (void *)_operator_DATA_;
+  _kwds->getKeywordById( _OPR_DELETE_KW)->operator_ptr = (void *)_operator_DELETE_;
+  _kwds->getKeywordById( _OPR_DIR_KW)->operator_ptr = (void *)_operator_DIR_;
+  _kwds->getKeywordById( _OPR_DIRECTORY_KW)->operator_ptr = (void *)_operator_DIRECTORY_;
+  _kwds->getKeywordById( _OPR_EDIT_KW)->operator_ptr = (void *)_operator_EDIT_;
   _kwds->getKeywordById( _OPR_FMAN_KW)->operator_ptr = (void *)_operator_FMAN_;
   _kwds->getKeywordById( _OPR_LET_KW)->operator_ptr = (void *)_operator_LET_;
   _kwds->getKeywordById( _OPR_LIST_KW)->operator_ptr = (void *)_operator_LIST_;
@@ -97,6 +116,7 @@ void Lexer::init(void *components[]){
   _kwds->getKeywordById( _OPR_REM_KW)->operator_ptr = (void *)_operator_REM_;
   _kwds->getKeywordById( _OPR_REMALT_KW)->operator_ptr = (void *)_operator_REM_;
   _kwds->getKeywordById( _OPR_PUSH_KW)->operator_ptr = (void *)_operator_PUSH_;
+  _kwds->getKeywordById( _OPR_RESTORE_KW)->operator_ptr = (void *)_operator_RESTORE_;
   _kwds->getKeywordById( _OPR_RPN_KW)->operator_ptr = (void *)_operator_RPN_;
   _kwds->getKeywordById( _OPR_RUN_KW)->operator_ptr = (void *)_operator_RUN_;
   _kwds->getKeywordById( _OPR_SAVE_KW)->operator_ptr = (void *)_operator_SAVE_;

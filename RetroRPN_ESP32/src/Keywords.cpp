@@ -167,8 +167,8 @@ const char _OPR_dim[] PROGMEM = "dim";
 const char _OPR_DIR[] PROGMEM = "DIR";
 const char _OPR_dir[] PROGMEM = "dir";
 //#define _OPR_DIRECTORY_KW       52
-const char _OPR_DIRECTORY[] PROGMEM = "DIRECTORY";
-const char _OPR_directory[] PROGMEM = "directory";
+const char _OPR_DIRECTORY[] PROGMEM = "CD";
+const char _OPR_directory[] PROGMEM = "cd";
 //#define _OPR_DIV_KW             53
 const char _OPR_DIV[] PROGMEM = "DIV";
 const char _OPR_div[] PROGMEM = "div";
@@ -682,7 +682,15 @@ const char _OPR_r2d[] PROGMEM = "r2d";
 //#define _OPR_D2R_KW             223
 const char _OPR_D2R[] PROGMEM = "D2R";
 const char _OPR_d2r[] PROGMEM = "d2r";
-
+//#define _OPR_DELETE_KW          224
+const char _OPR_DELETE[] PROGMEM = "DELETE";
+const char _OPR_delete[] PROGMEM = "delete";
+//#define _OPR_MOVE_KW            225
+const char _OPR_MOVE[] PROGMEM = "MOVE";
+const char _OPR_move[] PROGMEM = "move";
+//#define _OPR_COPY_KW            226
+const char _OPR_COPY[] PROGMEM = "COPY";
+const char _OPR_copy[] PROGMEM = "copy";
 
 
 void Keywords::init(){
@@ -910,7 +918,10 @@ void Keywords::init(){
   _addKeyword( _OPR_SFT2SM, _OPR_sft2sm);              // 221
   _addKeyword( _OPR_R2D, _OPR_r2d);                    // 222
   _addKeyword( _OPR_D2R, _OPR_d2r);                    // 223
-  //_addKeyword( Add here, Add here);                  // 224
+  _addKeyword( _OPR_DELETE, _OPR_delete);              // 224
+  _addKeyword( _OPR_MOVE, _OPR_move);                  // 225
+  _addKeyword( _OPR_COPY, _OPR_copy);                  // 226
+  //_addKeyword( Add here, Add here);                  // 227
 };
 
 Keyword *Keywords::getKeyword(byte *str){

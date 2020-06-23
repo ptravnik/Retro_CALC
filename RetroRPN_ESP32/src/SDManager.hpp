@@ -55,9 +55,6 @@ class SDManager{
     void loadState();
     void saveState();
 
-    void storeVariables();
-    void storeConstants();
-    void listDir();
     void readFile( const char * path);
     void writeFile( const char * path, const char * message);
     void readRPNStatus( byte *inp, byte *last_inp, uint16_t *pos);
@@ -70,17 +67,17 @@ class SDManager{
       return false;
     }
 
+    bool checkExists( const char *name);
+    void listDir( char *name=NULL);
+    bool deleteEntity( const char *name);
     bool openProgramFileRead( const char *name);
     bool openProgramFileWrite( const char *name);
     bool openDataFileRead( const char *name);
     bool openDataFileWrite( const char *name);
     uint16_t readln( byte *buff);
-    uint16_t writeln( char *buff);
-    inline void closeProgramFile(){
-      _currentProgramFile.close();
-    };
-    inline void closeDataFile(){
-      _currentDataFile.close();
+    uint16_t print( char *buff, bool cr=true);
+    inline void closeFile(){
+      _currentFile.close();
     };
 
   private:
@@ -91,28 +88,28 @@ class SDManager{
     ProgramCode *_code;
     MessageBox *_mbox;
     ExpressionParser *_epar;
-    File _currentProgramFile;
-    File _currentDataFile;
+    File _currentFile;
 
     void _checkSDPin();
     void _checkRoot();
     File _getCurrentDir();
     bool _detectSDCard();
+
     void _readBuffer( void *f);
     bool _readDouble( void *f, double *v);
     bool _writeDouble( void *f, double v);
     bool _readString( void *f, byte *buff, size_t limit);
     bool _writeString( void *f, byte *v);
-    size_t _writeVariable(void *f, const char *fmt, size_t lineNumber, VariableToken vt);
 
     bool _locateBASICFile( const char *name);
     bool _locateExistingFile( const char *name);
     bool _cardCheckMantra();
+    char *_stripFolders( const char *name);
     bool _nameLengthCheckMantra( size_t len);
     bool _lookForFileMantra1( char *tmpName);
     bool _lookForFileMantra2( char *tmpName);
     bool _formFileMantra( const char *name, char *dest);
-    bool _directoryCheckMantra( char *name);
+    bool _checkDirectoryStructure( char *name);
 };
 
 #endif // SDMANAGER_HPP

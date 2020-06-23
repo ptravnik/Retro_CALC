@@ -24,6 +24,7 @@ const char SD_Error_FileNameTooLong[] PROGMEM = "Name too long";
 const char SD_Error_FileNotFound[] PROGMEM = "File not found";
 const char SD_Error_FileAccessError[] PROGMEM = "Cannot access file";
 const char SD_Error_OutOfMemory[] PROGMEM = "Out of memory";
+const char SD_Error_DeleteFailed[] PROGMEM = "Delete failed";
 
 const char SD_Message0[] PROGMEM = "+ SD inserted";
 const char SD_Message1[] PROGMEM = "+ SD removed";
@@ -169,6 +170,35 @@ void SDManager::sleepOff(){
   _detectSDCard();
 }
 
+bool SDManager::checkExists( const char *name){
+  if( _cardCheckMantra()) return false;
+  return SD.exists( name);
+}
+
+bool SDManager::deleteEntity( const char *name){
+  if( _cardCheckMantra()) return true;
+  Serial.print( "Deleting: ");
+  Serial.println( name);
+  if( strlen(name) == 1 && name[0] == '/') return false;
+  if( !SD.exists( name)) return false;
+  File root = SD.open( name);
+  bool dir = root.isDirectory();
+  if( dir){
+    File file = root.openNextFile();
+    while(file){
+      if( deleteEntity( file.name())) break;;
+      file = root.openNextFile();
+    } // while
+  }//if
+  root.close();
+  bool res = dir? SD.rmdir(name): SD.remove( name);
+  if( !res){
+    LastError = SD_Error_DeleteFailed;
+    return true;
+  }
+  return false;
+}
+
 //
 // TODO: load and save functionality here
 //
@@ -248,60 +278,31 @@ void SDManager::saveState(){
   file.close();
 }
 
-void SDManager::storeVariables(){
+void SDManager::listDir( char *name){
+  if( _cardCheckMantra()) return;
+  if( name == NULL) name = _vars->currentDir;
 
-}
-
-void SDManager::storeConstants(){
-  if(!SDInserted) return;
-  if(!SDMounted) return;
-  File file = SD.open( RPN_SaveConstantsFile, FILE_WRITE);
-  if(!file){
-    #ifdef __DEBUG
-    Serial.println("Failed to open constants file for writing");
-    #endif
-    _mbox->setLabel(SD_Error_WriteFailed);
-    return;
-  }
-  VariableToken vt = _vars->getFirstConst();
-  size_t lineNumber = 10;
-  char *ptr = (char *)_io_buffer;
-  int offset, end_point;
-  #ifdef __DEBUG
-  Serial.println("Saving constants:");
-  #endif
-  while( !_vars->isReadOnly( vt)){
-    _writeVariable( &file, ConstantFileFormat, lineNumber, vt);
-    vt = _vars->getNextVar( vt);
-    if( !vt) break;
-    lineNumber += 10;
-  }
-  file.close();
-}
-
-void SDManager::listDir(){
-    if(!SDInserted) return;
-    if(!SDMounted) return;
-    Serial.print("Listing directory: ");
-    Serial.println(_vars->currentDir);
-
-    File root = _getCurrentDir();
-    if(!root) return;
-
-    File file = root.openNextFile();
-    while(file){
-        if(file.isDirectory()){
-            Serial.print("  DIR : ");
-            Serial.println(file.name());
-        }
-        else {
-            Serial.print("  FILE: ");
-            Serial.print(file.name());
-            Serial.print("  SIZE: ");
-            Serial.println(file.size());
-        }
-        file = root.openNextFile();
+  // TODO: change to IOM
+  Serial.print("Listing directory: ");
+  Serial.println( name);
+  File root = SD.open( name);
+  if(!root) return;
+  File file = root.openNextFile();
+  while(file){
+    if(file.isDirectory()){
+      Serial.print("  ");
+      Serial.print( _stripFolders( file.name()));
+      Serial.println("  [DIR]");
     }
+    else {
+      Serial.print("  ");
+      Serial.print( _stripFolders( file.name()));
+      Serial.print(" ");
+      Serial.print(file.size());
+      Serial.println("b");
+    }
+  file = root.openNextFile();
+  } // while
 }
 
 //void createDir(fs::FS &fs, const char * path){
@@ -313,14 +314,6 @@ void SDManager::listDir(){
 //    }
 //}
 //
-//void removeDir(fs::FS &fs, const char * path){
-//    Serial.printf("Removing Dir: %s\n", path);
-//    if(fs.rmdir(path)){
-//        Serial.println("Dir removed");
-//    } else {
-//        Serial.println("rmdir failed");
-//    }
-//}
 
 void SDManager::readFile(const char * path){
   if(!SDInserted) return;
@@ -457,67 +450,6 @@ bool SDManager::_writeString( void *f, byte *v){
   return file->print("\r\n") != 2;
 }
 
-size_t SDManager::_writeVariable(void *f, const char *fmt, size_t lineNumber, VariableToken vt){
-  File *file = (File *)f;
-  char *ptr = (char *)_io_buffer;
-  int offset = snprintf ( ptr, INPUT_COLS, fmt, lineNumber);
-  offset = convertToUTF8( ptr + offset, (byte *)_vars->getVarName( vt), INPUT_COLS-offset) - ptr;
-  int end_point = offset;
-  size_t xsize, ysize; 
-  switch( _vars->getVarType(vt)){
-    case VARTYPE_NUMBER:
-      offset = end_point + snprintf ( ptr + end_point, INPUT_COLS-end_point, " = ");
-      offset = _epar->numberParser.stringValue( _vars->realValue(vt), _io_buffer + offset, INPUT_COLS-end_point) - _io_buffer;
-      snprintf ( ptr + offset, INPUT_COLS-offset, "\r\n");
-      file->print(ptr); 
-      #ifdef __DEBUG
-      Serial.println( ptr);
-      #endif
-      return lineNumber + PROGLINE_INCREMENT;
-    case VARTYPE_VECTOR:
-      xsize = _vars->getRowSize( vt);
-      for( size_t i; i<xsize; i++){
-        offset = end_point + snprintf ( ptr + end_point, INPUT_COLS-end_point, "[%d] = ", i);
-        offset = _epar->numberParser.stringValue( _vars->realValue(vt, i, 0), _io_buffer + offset, INPUT_COLS-end_point) - _io_buffer;
-        snprintf ( ptr + offset, INPUT_COLS-offset, "\r\n");
-        file->print(ptr);
-        lineNumber += PROGLINE_INCREMENT; 
-        #ifdef __DEBUG
-        Serial.println( ptr);
-        #endif
-      }
-      return lineNumber;
-    case  VARTYPE_MATRIX:
-      xsize = _vars->getRowSize( vt);
-      ysize = _vars->getColumnSize( vt);
-      for( size_t j; j<ysize; j++){
-        for( size_t i; i<xsize; i++){
-          offset = end_point + snprintf ( ptr + end_point, INPUT_COLS-end_point, "[%d,%d] = ", j, i);
-          offset = _epar->numberParser.stringValue( _vars->realValue(vt, i, j), _io_buffer + offset, INPUT_COLS-end_point) - _io_buffer;
-          snprintf ( ptr + offset, INPUT_COLS-offset, "\r\n");
-          file->print(ptr);
-          lineNumber += PROGLINE_INCREMENT; 
-          #ifdef __DEBUG
-          Serial.println( ptr);
-          #endif
-        }
-      }
-      return lineNumber;
-    case  VARTYPE_STRING:
-      offset = end_point + snprintf ( ptr + end_point, INPUT_COLS-end_point, " = \"");
-      offset = convertToUTF8( ptr+offset, _vars->stringValue(vt), INPUT_COLS-offset) - ptr;
-      snprintf ( ptr + offset, INPUT_COLS-offset, "\"\r\n");
-      file->print(ptr);
-      #ifdef __DEBUG
-      Serial.println( ptr);
-      #endif
-      return lineNumber + PROGLINE_INCREMENT;
-    default:
-      break;
-    }
-    return lineNumber;
-}
-
 //void appendFile(fs::FS &fs, const char * path, const char * message){
 //    Serial.printf("Appending to file: %s\n", path);
 //
@@ -594,48 +526,6 @@ size_t SDManager::_writeVariable(void *f, const char *fmt, size_t lineNumber, Va
 //    file.close();
 //}
 //
-//void setup(){
-//    Serial.begin(115200);
-//    if(!SD.begin()){
-//        Serial.println("Card Mount Failed");
-//        return;
-//    }
-//    uint8_t cardType = SD.cardType();
-//
-//    if(cardType == CARD_NONE){
-//        Serial.println("No SD card attached");
-//        return;
-//    }
-//
-//    Serial.print("SD Card Type: ");
-////    if(cardType == CARD_MMC){
-//        Serial.println("MMC");
-//    } else if(cardType == CARD_SD){
-//        Serial.println("SDSC");
-//    } else if(cardType == CARD_SDHC){
-//        Serial.println("SDHC");
-//    } else {
-//        Serial.println("UNKNOWN");
-//    }
-//
-//    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-//    Serial.printf("SD Card Size: %lluMB\n", cardSize);
-//
-//    listDir(SD, "/", 0);
-//    createDir(SD, "/mydir");
-//    listDir(SD, "/", 0);
-//    removeDir(SD, "/mydir");
-//    listDir(SD, "/", 2);
-//    writeFile(SD, "/hello.txt", "Hello ");
-//    appendFile(SD, "/hello.txt", "World!\n");
-//    readFile(SD, "/hello.txt");
-//    deleteFile(SD, "/foo.txt");
-//    renameFile(SD, "/hello.txt", "/foo.txt");
-//    readFile(SD, "/foo.txt");
-//    testFileIO(SD, "/test.txt");
-//    Serial.printf("Total space: %lluMB\n", SD.totalBytes() / (1024 * 1024));
-//    Serial.printf("Used space: %lluMB\n", SD.usedBytes() / (1024 * 1024));
-//}
 
 //
 // Opens a data file for reading
@@ -651,8 +541,8 @@ bool SDManager::openDataFileRead( const char *name){
 
   // first, try the absolute name; no memory allocation needed
   if( len > 2 && name[0] == '/'){
-    _currentDataFile = SD.open( name);
-    return !_currentDataFile;
+    _currentFile = SD.open( name);
+    return !_currentFile;
   }
   
   // next, try directory + name
@@ -691,9 +581,9 @@ bool SDManager::openProgramFileRead( const char *name){
 
   // first, try the absolute name; no memory allocation needed
   if( name == NULL){
-    _currentProgramFile = SD.open( _vars->currentFile);
-    if(!_currentProgramFile){
-      LastError = SD_Error_FileAccessError;
+    _currentFile = SD.open( _vars->currentFile);
+    if(!_currentFile){
+      LastError = SD_Error_FileNotFound;
       return true;
     }
     return false;
@@ -709,8 +599,8 @@ bool SDManager::openProgramFileRead( const char *name){
     LastError = SD_Error_FileNotFound;
     return true;
   }
-  _currentProgramFile = SD.open( _vars->currentFile);
-  if(!_currentProgramFile){
+  _currentFile = SD.open( _vars->currentFile);
+  if(!_currentFile){
     LastError = SD_Error_FileAccessError;
     return true;
   }
@@ -721,13 +611,15 @@ bool SDManager::openProgramFileRead( const char *name){
 // Opens a data file for writing
 //
 bool SDManager::openDataFileWrite( const char *name){
+  Serial.println("file given: ");
+  Serial.println(name);
   if( _cardCheckMantra()) return true;
   uint16_t len = strlen( name);
 
   // first, try the absolute name; no memory allocation needed
   if( len > 1 && name[0] == '/'){
-    _currentDataFile = SD.open( name, "w");
-    if(!_currentDataFile){
+    _currentFile = SD.open( name, "w");
+    if(!_currentFile){
       LastError = SD_Error_FileAccessError;
       return true;
     }
@@ -744,13 +636,13 @@ bool SDManager::openDataFileWrite( const char *name){
   while( *name == '/') name++;
   strcat( tmpName, name);
 
-  if( _directoryCheckMantra( tmpName)){
+  if( _checkDirectoryStructure( tmpName)){
     free( tmpName);
     return true;
   }
-  _currentDataFile = SD.open( tmpName, "w");
+  _currentFile = SD.open( tmpName, "w");
   free( tmpName);
-  if(!_currentDataFile){
+  if(!_currentFile){
     LastError = SD_Error_FileAccessError;
     return true;
   }
@@ -766,16 +658,16 @@ bool SDManager::openProgramFileWrite( const char *name){
   Serial.println("Current file set: ");
   Serial.println(( const char*)_vars->currentFile);
   if( SD.exists(_vars->currentFile)){
-    _currentProgramFile = SD.open( _vars->currentFile, "w");
-    if(!_currentProgramFile){
+    _currentFile = SD.open( _vars->currentFile, "w");
+    if(!_currentFile){
       LastError = SD_Error_FileAccessError;
       return true;
     }
     return false;
   }
-  if( _directoryCheckMantra( _vars->currentFile)) return true;
-  _currentProgramFile = SD.open( _vars->currentFile, "w");
-  if(!_currentProgramFile){
+  if( _checkDirectoryStructure( _vars->currentFile)) return true;
+  _currentFile = SD.open( _vars->currentFile, "w");
+  if(!_currentFile){
     LastError = SD_Error_FileAccessError;
     return true;
   }
@@ -820,6 +712,7 @@ bool SDManager::_locateBASICFile( const char *name){
 
   // if we are here, nobody freed the memory
   free( tmpName);
+  LastError = SD_Error_FileNotFound;
   return true;
 }
 
@@ -834,6 +727,12 @@ bool SDManager::_cardCheckMantra(){
   LastError = NULL;
   return false;
 }
+char *SDManager::_stripFolders( const char *name){
+  int16_t lastHash = strlen( name) - 1;
+  while( lastHash>0 && name[lastHash] != '/') lastHash--;
+  return (char *)name+lastHash+1; 
+}
+
 bool SDManager::_nameLengthCheckMantra( size_t len){
   if( len <= CURRENT_FILE_LEN) return false;
   LastError = SD_Error_FileNameTooLong;
@@ -845,9 +744,9 @@ bool SDManager::_lookForFileMantra1( char *tmpName){
   Serial.println( tmpName);
   #endif
   if( !SD.exists(tmpName)) return false;
-  _currentDataFile = SD.open( tmpName);
+  _currentFile = SD.open( tmpName);
   free( tmpName);
-  if( !_currentDataFile) LastError = NULL;
+  if( !_currentFile) LastError = NULL;
   return true;
 }
 bool SDManager::_lookForFileMantra2( char *tmpName){
@@ -874,21 +773,42 @@ bool SDManager::_formFileMantra( const char *name, char *dest){
   strcat( dest, name);
   return false;
 }
-bool SDManager::_directoryCheckMantra( char *name){
+
+//
+// Checks if directory structure exists, if not - creates
+//
+bool SDManager::_checkDirectoryStructure( char *name){
   if( SD.exists( name)) return false;
-  int16_t i = strlen( name) - 1;
-  while( i>0 && name[i] != '/') i--;
-  if( i<=0) return false; // no directory found
-  char tmp = name[i];
-  name[i] = _NUL_;
-  Serial.println("Will create directory: ");
-  Serial.println(name);
-  bool ret = SD.mkdir( (const char*)name);
-  name[i] = tmp;
-  if( !ret){
-    LastError = SD_Error_FileAccessError;
-    return true;
+  int16_t lastHash = strlen( name) - 1;
+  while( lastHash>0 && name[lastHash] != '/') lastHash--;
+  if( lastHash <= 0) return false; 
+  for( int i=1; i<=lastHash; i++){
+    if( name[i] != '/') continue;
+    char tmp = name[i];
+    name[i] = _NUL_;
+    if( SD.exists( (const char*)name)){
+      #ifdef __DEBUG
+      Serial.print(name);
+      Serial.println(" is OK");
+      #endif
+      name[i] = tmp;
+      continue;
+    }
+    #ifdef __DEBUG
+    Serial.print("Creating ");
+    Serial.println(name);
+    #endif
+    bool ret = SD.mkdir( (const char*)name);
+    name[i] = tmp;
+    if( !ret){
+      #ifdef __DEBUG
+      Serial.println("Create failed, exiting");
+      #endif
+      LastError = SD_Error_FileAccessError;
+      return true;
+    }
   }
+  // directory structure checked
   return false;
 }
 
@@ -897,8 +817,8 @@ bool SDManager::_directoryCheckMantra( char *name){
 //
 uint16_t SDManager::readln( byte *buff){
   uint16_t nBytes = 0;
-  while(_currentProgramFile.available()){
-    byte b = _currentProgramFile.read();
+  while(_currentFile.available()){
+    byte b = _currentFile.read();
     if( b==_CR_) continue;
     if( b==_LF_) break;
     buff[nBytes++] = b;
@@ -907,7 +827,8 @@ uint16_t SDManager::readln( byte *buff){
   buff[nBytes] = _NUL_;
   return nBytes;
 }
-uint16_t SDManager::writeln( char *buff){
-  uint16_t ret = _currentProgramFile.print( buff);
-  return ret + _currentProgramFile.print( "\r\n");
+uint16_t SDManager::print( char *buff, bool cr){
+  uint16_t nBytes = _currentFile.print( buff);
+  if(cr) return nBytes + _currentFile.print( "\r\n");
+  return nBytes;
 }

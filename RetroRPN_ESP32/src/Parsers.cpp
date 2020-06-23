@@ -445,24 +445,53 @@ byte *FilenameParser::parse( byte *str){
   size_t len = _parser_end - _parser_start;
   if( len == 0 ) return _parser_start;
 
+  Serial.print("Given: ");
+  Serial.println( (char*)str);  
+
+  // absolute directory
+  if( *_parser_start == '/'){
+    strncat2( (char*)_name, (const char *)_parser_start, INPUT_COLS+1);
+    Serial.print("Absolute name: ");
+    Serial.println( (char*)_name);  
+    result = true;
+    return _parser_end;
+  }
+
+  // Not absolute - start from existing
+  strncat2( (char*)_name, (const char *)_vars->currentDir, INPUT_COLS-1);
+
   // up one directory
   if( IsToken( _parser_start, "../", false)){
-    strncat2( (char*)_name, (const char *)_vars->currentDir, INPUT_COLS+1);
     while( IsToken( _parser_start, "../", false)){
       _backpedalDirectory();
       _parser_start += 3;
     }
   }
 
+  // up one directory
+  if( IsToken( _parser_start, "..", true)){
+    _backpedalDirectory();
+    _parser_start = _parser_end;
+  }
+
   // use the same directory
   if( IsToken( _parser_start, "./", false)){
-    strncat2( (char*)_name, (const char *)_vars->currentDir, INPUT_COLS+1);
     _parser_start += 2;
   }
 
   len = _parser_end - _parser_start;
-  if( len == 0 ) return _parser_start;
+  if( len == 0 ){
+    result = true;
+    return _parser_start;
+  }
+  int l2 = strlen(_name);
+  if( l2<=0 || _name[l2-1] != '/') strcat( (char*)_name, "/");
+  len += l2;
   strncat( (char*)_name, (const char *)_parser_start, INPUT_COLS - len);
+  #ifdef __DEBUG
+  Serial.print("Name set to: ");
+  Serial.println( (char*)_name);
+  #endif
   result = true;
   return _parser_end;
 }
@@ -481,16 +510,15 @@ void FilenameParser::_locateTerminator( byte *start){
 // Locates a previous directory marker and chops the string at it
 //
 void FilenameParser::_backpedalDirectory(){
+  Serial.println( "Directory before: ");
+  Serial.println( (char *)_name);
   int16_t end = strlen( _name)-1;
-  while( end >= 0 && _name[end] == '/') end--;
+  if( end>0 && _name[end] == '/') end--;
+  while( end>0 && _name[end] != '/') end--;
   if( end<=0) return;
-  end--;
-  while( end >= 0 && _name[end] != '/') end--;
-  if( end<=0){
-    _name[0] = _NUL_;
-    return;
-  }
-  _name[end+1] = _NUL_;
+  _name[end] = _NUL_;
+  Serial.println( "Directory after backpedal:");
+  Serial.println( (char *)_name);
 }
 
 //

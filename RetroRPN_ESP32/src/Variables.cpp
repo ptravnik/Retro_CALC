@@ -432,6 +432,16 @@ const char *Variables::getAMODEString(){
   return _RPN_AMODE_Table[ getAngleMode()];
 }
 
+void Variables::appendToData( double value){
+  dataList[listWritePosition] = value;
+  if( listWritePosition < LIST_LEN) listWritePosition++;
+}
+
+double Variables::readData(){
+  if( listReadPosition>=listWritePosition) return 0.0;
+  return dataList[listReadPosition++];
+}
+
 //
 // Private methods
 //

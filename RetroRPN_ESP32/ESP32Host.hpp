@@ -29,12 +29,13 @@
 #define SCREEN_OFF_PERIOD 480000
 #define POWER_OFF_PERIOD  720000
 
-#include "./src/Lexer.hpp"
-#include "./src/CommandLine.hpp"
-#include "./src/TerminalBox.hpp"
+//#include "./src/Lexer.hpp"
+//#include "./src/CommandLine.hpp"
+//#include "./src/TerminalBox.hpp"
 #include "FileManager.hpp"
-// #include "RPNCalculator.hpp"
+#include "RPNCalculator.hpp"
 #include "BasicConsole.hpp"
+#include "Editor.hpp"
 
 #define IO_MSG_POWER_BUTTON 0
 #define IO_MSG_INACTIVE     1

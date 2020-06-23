@@ -16,6 +16,7 @@
 #define NEAR_ZERO         1.0e-100
 #define CURRENT_DIR_LEN   255
 #define CURRENT_FILE_LEN  255
+#define LIST_LEN          64 
 
 #define VARTYPE_NONE      0
 #define VARTYPE_NUMBER    1
@@ -57,6 +58,11 @@ class Variables{
     byte *rpnLabelX;
     byte *rpnLabelY;
     byte *rpnLabelZ;
+
+    // Rudimentary data list for backward compatibility
+    double dataList[LIST_LEN];
+    byte listWritePosition = 0;
+    byte listReadPosition = 0;
 
     // 1-D statistical
     double *nmean;
@@ -132,6 +138,10 @@ class Variables{
     byte *stringValue( VariableToken vt);
     inline uint16_t getPrgCounter(){ return (uint16_t)(_prgCounter[0]);};
     inline void setPrgCounter(uint16_t ln){ _prgCounter[0] = (int64_t)ln;};
+    void appendToData( double value);
+    inline void clearData(){listWritePosition = 0;};
+    double readData();
+    inline void restoreReadPosition(){ listReadPosition = 0;};
 
     //
     // Looks for constants and variables

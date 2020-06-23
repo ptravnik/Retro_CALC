@@ -36,8 +36,12 @@ class Lexer{
     bool operator_CLEAR();
     bool operator_CLEAR_Program();
     bool operator_CLEAR_Vars( bool constants);
-
     bool operator_CONST();
+
+    bool operator_DATA();
+    bool operator_DELETE();
+    bool operator_DIR();
+    bool operator_DIRECTORY();
 
     bool operator_LET();
 
@@ -51,6 +55,9 @@ class Lexer{
     bool operator_NEW();
 
     bool operator_REM();
+    bool operator_RESTORE();
+    bool operator_RESTORE_Vars();
+    bool operator_RESTORE_Const();
 
     bool operator_PUSH();
 
@@ -58,7 +65,8 @@ class Lexer{
 
     bool operator_SAVE();
     bool operator_STORE();
-    bool operator_STORE_Vars( bool constants);
+    bool operator_STORE_Vars();
+    bool operator_STORE_Const();
 
     bool operator_SUM();
 

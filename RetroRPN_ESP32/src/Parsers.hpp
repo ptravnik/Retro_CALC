@@ -123,15 +123,16 @@ class FilenameParser{
   private:
     Variables *_vars;
     byte _name[INPUT_COLS+1]; // TODO: replace with dynamic
+    byte _name2[INPUT_COLS+1];
     byte *_parser_start = NULL;
     byte *_parser_end = NULL;
     void _locateTerminator( byte *start);
     void _backpedalDirectory();
     uint16_t _name_position;
-    inline void _add_char_to_name( byte *ptr){
-      _name[_name_position++] = *ptr;
-      _name[_name_position] = _NUL_;
-    };
+    //inline void _add_char_to_name( byte *ptr){
+    //  _name[_name_position++] = *ptr;
+    //  _name[_name_position] = _NUL_;
+    //};
 };
 
 //

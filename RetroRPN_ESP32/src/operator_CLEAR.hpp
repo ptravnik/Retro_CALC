@@ -51,7 +51,11 @@ bool Lexer::operator_CLEAR(){
       _vars->clearRPNSum();
       _vars->clearRPNSumXY();
       _skipToNextOperator( _lexer_position);
-    return true;
+      return true;
+    case _OPR_DATA_KW:
+      _vars->clearData();
+      _skipToNextOperator( _lexer_position);
+      return true;
     default:
       break;
   }

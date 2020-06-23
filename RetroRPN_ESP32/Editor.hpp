@@ -6,13 +6,23 @@
 //
 //////////////////////////////////////////////////////////
 
-#ifndef FILEMANAGER_HPP
-#define FILEMANAGER_HPP
+/*
+  Editor.hpp 
+  Implements a BASIC text editor
+
+  Keyboard commands, additional to Command Line:
+  1 - arrow down/up - move between the code lines
+  2 - page down/up - move between the code lines
+  3 - CR = enter - command line execution
+*/
+
+#ifndef EDITOR_HPP
+#define EDITOR_HPP
 
 #include "RPNCalculator.hpp"
 #include "./src/TerminalBox.hpp"
 
-class FileManager{
+class Editor{
   public:
     unsigned long init(void *components[]);
     unsigned long tick();
@@ -38,4 +48,4 @@ class FileManager{
     void _evaluateString();
 };
 
-#endif // FILEMANAGER_HPP
+#endif //EDITOR_HPP

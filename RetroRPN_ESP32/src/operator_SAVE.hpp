@@ -36,12 +36,12 @@ bool Lexer::operator_SAVE(){
   ProgramLine pl = _code->getFirstLine();
   while( true){
     if( pl.line == NULL) break;
-    _sdm->writeln( (char *)_code->getLineString( pl, true));
+    _sdm->print( (char *)_code->getLineString( pl, true));
     pl = _code->getNextLine( pl);
   }
-  _sdm->closeProgramFile();
+  _sdm->closeFile();
   _mbox->setLabel( ( _sdm->LastError == NULL)?
-      LEX_Message_Loaded: _sdm->LastError);
+      LEX_Message_Saved: _sdm->LastError);
   _skipToEOL(_lexer_position);
   return true;
 }
