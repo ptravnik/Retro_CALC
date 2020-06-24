@@ -52,13 +52,12 @@ class SDManager{
     };
     void sleepOn();
     void sleepOff();
-    void loadState();
-    void saveState();
+
+    size_t loadBinary( const char *name, byte *buff, size_t minSize, size_t maxSize);
+    bool saveBinary( const char *name, byte *buff, size_t Size);
 
     void readFile( const char * path);
     void writeFile( const char * path, const char * message);
-    void readRPNStatus( byte *inp, byte *last_inp, uint16_t *pos);
-    void writeRPNStatus( byte *inp, byte *last_inp, uint16_t pos);
     const char *SD_Message();
     void checkSDStatus();
     bool setPrevMounted(){
@@ -67,9 +66,12 @@ class SDManager{
       return false;
     }
 
-    bool checkExists( const char *name);
-    void listDir( char *name=NULL);
+    void checkRootExists();
+    bool checkEntityExists( const char *name);
+    void listFolder( char *name=NULL);
     bool deleteEntity( const char *name);
+    void createFolder( char *name);
+
     bool openProgramFileRead( const char *name);
     bool openProgramFileWrite( const char *name);
     bool openDataFileRead( const char *name);
@@ -79,6 +81,12 @@ class SDManager{
     inline void closeFile(){
       _currentFile.close();
     };
+    bool readDouble( double *v);
+    bool writeDouble( double v);
+    size_t readString( byte *buff, size_t limit);
+    bool writeString( byte *v);
+    bool writeSettingNumber( const char *title, double value);
+    bool writeSettingString( const char *title, byte *value);
 
   private:
     byte *_io_buffer;
@@ -91,15 +99,8 @@ class SDManager{
     File _currentFile;
 
     void _checkSDPin();
-    void _checkRoot();
     File _getCurrentDir();
     bool _detectSDCard();
-
-    void _readBuffer( void *f);
-    bool _readDouble( void *f, double *v);
-    bool _writeDouble( void *f, double v);
-    bool _readString( void *f, byte *buff, size_t limit);
-    bool _writeString( void *f, byte *v);
 
     bool _locateBASICFile( const char *name);
     bool _locateExistingFile( const char *name);
@@ -109,7 +110,7 @@ class SDManager{
     bool _lookForFileMantra1( char *tmpName);
     bool _lookForFileMantra2( char *tmpName);
     bool _formFileMantra( const char *name, char *dest);
-    bool _checkDirectoryStructure( char *name);
+    bool _checkFolderStructure( char *name);
 };
 
 #endif // SDMANAGER_HPP

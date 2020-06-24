@@ -18,7 +18,7 @@
 class Lexer{
   public:
     bool isRunning = false;
-    byte currentUI = UI_UNDEFINED;
+    byte currentUI = UI_RPNCALC;
     byte nextUI = UI_UNDEFINED;
     Keyword *lastKeyword = NULL;
     VariableToken lastVariable = 0;
@@ -29,9 +29,13 @@ class Lexer{
       return parse( str);
     };
     byte *parse( byte *str);
+    void loadState();
+    void saveState();
+    void readBASICConstantFile(const char *name);
 
     // Operator declarations here
     bool operator_AMODE();
+    bool operator_APPEND();
 
     bool operator_CLEAR();
     bool operator_CLEAR_Program();
@@ -44,33 +48,34 @@ class Lexer{
     bool operator_DIRECTORY();
 
     bool operator_LET();
-
     bool operator_LIST();
     bool operator_LIST_Program();
     bool operator_LIST_Vars( bool constants);
     bool operator_LOAD();
 
     bool operator_MEM();
+    bool operator_MKDIR();
 
     bool operator_NEW();
 
-    bool operator_REM();
-    bool operator_RESTORE();
-    bool operator_RESTORE_Vars();
-    bool operator_RESTORE_Const();
-
     bool operator_PUSH();
 
+    bool operator_REM();
+    bool operator_RESTORE();
+    bool operator_RESTORE_Vars(bool remove);
+    bool operator_RESTORE_Const(bool remove);
     bool operator_RUN();
 
     bool operator_SAVE();
     bool operator_STORE();
     bool operator_STORE_Vars();
+    bool operator_STORE_Vars( const char *name);
     bool operator_STORE_Const();
-
+    bool operator_STORE_Const( const char *name);
     bool operator_SUM();
-
     bool operator_SUMXY();
+
+    bool operator_TYPE();
 
     inline byte *_getCurrentPosition(){
       return _lexer_position;
@@ -113,7 +118,8 @@ class Lexer{
     bool _peek_NextToken( byte c);
     byte _parseList( byte maxVal=10);
 
-    void _saveBASICFile( const char *name);
+    void _loadBASICFile( const char *name, bool ignoreErrors);
+    void _saveBASICFile( const char *name, bool ignoreErrors);
 };
 
 #endif // _LEXER_HPP

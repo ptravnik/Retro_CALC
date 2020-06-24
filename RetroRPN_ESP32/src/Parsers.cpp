@@ -444,15 +444,18 @@ byte *FilenameParser::parse( byte *str){
   if( !IsOperatorTerm( *_parser_end)) return _parser_start;
   size_t len = _parser_end - _parser_start;
   if( len == 0 ) return _parser_start;
-
+  #ifdef __DEBUG
   Serial.print("Given: ");
-  Serial.println( (char*)str);  
+  Serial.println( (char*)str);
+  #endif 
 
   // absolute directory
   if( *_parser_start == '/'){
     strncat2( (char*)_name, (const char *)_parser_start, INPUT_COLS+1);
+    #ifdef __DEBUG
     Serial.print("Absolute name: ");
     Serial.println( (char*)_name);  
+    #endif 
     result = true;
     return _parser_end;
   }
@@ -510,15 +513,19 @@ void FilenameParser::_locateTerminator( byte *start){
 // Locates a previous directory marker and chops the string at it
 //
 void FilenameParser::_backpedalDirectory(){
+  #ifdef __DEBUG  
   Serial.println( "Directory before: ");
   Serial.println( (char *)_name);
+  #endif
   int16_t end = strlen( _name)-1;
   if( end>0 && _name[end] == '/') end--;
   while( end>0 && _name[end] != '/') end--;
   if( end<=0) return;
   _name[end] = _NUL_;
+  #ifdef __DEBUG  
   Serial.println( "Directory after backpedal:");
   Serial.println( (char *)_name);
+  #endif  
 }
 
 //

@@ -10,9 +10,16 @@
 
 //#define __DEBUG
 
+const char RPN_SaveVariables[] PROGMEM = "/_RPN_SaveVars.bin";
+const char RPN_SaveConstants[] PROGMEM = "/_RPN_SaveConstants.bas";
+const char RPN_SaveProgram[] PROGMEM = "/_RPN_SaveProgram.bin";
+const char RPN_SaveStatus[] PROGMEM = "/_RPN_SaveStatus.txt";
+const char RPN_AutoexecFile[] PROGMEM = "/autotest.bas";
+
 const char LEX_Error_OutOfMemory[] PROGMEM = "Err: Out of memory";
+const char LEX_Error_NoSDCard[] PROGMEM = "Err: No card";
 const char LEX_Warning_ReadOnly[] PROGMEM = "Warn: Read-only";
-const char LEX_Warning_NoSuchFolder[] PROGMEM = "Warn: No such folder";
+const char LEX_Warning_NoSuchFolder[] PROGMEM = "Warn: Not found";
 const char LEX_Message_VariableList[] PROGMEM = "Variables:";
 const char LEX_Message_ConstantsList[] PROGMEM = "Constants:";
 const char LEX_Message_ProgMemory[] PROGMEM = "Program Memory:";
@@ -20,6 +27,8 @@ const char LEX_Message_VarsMemory[] PROGMEM = "Variable Memory:";
 const char LEX_Message_Loaded[] PROGMEM = "Loaded";
 const char LEX_Message_Saved[] PROGMEM = "Saved";
 const char LEX_Message_Deleted[] PROGMEM = "Deleted";
+const char LEX_Message_Created[] PROGMEM = "Created";
+const char LEX_Message_Restored[] PROGMEM = "Restored";
 const char LEX_Message_SumUpdated[] PROGMEM = "Sum Updated";
 const char LEX_Message_N[] PROGMEM = "N:";
 const char LEX_Message_stDev[] PROGMEM = "StDev:";
@@ -32,6 +41,12 @@ const char LEX_Message_FolderSet[] PROGMEM = "Folder set";
 
 const char LEX_Standard_Variables[] PROGMEM = "/_VARS_.bas";
 const char LEX_Standard_Constants[] PROGMEM = "/_CONST_.bas";
+
+const char LEX_StorageMarker_Current_UI[] PROGMEM = "# Current_UI = ";
+const char LEX_StorageMarker_Command[] PROGMEM = "# Command = ";
+const char LEX_StorageMarker_Command_Prev[] PROGMEM = "# Command_Prev = ";
+const char LEX_StorageMarker_Cursor_Column[] PROGMEM = "# Cursor_Column = ";
+
 
 // add operator includes here
 #include "operator_AMODE.hpp"
@@ -65,6 +80,7 @@ static bool _operator_FMAN_( Lexer *lex){
 #include "operator_LIST.hpp"
 #include "operator_LOAD.hpp"
 #include "operator_MEM.hpp"
+#include "operator_MKDIR.hpp"
 #include "operator_NEW.hpp"
 #include "operator_PUSH.hpp"
 #include "operator_REM.hpp"
@@ -81,6 +97,7 @@ static bool _operator_RPN_( Lexer *lex){
 #include "operator_STORE.hpp"
 #include "operator_SUM.hpp"
 #include "operator_SUMXY.hpp"
+#include "operator_TYPE.hpp"
 
 //
 // Inits Lexer
@@ -99,6 +116,7 @@ void Lexer::init(void *components[]){
   _clb = (CommandLine *)components[UI_COMP_CommandLine];
   _io_buffer = _iom->getIOBuffer();
   _kwds->getKeywordById( _OPR_AMODE_KW)->operator_ptr = (void *)_operator_AMODE_;
+  _kwds->getKeywordById( _OPR_APPEND_KW)->operator_ptr = (void *)_operator_APPEND_; // desc in oprerator_RESTORE.hpp
   _kwds->getKeywordById( _OPR_CLEAR_KW)->operator_ptr = (void *)_operator_CLEAR_;
   _kwds->getKeywordById( _OPR_CLI_KW)->operator_ptr = (void *)_operator_CLI_;
   _kwds->getKeywordById( _OPR_CONST_KW)->operator_ptr = (void *)_operator_CONST_;
@@ -112,6 +130,7 @@ void Lexer::init(void *components[]){
   _kwds->getKeywordById( _OPR_LIST_KW)->operator_ptr = (void *)_operator_LIST_;
   _kwds->getKeywordById( _OPR_LOAD_KW)->operator_ptr = (void *)_operator_LOAD_;
   _kwds->getKeywordById( _OPR_MEM_KW)->operator_ptr = (void *)_operator_MEM_;
+  _kwds->getKeywordById( _OPR_MKDIR_KW)->operator_ptr = (void *)_operator_MKDIR_;
   _kwds->getKeywordById( _OPR_NEW_KW)->operator_ptr = (void *)_operator_NEW_;
   _kwds->getKeywordById( _OPR_REM_KW)->operator_ptr = (void *)_operator_REM_;
   _kwds->getKeywordById( _OPR_REMALT_KW)->operator_ptr = (void *)_operator_REM_;
@@ -123,6 +142,7 @@ void Lexer::init(void *components[]){
   _kwds->getKeywordById( _OPR_STORE_KW)->operator_ptr = (void *)_operator_STORE_;
   _kwds->getKeywordById( _OPR_SUM_KW)->operator_ptr = (void *)_operator_SUM_;
   _kwds->getKeywordById( _OPR_SUMXY_KW)->operator_ptr = (void *)_operator_SUMXY_;
+  _kwds->getKeywordById( _OPR_TYPE_KW)->operator_ptr = (void *)_operator_TYPE_;
 }
 
 //
@@ -368,331 +388,6 @@ byte Lexer::_parseList( byte maxVal){
   return maxVal;
 }
 
-
-// //
-// // Checks if the value at text position is one of operations
-// // Used for finding ** and such
-// //
-// bool ExpressionParser::_validate_NextOperation( const char *op1){
-//   if( _expression_error) return true;
-//   if( startsWithC(_parser_position, op1)){
-//     _parser_position += strlen(op1);
-//     _ignore_Blanks();
-//     return false;
-//   }
-//   return true;
-// }
-// bool ExpressionParser::_validate_NextOperation( const char *op1, const char *op2){
-//   if( _expression_error) return true;
-//   if( startsWithC(_parser_position, op1)){
-//     _parser_position += strlen(op1);
-//     _ignore_Blanks();
-//     return false;
-//   }
-//   if( startsWithC(_parser_position, op2)){
-//     _parser_position += strlen(op2);
-//     _ignore_Blanks();
-//     return false;
-//   }
-//   return true;
-// }
-
-// //
-// // Processes a bracket pair (less the opening bracket) or list member 
-// //
-// bool ExpressionParser::_parse_ListMember( byte terminator){
-//   _parse_Expression_Logic();
-//   if( numberParser.result == _RESULT_UNDEFINED_) return true;
-//   if( _validate_NextCharacter( terminator)) return true;
-//   _ignore_Blanks();
-//   return false;
-// }
-
-// //
-// // Processes logic left to right
-// //
-// byte *ExpressionParser::_parse_Expression_Logic(){
-//   double a,b;
-//   byte *ptr = _parse_Expression_NOT();
-//   if(_expression_error) return ptr;
-//   a = numberParser.realValue();
-//   while(true){
-//     _ignore_Blanks();
-//     if( !_validate_NextOperation( "and ", "AND ")){
-//       ptr = _parse_Expression_NOT();
-//       if(_expression_error) return ptr;
-//       b = numberParser.realValue();
-//       a = (a>0.5 && b>0.5)? 1.0: 0.0;
-//       continue;
-//     }
-//     if( !_validate_NextOperation( "or ", "OR ")){
-//       ptr = _parse_Expression_NOT();
-//       if(_expression_error) return ptr;
-//       b = numberParser.realValue();
-//       a = (a>0.5 || b>0.5)? 1.0: 0.0;
-//       continue;
-//     }
-//     if( !_validate_NextOperation( "nor ", "NOR ")){
-//       ptr = _parse_Expression_NOT();
-//       if(_expression_error) return ptr;
-//       b = numberParser.realValue();
-//       a = (a>0.5 || b>0.5)? 0.0: 1.0;
-//       continue;
-//     }
-//     if( !_validate_NextOperation( "xor ", "XOR ")){
-//       ptr = _parse_Expression_NOT();
-//       if(_expression_error) return ptr;
-//       b = numberParser.realValue();
-//       a = ((a>0.5 && b>0.5) || (a<0.5 && b<0.5))? 0.0: 1.0;
-//       continue;
-//     }
-//     break;
-//   }
-//   numberParser.setValue( a);
-//   return _parser_position;
-// }
-
-// //
-// // Processes logical not left to right
-// //
-// byte *ExpressionParser::_parse_Expression_NOT(){
-//   double a;
-//   byte *ptr;
-//   while(true){
-//     _ignore_Blanks();
-//     if( !_validate_NextOperation( "not ", "NOT ")){
-//       ptr = _parse_Expression_NOT();
-//       if(_expression_error) return ptr;
-//       a = (numberParser.realValue()>0.5)? 0.0: 1.0;
-//       break;
-//     }
-//     if( !_validate_NextOperation( "and ", "AND ")){
-//       _expression_error = true;
-//       return _parser_position;
-//     }
-//     if( !_validate_NextOperation( "or ", "OR ")){
-//       _expression_error = true;
-//       return _parser_position;
-//     }
-//     if( !_validate_NextOperation( "nor ", "NOR ")){
-//       _expression_error = true;
-//       return _parser_position;
-//     }
-//     if( !_validate_NextOperation( "xor ", "XOR ")){
-//       _expression_error = true;
-//       return _parser_position;
-//     }
-//     ptr = _parse_Expression_Comparison();
-//     if(_expression_error) return ptr;
-//     a = numberParser.realValue();
-//     break;
-//   }
-//   numberParser.setValue( a);
-//   return _parser_position;
-// }
-
-// //
-// // Processes comparisons left to right
-// //
-// byte *ExpressionParser::_parse_Expression_Comparison(){
-//   double a,b;
-//   byte *ptr = _parse_Expression_Add_Sub();
-//   if(_expression_error) return ptr;
-//   a = numberParser.realValue();
-//   while(true){
-//     _ignore_Blanks();
-//     if( !_validate_NextOperation( "!=", "<>")){
-//       ptr = _parse_Expression_Add_Sub();
-//       if(_expression_error) return ptr;
-//       b = numberParser.realValue();
-//       a = (a!=b)? 1.0: 0.0;
-//       continue;
-//     }
-//     if( !_validate_NextOperation( "<=")){
-//       ptr = _parse_Expression_Add_Sub();
-//       if(_expression_error) return ptr;
-//       b = numberParser.realValue();
-//       a = (a<=b)? 1.0: 0.0;
-//       continue;
-//     }
-//     if( !_validate_NextOperation( ">=")){
-//       ptr = _parse_Expression_Add_Sub();
-//       if(_expression_error) return ptr;
-//       b = numberParser.realValue();
-//       a = (a>=b)? 1.0: 0.0;
-//       continue;
-//     }
-//     if( !_validate_NextOperation( "<")){
-//       ptr = _parse_Expression_Add_Sub();
-//       if(_expression_error) return ptr;
-//       b = numberParser.realValue();
-//       a = (a<b)? 1.0: 0.0;
-//       continue;
-//     }
-//     if( !_validate_NextOperation( ">")){
-//       ptr = _parse_Expression_Add_Sub();
-//       if(_expression_error) return ptr;
-//       b = numberParser.realValue();
-//       a = (a>b)? 1.0: 0.0;
-//       continue;
-//     }
-//     if( !_validate_NextOperation( "==")){
-//       ptr = _parse_Expression_Add_Sub();
-//       if(_expression_error) return ptr;
-//       b = numberParser.realValue();
-//       a = (a==b)? 1.0: 0.0;
-//       continue;
-//     }
-//     if( !_validate_NextOperation( "is not ", "IS NOT ")){
-//       ptr = _parse_Expression_Add_Sub();
-//       if(_expression_error) return ptr;
-//       b = numberParser.realValue();
-//       a = (a!=b)? 1.0: 0.0;
-//       continue;
-//     }
-//     if( !_validate_NextOperation( "is ", "IS ")){
-//       ptr = _parse_Expression_Add_Sub();
-//       if(_expression_error) return ptr;
-//       b = numberParser.realValue();
-//       a = (a==b)? 1.0: 0.0;
-//       continue;
-//     }
-//     break;
-//   }
-//   numberParser.setValue( a);
-//   return _parser_position;
-// }
-
-// //
-// // Processes addition and subtraction left to right
-// //
-// byte *ExpressionParser::_parse_Expression_Add_Sub(){
-//   double a,b;
-//   byte *ptr = _parse_Expression_Mult_Div();
-//   if(_expression_error) return ptr;
-//   a = numberParser.realValue();
-//   while(true){
-//     _ignore_Blanks();
-//     if(*_parser_position == '+' && _parser_position[1] != '+') {
-//       _parser_position++;
-//       ptr = _parse_Expression_Mult_Div();
-//       if(_expression_error) return ptr;
-//       a += numberParser.realValue();
-//       continue;
-//     }
-//     if(*_parser_position == '-' && _parser_position[1] != '-') {
-//       _parser_position++;
-//       ptr = _parse_Expression_Mult_Div();
-//       if(_expression_error) return ptr;
-//       a -= numberParser.realValue();
-//       continue;
-//     }
-//     break;
-//   }
-//   numberParser.setValue( a);
-//   return _parser_position;
-// }
-
-// //
-// // Processes multiplication and division left to right
-// //
-// byte *ExpressionParser::_parse_Expression_Mult_Div(){
-//   double a,b;
-//   int64_t c;
-//   byte *ptr = _parse_Expression_Power();
-//   if(_expression_error) return ptr;
-//   a = numberParser.realValue();
-//   while(true){
-//     _ignore_Blanks();
-//     if(*_parser_position == '*' && _parser_position[1] != '*') {
-//       _parser_position++;
-//       ptr = _parse_Expression_Power();
-//       if(_expression_error) return ptr;
-//       a *= numberParser.realValue();
-//       continue;
-//     }
-//     if( !_validate_NextOperation( "//")){
-//       ptr = _parse_Expression_Power();
-//       if(_expression_error) return ptr;
-//       c = numberParser.integerValue();
-//       _expression_error = (c == 0);
-//       if(_expression_error) return ptr;
-//       a = (double)((int64_t)a / c);
-//       continue;
-//     }
-//     if(*_parser_position == '/' && _parser_position[1] != '/') {
-//       _parser_position++;
-//       ptr = _parse_Expression_Power();
-//       if(_expression_error) return ptr;
-//       b = numberParser.realValue();
-//       _expression_error = (b == 0.0);
-//       if(_expression_error) return ptr;
-//       a /= b;
-//       continue;
-//     }
-//     if( !_validate_NextOperation( "%")){
-//       ptr = _parse_Expression_Power();
-//       if(_expression_error) return ptr;
-//       c = numberParser.integerValue();
-//       _expression_error = (a > _HUGE_POS_INTEGER_) || (a < _HUGE_NEG_INTEGER_) || (c == 0);
-//       if(_expression_error) return ptr;
-//       a = (double)((int64_t)a % c);
-//       continue;
-//     }
-//     break;
-//   }
-//   numberParser.setValue( a);
-//   return _parser_position;
-// }
-
-// //
-// // Processes power left to right
-// //
-// byte *ExpressionParser::_parse_Expression_Power(){
-//   double a,b;
-//   byte *ptr = _parse_Expression_Value();
-//   if(_expression_error) return ptr;
-//   a = numberParser.realValue();
-//   while(true){
-//     _ignore_Blanks();
-//     if(_validate_NextOperation( "^", "**")){
-//       numberParser.setValue( a); 
-//       break;
-//     }
-//     ptr = _parse_Expression_Value();
-//     if(_expression_error) return ptr;
-//     b = numberParser.realValue();
-//     a = pow(a, b);
-//   }
-//   return _parser_position;
-// }
-
-
-// bool ExpressionParser::_parse_FunctionArguments(Function *mf, double *_args){
-//   _ignore_Blanks();
-//   if(mf->nArgs == 0) return false;
-//   if(!_check_NextToken( '(')) return true;
-//   for( byte i=0; i<mf->nArgs-1; i++){
-//     if( _parse_ListMember( ',')) return true;
-//     _args[i] = numberParser.realValue();
-//     #ifdef __DEBUG
-//     Serial.print("Argument [");
-//     Serial.print( i);
-//     Serial.print("] parsed: ");
-//     Serial.println(_args[0]);
-//     #endif
-//   }
-//   if( _parse_ListMember( ')')) return true;
-//   _args[mf->nArgs-1] = numberParser.realValue();
-//   #ifdef __DEBUG
-//   Serial.print("Argument [");
-//   Serial.print( mf->nArgs-1);
-//   Serial.print("] parsed: ");
-//   Serial.println(_args[mf->nArgs-1]);
-//   #endif
-//   return false;
-// }
-
 // //
 // // Returns true if unmatched brackets
 // //
@@ -709,3 +404,71 @@ byte Lexer::_parseList( byte maxVal){
 //   _expression_error = bracket_count != 0;
 //   return ptr;
 // }
+
+void Lexer::loadState(){
+  size_t loadedSize = _sdm->loadBinary( RPN_SaveVariables, _vars->_buffer, _vars->_var_bottom, _vars->_const_top - 2);
+  if( _vars->_var_bottom < loadedSize) _vars->_var_bottom = loadedSize;
+  readBASICConstantFile( RPN_SaveConstants); // may use program space; should be called before loadBinbary
+  _code->_program_bottom = _sdm->loadBinary( RPN_SaveProgram, _code->_buffer, 5, BASIC_SPACE-4);
+  if( _code->_program_bottom <= 0) _loadBASICFile( RPN_AutoexecFile, true);
+
+  byte *buff = (byte *)malloc( INPUT_COLS);
+  byte *ptr;
+  if( buff == NULL){
+    _mbox->setLabel(LEX_Error_OutOfMemory);
+    return;
+  }
+  if( _sdm->openDataFileRead( RPN_SaveStatus)){
+    free( buff);
+    return;
+  }
+  while( true){
+    if( _sdm->readString( buff, INPUT_COLS) == 0) break;
+    #ifdef __DEBUG
+    Serial.println ((char *)buff);
+    #endif
+    if( IsToken( buff, LEX_StorageMarker_Current_UI, false)){
+      ptr = buff + strlen( LEX_StorageMarker_Current_UI);
+      _epar->numberParser.parse( ptr);
+      if( _epar->numberParser.result == _RESULT_INTEGER_ || _epar->numberParser.result == _RESULT_REAL_)
+        currentUI = (byte)_epar->numberParser.integerValue();
+      if( currentUI < UI_RPNCALC || currentUI > UI_CONSOLE) currentUI = UI_RPNCALC;
+      continue;
+    }
+    if( IsToken( buff, LEX_StorageMarker_Command, false)){
+      ptr = buff + strlen( LEX_StorageMarker_Command);
+      strncat2( (char *)_clb->_input, (const char *)ptr, INPUT_COLS);
+      continue;
+    }
+    if( IsToken( buff, LEX_StorageMarker_Command_Prev, false)){
+      ptr = buff + strlen( LEX_StorageMarker_Command_Prev);
+      strncat2( (char *)_clb->_inputPrevious, (const char *)ptr, INPUT_COLS);
+      continue;
+    }
+    if( IsToken( buff, LEX_StorageMarker_Cursor_Column, false)){
+      ptr = buff + strlen( LEX_StorageMarker_Cursor_Column);
+      _epar->numberParser.parse( ptr);
+      if( _epar->numberParser.result == _RESULT_INTEGER_ || _epar->numberParser.result == _RESULT_REAL_)
+        _clb->cursor_column = (uint16_t)_epar->numberParser.integerValue();
+      continue;
+    }
+  }
+  size_t linp = strlen(_clb->_input);
+  if( _clb->cursor_column > linp) _clb->cursor_column = linp;
+  free(buff);
+  _sdm->closeFile();
+}
+
+void Lexer::saveState(){
+  if(!_sdm->SDInserted) return;
+  if(!_sdm->SDMounted) return;
+  _sdm->saveBinary( RPN_SaveVariables, _vars->_buffer, _vars->_var_bottom);
+  _sdm->saveBinary( RPN_SaveProgram, _code->_buffer, _code->_program_bottom);
+  operator_STORE_Const( RPN_SaveConstants);
+  if( _sdm->openDataFileWrite( RPN_SaveStatus)) return;
+  if( _sdm->writeSettingNumber( LEX_StorageMarker_Current_UI, (double)currentUI)) return;
+  if( _sdm->writeSettingString( LEX_StorageMarker_Command, _clb->_input)) return;
+  if( _sdm->writeSettingString( LEX_StorageMarker_Command_Prev, _clb->_inputPrevious)) return;
+  if( _sdm->writeSettingNumber( LEX_StorageMarker_Cursor_Column, _clb->cursor_column)) return;
+  _sdm->closeFile(); // if file has not been closed due to an error;
+}

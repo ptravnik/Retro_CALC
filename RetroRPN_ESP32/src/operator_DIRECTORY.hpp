@@ -24,8 +24,8 @@ bool Lexer::operator_DIR(){
   #endif
   _ignore_Blanks();
   _lexer_position = _epar->filenameParser.parse( _lexer_position);
-  if( _epar->filenameParser.result) _sdm->listDir( (char *)_epar->filenameParser.Name());
-  else _sdm->listDir( _vars->currentDir);
+  if( _epar->filenameParser.result) _sdm->listFolder( (char *)_epar->filenameParser.Name());
+  else _sdm->listFolder( _vars->currentDir);
   _skipToEOL(_lexer_position);
   return true;
 }
@@ -45,7 +45,7 @@ bool Lexer::operator_DIRECTORY(){
   #endif
   _ignore_Blanks();
   _lexer_position = _epar->filenameParser.parse( _lexer_position);
-  if( !_epar->filenameParser.result || !_sdm->checkExists( (char *)_epar->filenameParser.Name())){
+  if( !_epar->filenameParser.result || !_sdm->checkEntityExists( (char *)_epar->filenameParser.Name())){
     _mbox->setLabel( LEX_Warning_NoSuchFolder);
     strncat2( _vars->currentDir, "/", CURRENT_DIR_LEN);
     _skipToEOL(_lexer_position);

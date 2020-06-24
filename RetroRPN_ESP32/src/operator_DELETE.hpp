@@ -31,6 +31,7 @@ bool Lexer::operator_DELETE(){
   _sdm->deleteEntity( (char *)_epar->filenameParser.Name());
   if( _sdm->LastError != NULL) _mbox->setLabel( _sdm->LastError);
   else _mbox->setLabel( LEX_Message_Deleted);
+  _sdm->checkRootExists();
   _skipToEOL(_lexer_position);
   return true;
 }

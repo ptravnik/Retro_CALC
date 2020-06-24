@@ -326,7 +326,10 @@
 #define _OPR_DELETE_KW          224
 #define _OPR_MOVE_KW            225
 #define _OPR_COPY_KW            226
-#define _OPERATOR_COUNT         227
+#define _OPR_TYPE_KW            227
+#define _OPR_INJECT_KW          228
+#define _OPR_MKDIR_KW           229
+#define _OPERATOR_COUNT         230
 
 #define RPN_STACK               20
 

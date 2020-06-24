@@ -39,7 +39,7 @@ static void _writeDoubleIndex( char *buff, int value1, int value2, SDManager *sd
   sdm->print( buff, false);
 }
 
-static void _writeString( char *buff, byte *str, SDManager *sdm){
+static void writeString( char *buff, byte *str, SDManager *sdm){
   snprintf( buff, INPUT_COLS, " = \"");
   sdm->print( buff, false);
   convertToUTF8( buff, str, INPUT_COLS);
@@ -79,12 +79,12 @@ static uint16_t _writeVariable( char *buff, const char *format, uint16_t lineNum
       break;
     case VARTYPE_STRING:
       _writeLineStarter( buff, format, lineNumber, vars->getVarName(vt), sdm);
-      _writeString( buff, vars->stringValue( vt), sdm);
+      writeString( buff, vars->stringValue( vt), sdm);
       lineNumber += 10;
       break;
     default:
       _writeLineStarter( buff, format, lineNumber, vars->getVarName(vt), sdm);
-      _writeString( buff, (byte*)"None", sdm);
+      writeString( buff, (byte*)"None", sdm);
       lineNumber += PROGLINE_INCREMENT;
       break;
   }
@@ -92,26 +92,29 @@ static uint16_t _writeVariable( char *buff, const char *format, uint16_t lineNum
 }
 
 bool Lexer::operator_STORE(){
-  //#ifdef __DEBUG
+  #ifdef __DEBUG
   Serial.println("STORE called");
   Serial.print("Evaluating: |");
   Serial.println((char *)_lexer_position);
-  //#endif
+  #endif
   _ignore_Blanks();
   _lexer_position = _kwds->parse(_lexer_position);
   if( _kwds->lastKeywordFound == NULL){
-    Serial.println("No keyword");
-    _sdm->saveState();
-    _mbox->setLabel( LEX_Message_Saved);
+    if(!_sdm->SDMounted){
+      _mbox->setLabel( LEX_Error_NoSDCard);
+    }
+    else{
+      saveState();
+      _mbox->setLabel( (_sdm->LastError != NULL)?
+          _sdm->LastError: LEX_Message_Saved);
+    }
     _skipToNextOperator( _lexer_position);
     return true; 
   }
   switch(_kwds->lastKeywordFound->id){
     case _OPR_VARS_KW:
-      Serial.println("Keyword VARS");
       return operator_STORE_Vars();
     case _OPR_CONST_KW:
-      Serial.println("Keyword CONST");
       return operator_STORE_Const();
     default:
       _skipToNextOperator( _lexer_position);
@@ -121,17 +124,27 @@ bool Lexer::operator_STORE(){
 }
 
 bool Lexer::operator_STORE_Vars(){
+  #ifdef __DEBUG
   Serial.println("STORE VARS called");
   Serial.print("Evaluating: |");
   Serial.println((char *)_lexer_position);
+  #endif
   _ignore_Blanks();
   _lexer_position = _epar->filenameParser.parse( _lexer_position);
-  bool resError = _sdm->openDataFileWrite( _epar->filenameParser.result?
-      (char *)_epar->filenameParser.Name(): (char *)LEX_Standard_Variables);
-  if( resError){
-    if( _sdm->LastError != NULL) _mbox->setLabel( _sdm->LastError);
-    return true;
-  }
+  operator_STORE_Vars( _epar->filenameParser.result?
+      (const char *)_epar->filenameParser.Name(): LEX_Standard_Variables);
+  _mbox->setLabel( ( _sdm->LastError == NULL)?
+      LEX_Message_Saved: _sdm->LastError);
+  _skipToEOL(_lexer_position);
+  return true;
+  _mbox->setLabel( ( _sdm->LastError == NULL)?
+      LEX_Message_Saved: _sdm->LastError);
+  _skipToEOL(_lexer_position);
+  return true;
+}
+
+bool Lexer::operator_STORE_Vars( const char *name){
+  if(_sdm->openDataFileWrite( name)) return true;
   int16_t lineNumber = 10;
   VariableToken vt = _vars->getFirstVar();
   NumberParser *npar = &(_epar->numberParser);
@@ -141,24 +154,27 @@ bool Lexer::operator_STORE_Vars(){
     vt = _vars->getNextVar( vt);
   }
   _sdm->closeFile();
+  return true;
+}
+
+bool Lexer::operator_STORE_Const(){
+  #ifdef __DEBUG
+  Serial.println("STORE CONST called");
+  Serial.print("Evaluating: |");
+  Serial.println((char *)_lexer_position);
+  #endif
+  _ignore_Blanks();
+  _lexer_position = _epar->filenameParser.parse( _lexer_position);
+  operator_STORE_Const( _epar->filenameParser.result?
+      (const char *)_epar->filenameParser.Name(): LEX_Standard_Constants);
   _mbox->setLabel( ( _sdm->LastError == NULL)?
       LEX_Message_Saved: _sdm->LastError);
   _skipToEOL(_lexer_position);
   return true;
 }
 
-bool Lexer::operator_STORE_Const(){
-  Serial.println("STORE CONST called");
-  Serial.print("Evaluating: |");
-  Serial.println((char *)_lexer_position);
-  _ignore_Blanks();
-  _lexer_position = _epar->filenameParser.parse( _lexer_position);
-  bool resError = _sdm->openDataFileWrite( _epar->filenameParser.result?
-      (char *)_epar->filenameParser.Name(): (char *)LEX_Standard_Constants);
-  if( resError){
-    if( _sdm->LastError != NULL) _mbox->setLabel( _sdm->LastError);
-    return true;
-  }
+bool Lexer::operator_STORE_Const( const char *name){
+  if( _sdm->openDataFileWrite( name)) return true;
   int16_t lineNumber = 10;
   VariableToken vt = _vars->getFirstConst();
   NumberParser *npar = &(_epar->numberParser);
@@ -169,8 +185,5 @@ bool Lexer::operator_STORE_Const(){
     if( _vars->isReadOnly( vt)) break;
   }
   _sdm->closeFile();
-  _mbox->setLabel( ( _sdm->LastError == NULL)?
-      LEX_Message_Saved: _sdm->LastError);
-  _skipToEOL(_lexer_position);
   return true;
 }

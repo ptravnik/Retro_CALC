@@ -117,12 +117,13 @@ unsigned long ESP32Host::init() {
   myBasicConsole.init(_host_Components);
   myEditor.init(_host_Components);
   myRPNCalculator.init(_host_Components);
-  mySDManager.loadState();
+  myLexer.loadState();
   
   myLCDManager.waitForEndSplash( initStarted);
 
-  // TODO: remember selector here
-  selectUI(UI_RPNCALC);
+  if( myLexer.currentUI < UI_RPNCALC || myLexer.currentUI > UI_CONSOLE )
+    myLexer.currentUI = UI_RPNCALC;
+  show();
   redraw();
   return myIOManager.keepAwake();
 }
@@ -155,8 +156,7 @@ unsigned long ESP32Host::tick() {
   }
   if(dt > SCREEN_OFF_PERIOD){
     // TODO: check here if saving is needed
-    // mySDManager.saveState();
-    // myRPNCalculator.saveState();
+    // myLexer.saveState();
     myLCDManager.sleepOn();
     return myIOManager.lastInput;
   }
@@ -186,7 +186,7 @@ void ESP32Host::selectNextUI(){
 void ESP32Host::selectUI(byte ui){
   if( myLexer.currentUI == ui) return;
   myLexer.currentUI = ui;
-  myCommandLine.clearInput(); // TODO: check if this interferes with Lexer
+  myCommandLine.clearInput();
   show();
 }
 
@@ -238,8 +238,7 @@ void ESP32Host::deepSleep( byte msg){
   delay(500);
   myLCDManager.sleepOn();
   // TODO add calls for saving the system state
-  mySDManager.saveState();
-  myRPNCalculator.saveState();
+  myLexer.saveState();
   delay(1000); // finish card activity
   mySDManager.sleepOn();
   myIOManager.sleepOn(); // consoles quit the last!

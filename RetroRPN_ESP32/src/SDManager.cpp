@@ -12,19 +12,14 @@
 
 //#define __DEBUG
 
-
-const char RPN_SaveStatusFile[] PROGMEM = "/_RPN_SaveStatus.txt";
-const char RPN_SaveStatusFile2[] PROGMEM = "/_RPN_SaveStatus.bin";
-const char RPN_SaveConstantsFile[] PROGMEM = "/_RPN_Constants.txt";
-const char RPN_AutoexecFile[] PROGMEM = "/autotest.bas";
-
-const char SD_Error_NotInserted[] PROGMEM = "No SD card";
-const char SD_Error_NotMounted[] PROGMEM = "SD not mounted";
-const char SD_Error_FileNameTooLong[] PROGMEM = "Name too long";
-const char SD_Error_FileNotFound[] PROGMEM = "File not found";
-const char SD_Error_FileAccessError[] PROGMEM = "Cannot access file";
-const char SD_Error_OutOfMemory[] PROGMEM = "Out of memory";
-const char SD_Error_DeleteFailed[] PROGMEM = "Delete failed";
+const char SD_Error_NotInserted[] PROGMEM = "Err: No card";
+const char SD_Error_NotMounted[] PROGMEM = "Err: Unmounted";
+const char SD_Error_FileNameTooLong[] PROGMEM = "Err: Long name";
+const char SD_Error_FileNotFound[] PROGMEM = "Err: Not found";
+const char SD_Error_WriteFailed[] PROGMEM = "Err: SD fail";
+const char SD_Error_FileAccessError[] PROGMEM = "Err: Write fail";
+const char SD_Error_OutOfMemory[] PROGMEM = "Err: Out of memory";
+const char SD_Error_DeleteFailed[] PROGMEM = "Err: Delete fail";
 
 const char SD_Message0[] PROGMEM = "+ SD inserted";
 const char SD_Message1[] PROGMEM = "+ SD removed";
@@ -33,7 +28,6 @@ const char SD_Message3[] PROGMEM = "+ SD mount failed";
 const char SD_Message4[] PROGMEM = "+ SD size: %llu MB";
 const char SD_Message_Mounted[] PROGMEM = "SD mounted";
 const char SD_Message_Removed[] PROGMEM = "SD removed";
-const char SD_Error_WriteFailed[] PROGMEM = "Err: SD failure";
 const char *const SD_Message_Table[] PROGMEM = {
   SD_Message0,
   SD_Message1,
@@ -85,7 +79,7 @@ bool SDManager::_detectSDCard(){
   #ifdef __DEBUG  
   Serial.printf("SD Card Size: %llu MB\n", cardSize);
   #endif
-  _checkRoot();
+  checkRootExists();
   keepAwake();
   return inserted;  
 }
@@ -133,7 +127,7 @@ uint8_t SDManager::cardType(){
   return SD.cardType();
 }
 
-void SDManager::_checkRoot(){
+void SDManager::checkRootExists(){
   if(!SDInserted) return;
   if(!SDMounted) return;
   File root = SD.open(_vars->currentDir);
@@ -154,7 +148,7 @@ void SDManager::_checkRoot(){
 }
 
 File SDManager::_getCurrentDir(){
-  _checkRoot();
+  checkRootExists();
   return SD.open(_vars->currentDir);
 }
 
@@ -170,8 +164,10 @@ void SDManager::sleepOff(){
   _detectSDCard();
 }
 
-bool SDManager::checkExists( const char *name){
-  if( _cardCheckMantra()) return false;
+bool SDManager::checkEntityExists( const char *name){
+  if( !SDInserted ) return false;
+  if( !SDMounted ) return false;
+  // if( _cardCheckMantra()) return false; // no need to write any errors
   return SD.exists( name);
 }
 
@@ -216,69 +212,58 @@ static uint16_t _ReadLn_( File file, byte *ptr){
   return nBytes;
 }
 
-void SDManager::loadState(){
-  if(!SDInserted) return;
-  if(!SDMounted) return;
-  File file = SD.open( RPN_SaveStatusFile2);
+//
+// Loading and saving variables as a binary file
+//
+size_t SDManager::loadBinary( const char *name, byte *buff, size_t minSize, size_t maxSize){
+  if(!SDInserted) return 0;
+  if(!SDMounted) return 0;
+  File file = SD.open( name);
   if(!file){
     #ifdef __DEBUG
-    Serial.println("Failed to open status file for reading");
+    Serial.println("Failed to open binary file for reading");
     #endif
-    return;
+    return 0;
   }
   size_t tmpSize = file.size();
-  size_t maxSize = _vars->_const_top - 2;
+  if( tmpSize < minSize) return 0; // old version of vars likely 
   if( tmpSize >= maxSize) tmpSize = maxSize;
-  file.read( (byte *)_vars->_buffer, tmpSize);
+  file.read( buff, tmpSize);
   file.close();
-  _vars->_buffer[tmpSize] = _NUL_; // prevents name overflow
-  _vars->_var_bottom = tmpSize;
+  buff[tmpSize] = _NUL_; // prevents name overflow
   #ifdef __DEBUG
-  Serial.print("Loaded status: ");
-  Serial.print(_vars->_var_bottom);
+  Serial.print("Loaded binary: ");
+  Serial.print( tmpSize);
   Serial.println(" bytes");
   #endif
-
-  file = SD.open( RPN_AutoexecFile);
-  if(!file){
-    #ifdef __DEBUG
-    Serial.println("Failed to open autotest.bat for reading");
-    #endif
-    return;
-  }
-  _code->clearProgram();
-  while( true){
-    if( !_ReadLn_( file, _io_buffer)) break;
-    if( _code->addLine( _io_buffer)) break;
-  }
-  _vars->setPrgCounter( _code->getFirstLine().lineNumber);
-  file.close();
+  return tmpSize;
 }
 
-void SDManager::saveState(){
-  if(!SDInserted) return;
-  if(!SDMounted) return;
-  File file = SD.open( RPN_SaveStatusFile2, FILE_WRITE);
+bool SDManager::saveBinary( const char *name, byte *buff, size_t Size){
+  if(!SDInserted) return false;
+  if(!SDMounted) return false;
+  File file = SD.open( name, FILE_WRITE);
   if(!file){
     #ifdef __DEBUG
-    Serial.println("Failed to open status file for writing");
+    Serial.println("Failed to open binary file for writing");
     #endif
-    return;
+    return false;
   }
   #ifdef __DEBUG
     Serial.print("Wrote ");
-    Serial.print(file.write( _vars->_buffer, _vars->_var_bottom));
-    Serial.println(" bytes of status");
-    Serial.print("Variable bottom at ");
-    Serial.print(_vars->_var_bottom);
-    Serial.println(" bytes");
+    Serial.print(file.write( buff, Size));
+    Serial.println(" bytes into binary");
   #else
-  file.write( (byte *)_vars->_buffer, _vars->_var_bottom);
+  file.write( buff, Size);
   #endif
   file.close();
+  return true;
 }
 
-void SDManager::listDir( char *name){
+//
+// Lists directory
+//
+void SDManager::listFolder( char *name){
   if( _cardCheckMantra()) return;
   if( name == NULL) name = _vars->currentDir;
 
@@ -305,26 +290,25 @@ void SDManager::listDir( char *name){
   } // while
 }
 
-//void createDir(fs::FS &fs, const char * path){
-//    Serial.printf("Creating Dir: %s\n", path);
-//    if(fs.mkdir(path)){
-//        Serial.println("Dir created");
-//    } else {
-//        Serial.println("mkdir failed");
-//    }
-//}
-//
+void SDManager::createFolder( char * name){
+  if( _cardCheckMantra()) return;
+  Serial.print( "Creating folder:");
+  Serial.println( name);
+  if( _checkFolderStructure( name) || SD.mkdir(name)){
+    LastError = SD_Error_FileAccessError;
+  }
+}
 
 void SDManager::readFile(const char * path){
   if(!SDInserted) return;
   if(!SDMounted) return;
-  Serial.printf("Reading file: %s\n", path);
+  Serial.print("Reading file: ");
+  Serial.println( path);
   File file = SD.open(path);
   if(!file){
       Serial.println("Failed to open file for reading");
       return;
   }
-  Serial.print("Read from file: ");
   while(file.available()){
       Serial.write(file.read());
   }
@@ -349,106 +333,70 @@ void SDManager::writeFile( const char * path, const char * message){
   file.close();
 }
 
-void SDManager::readRPNStatus( byte *inp, byte *last_inp, uint16_t *pos){
-  if(!SDInserted) return;
-  if(!SDMounted) return;
-  File file = SD.open(RPN_SaveStatusFile);
-  if(!file){
-    #ifdef __DEBUG
-    Serial.println("Failed to open status file for reading");
-    #endif
-    return;
-  }
-  if( _readString( &file, last_inp, INPUT_COLS)){
-    file.close();
-    return;
-  }
-  if( _readString( &file, inp, INPUT_COLS)){
-    file.close();
-    return;
-  }
-  size_t inplen = strlen(inp);
-  if(inplen>0){ 
-    double tmp = 0.0;
-    _readDouble( &file, &tmp);
-    *pos = (uint16_t)tmp;
-    if( *pos > inplen) *pos = inplen; 
-  }
-  file.close();
-}
-
-void SDManager::writeRPNStatus(  byte *inp, byte *last_inp, uint16_t pos){
-  if(!SDInserted) return;
-  if(!SDMounted) return;
-  File file = SD.open( RPN_SaveStatusFile, FILE_WRITE);
-  if(!file){
-    #ifdef __DEBUG
-    Serial.println("Failed to open status file for writing");
-    #endif
-    return;
-  }
-  if( _writeString( &file, last_inp)){
-    file.close();
-    return;
-  }
-  if( _writeString( &file, inp)){
-    file.close();
-    return;
-  }
-  _writeDouble( &file, (double)pos);
-  file.close();
-}
-
-void SDManager::_readBuffer( void *f){
-  File *file = (File *)f;
-  size_t pos = 0;
-  while(file->available()){
-    byte b = file->read();
-    if( b == _CR_) continue;
-    if( b == _LF_) break;
-    if( pos >= INPUT_LIMIT) continue;
-    _io_buffer[pos++] = b;
-  }
-  _io_buffer[pos] = _NUL_;
-}
-
-bool SDManager::_readDouble( void *f, double *v){
+bool SDManager::readDouble( double *v){
   *v = 0.0;
-  _readBuffer( f);
+  readln( _io_buffer);
   _epar->parse(_io_buffer);
   if(_epar->result == _RESULT_UNDEFINED_) return true;
   *v = _epar->numberParser.realValue();
   return false;
 }
 
-bool SDManager::_writeDouble( void *f, double v){
-  File *file = (File *)f;
+bool SDManager::writeDouble( double v){
   char *message = (char *)_epar->numberParser.stringValue( v);
-  if( !file->print(message)) return true;
-  return file->print("\r\n") != 2;
+  if( !_currentFile.print(message)) return true;
+  return _currentFile.print("\r\n") != 2;
 }
 
 //
 // Note CP1251 conversion on the fly
 //
-bool SDManager::_readString( void *f, byte *buff, size_t limit){
-  _readBuffer( f);
+size_t SDManager::readString( byte *buff, size_t limit){
+  readln( _io_buffer);
   convertToCP1251( buff, (const char *)_io_buffer, limit);
-  return strlen(buff) == 0;
+  return strlen(buff);
 }
 
 //
+// Writes string, returns true if an error
 // Note UTF8 conversion on the fly
 //
-bool SDManager::_writeString( void *f, byte *v){
+bool SDManager::writeString( byte *v){
   char buff[8]; 
-  File *file = (File *)f;
   while(*v){
     convertToUTF8( buff, *v++);
-    if( !file->print(buff)) break;
+    if( !_currentFile.print(buff)) break;
   }
-  return file->print("\r\n") != 2;
+  return _currentFile.print("\r\n") != 2;
 }
+
+//
+// Writes settings, returns true if an error
+// Note it performs file closure in case of an error
+//
+bool SDManager::writeSettingNumber( const char *title, double value){
+  if( !print( (char *)title, false)){
+    closeFile();
+    return true;
+  }
+  if( writeDouble( value)){
+    closeFile();
+    return true;
+  }
+  return false;
+}
+bool SDManager::writeSettingString( const char *title, byte *value){
+  if( !print( (char *)title, false)){
+    closeFile();
+    return true;
+  }
+  if( writeString( value)){
+    closeFile();
+    return true;
+  }
+  return false;
+}
+
 
 //void appendFile(fs::FS &fs, const char * path, const char * message){
 //    Serial.printf("Appending to file: %s\n", path);
@@ -472,15 +420,6 @@ bool SDManager::_writeString( void *f, byte *v){
 //        Serial.println("File renamed");
 //    } else {
 //        Serial.println("Rename failed");
-//    }
-//}
-//
-//void deleteFile(fs::FS &fs, const char * path){
-//    Serial.printf("Deleting file: %s\n", path);
-//    if(fs.remove(path)){
-//        Serial.println("File deleted");
-//    } else {
-//        Serial.println("Delete failed");
 //    }
 //}
 //
@@ -611,14 +550,12 @@ bool SDManager::openProgramFileRead( const char *name){
 // Opens a data file for writing
 //
 bool SDManager::openDataFileWrite( const char *name){
-  Serial.println("file given: ");
-  Serial.println(name);
   if( _cardCheckMantra()) return true;
   uint16_t len = strlen( name);
 
   // first, try the absolute name; no memory allocation needed
   if( len > 1 && name[0] == '/'){
-    _currentFile = SD.open( name, "w");
+    _currentFile = SD.open( name, FILE_WRITE);
     if(!_currentFile){
       LastError = SD_Error_FileAccessError;
       return true;
@@ -636,11 +573,11 @@ bool SDManager::openDataFileWrite( const char *name){
   while( *name == '/') name++;
   strcat( tmpName, name);
 
-  if( _checkDirectoryStructure( tmpName)){
+  if( _checkFolderStructure( tmpName)){
     free( tmpName);
     return true;
   }
-  _currentFile = SD.open( tmpName, "w");
+  _currentFile = SD.open( tmpName, FILE_WRITE);
   free( tmpName);
   if(!_currentFile){
     LastError = SD_Error_FileAccessError;
@@ -658,15 +595,15 @@ bool SDManager::openProgramFileWrite( const char *name){
   Serial.println("Current file set: ");
   Serial.println(( const char*)_vars->currentFile);
   if( SD.exists(_vars->currentFile)){
-    _currentFile = SD.open( _vars->currentFile, "w");
+    _currentFile = SD.open( _vars->currentFile, FILE_WRITE);
     if(!_currentFile){
       LastError = SD_Error_FileAccessError;
       return true;
     }
     return false;
   }
-  if( _checkDirectoryStructure( _vars->currentFile)) return true;
-  _currentFile = SD.open( _vars->currentFile, "w");
+  if( _checkFolderStructure( _vars->currentFile)) return true;
+  _currentFile = SD.open( _vars->currentFile, FILE_WRITE);
   if(!_currentFile){
     LastError = SD_Error_FileAccessError;
     return true;
@@ -777,7 +714,7 @@ bool SDManager::_formFileMantra( const char *name, char *dest){
 //
 // Checks if directory structure exists, if not - creates
 //
-bool SDManager::_checkDirectoryStructure( char *name){
+bool SDManager::_checkFolderStructure( char *name){
   if( SD.exists( name)) return false;
   int16_t lastHash = strlen( name) - 1;
   while( lastHash>0 && name[lastHash] != '/') lastHash--;

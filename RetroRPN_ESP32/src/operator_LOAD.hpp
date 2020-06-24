@@ -26,8 +26,6 @@ bool Lexer::operator_LOAD(){
       (char *)_epar->filenameParser.Name(): NULL);
   if( rs){
     if( _sdm->LastError != NULL) _mbox->setLabel( _sdm->LastError);
-    else _mbox->setLabel( "Not found");
-    // TODO
     return true;
   }
   _vars->removeAllVariables();
@@ -42,4 +40,17 @@ bool Lexer::operator_LOAD(){
       LEX_Message_Loaded: _sdm->LastError);
   _skipToEOL(_lexer_position);
   return true;
+}
+
+void Lexer::_loadBASICFile( const char *name, bool ignoreErrors){
+  if( _sdm->openProgramFileRead( name)){
+    if( !ignoreErrors && _sdm->LastError != NULL) _mbox->setLabel( _sdm->LastError);
+    return;
+  }
+  while( true){
+    if( !_sdm->readln(_io_buffer)) break;
+    if( _code->addLine( _io_buffer)) break;
+  }
+  _sdm->closeFile();
+  _vars->setPrgCounter( _code->getFirstLine().lineNumber);
 }

@@ -691,6 +691,15 @@ const char _OPR_move[] PROGMEM = "move";
 //#define _OPR_COPY_KW            226
 const char _OPR_COPY[] PROGMEM = "COPY";
 const char _OPR_copy[] PROGMEM = "copy";
+//#define _OPR_TYPE_KW            227
+const char _OPR_TYPE[] PROGMEM = "TYPE";
+const char _OPR_type[] PROGMEM = "type";
+//#define _OPR_INJECT_KW          228
+const char _OPR_INJECT[] PROGMEM = "INJECT";
+const char _OPR_inject[] PROGMEM = "inject";
+//#define _OPR_MKDIR_KW           229
+const char _OPR_MKDIR[] PROGMEM = "MKDIR";
+const char _OPR_mkdir[] PROGMEM = "mkdir";
 
 
 void Keywords::init(){
@@ -921,7 +930,10 @@ void Keywords::init(){
   _addKeyword( _OPR_DELETE, _OPR_delete);              // 224
   _addKeyword( _OPR_MOVE, _OPR_move);                  // 225
   _addKeyword( _OPR_COPY, _OPR_copy);                  // 226
-  //_addKeyword( Add here, Add here);                  // 227
+  _addKeyword( _OPR_TYPE, _OPR_type);                  // 227
+  _addKeyword( _OPR_INJECT, _OPR_inject);              // 228
+  _addKeyword( _OPR_MKDIR, _OPR_mkdir);                // 229
+  //_addKeyword( Add here, Add here);                  // 230
 };
 
 Keyword *Keywords::getKeyword(byte *str){

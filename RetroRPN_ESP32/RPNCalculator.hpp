@@ -36,8 +36,6 @@ class RPNCalculator{
     void redraw();
     void sendChar( byte c);
     void processInput( bool silent=false);
-    void loadState();
-    void saveState();
     void updateIOM( bool refresh=true);
   private:
     byte *_io_buffer;

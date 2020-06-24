@@ -30,7 +30,6 @@ unsigned long RPNCalculator::init(void *components[]){
   _clb = (CommandLine *)components[UI_COMP_CommandLine];
   _io_buffer = _iom->getIOBuffer();
   _rsb->resetRPNLabels();
-  loadState();
   _rsb->setStackRedrawAll();
   return _iom->keepAwake();
 }
@@ -248,29 +247,6 @@ void RPNCalculator::processInput( bool silent) {
     _rsb->setStackRedrawAll();
     updateIOM();
   }
-}
-
-//
-// TODO: load and save functionality here
-//
-void RPNCalculator::loadState(){
-  if( !_sdm->SDMounted) return;
-  _sdm->readRPNStatus(_clb->_input, _clb->_inputPrevious, &(_clb->cursor_column));
-  #ifdef __DEBUG
-  Serial.print("loaded: [");
-  Serial.print( (char*)_clb->_input);
-  Serial.println("]");
-  #endif
-}
-
-void RPNCalculator::saveState(){
-  if( !_sdm->SDMounted) return;
-  _sdm->writeRPNStatus(_clb->_input, _clb->_inputPrevious, _clb->cursor_column);
-  //_clb->
-  //  uint16_t _clb->cursor_column = 0;
-  //  uint16_t _clb->display_starts = 0;
-  //  byte _clb->_input[INPUT_COLS];
-  //  byte _clb->_inputPrevious[INPUT_COLS];
 }
 
 //
