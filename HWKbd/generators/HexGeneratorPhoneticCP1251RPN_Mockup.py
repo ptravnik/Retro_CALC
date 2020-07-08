@@ -181,8 +181,8 @@ kbd.addButtonNoSwitch(["#CODE=031-","-","#CODE=010cli#CODE=013","-",
                        "ю","Ю","#CODE=010cli#CODE=013","-"])          # 03
 kbd.addButtonNoSwitch(["#CODE=031*","*","#CODE=010edit#CODE=013","*",
                        "ъ","Ъ","#CODE=010edit#CODE=013","*"])         # 04
-kbd.addButtonNoSwitch(["#CODE=031/","/","#CODE=010fman","fman",
-                       "ь","Ь","#CODE=010fman","fman"])               # 05
+kbd.addButtonNoSwitch(["#CODE=031/","/","#CODE=010fman#CODE=013","#CODE=010oox#CODE=013",
+                       "ь","Ь","#CODE=010fman#CODE=013","/"])               # 05
 kbd.addButtonNoSwitch(["#CODE=031^","^","^","#CODE=010root#CODE=013",
                        "ё","Ё","^","^"])                              # 06
 kbd.addButtonNoSwitch(["#CODE=031#CODE=177","~","\\","#CODE=010oox#CODE=013",
@@ -240,13 +240,10 @@ kbd.addButtonSimple("lL  лЛ  ") # 39
 kbd.addButtonNoSwitch(["#CODE=008","#CODE=127","#CODE=008","#CODE=127",
                        "#CODE=008","#CODE=127","#CODE=008","#CODE=127"]) # 40
 
-#kbd.addButtonSimple("zZ  зЗ  ") # 41
 kbd.addButtonNoSwitch(["z","Z","#CODE=010sin#CODE=013","#CODE=010asin#CODE=013",
                        "з","З","#CODE=010sin#CODE=013","#CODE=010asin#CODE=013"]) # 41 (sine)
-#kbd.addButtonSimple("xX  хХ  ") # 42
 kbd.addButtonNoSwitch(["x","X","#CODE=010cos#CODE=013","#CODE=010acos#CODE=013",
                        "х","Х","#CODE=010cos#CODE=013","#CODE=010acos#CODE=013"]) # 42 (cosine)
-#kbd.addButtonSimple("cC  цЦ  ") # 43
 kbd.addButtonNoSwitch(["c","C","#CODE=010tan#CODE=013","#CODE=010atan#CODE=013",
                        "ц","Ц","#CODE=010tan#CODE=013","#CODE=010atan#CODE=013"]) # 42 (tangent)
 kbd.addButtonSimple("vV  вВ  ") # 44
