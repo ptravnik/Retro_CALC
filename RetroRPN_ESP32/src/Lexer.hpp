@@ -23,15 +23,19 @@ class Lexer{
     Keyword *lastKeyword = NULL;
     VariableToken lastVariable = 0;
     byte result = _RESULT_UNDEFINED_;
+
     void init( void *components[]);
     inline unsigned long tick(){ return millis();};
+
+    byte *parse( byte *str);
     inline byte *parseInteractive( byte *str){
       return parse( str);
     };
-    byte *parse( byte *str);
+
     void loadState();
     void saveState();
     void readBASICConstantFile(const char *name);
+    void resetMessageBox();
 
     // Operator declarations here
     bool operator_AMODE();
@@ -99,9 +103,16 @@ class Lexer{
     MessageBox *_mbox;
     CommandLine *_clb;
 
-    bool _expression_error = false;
+    bool _lexer_error = false;
     byte *_lexer_position;
     double _listValues[10];
+
+    inline void _ignore_Blanks(){
+      while(IsSpacer(*_lexer_position))
+        _lexer_position++;
+    };
+
+    //byte *_bracket_Check();
 
     void _parseOperator();
     bool _processKeyword();
@@ -110,10 +121,6 @@ class Lexer{
     bool _findAssignment();
     bool _validate_NextCharacter( byte c);
 
-    inline void _ignore_Blanks(){
-      while(IsSpacer(*_lexer_position))
-        _lexer_position++;
-    };
     bool _check_NextToken( byte c);
     bool _peek_NextToken( byte c);
     byte _parseList( byte maxVal=10);

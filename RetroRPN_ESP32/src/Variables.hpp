@@ -51,6 +51,8 @@ class Variables{
     size_t _standard_bottom = 0;
     size_t _const_top = VARIABLE_SPACE;
     size_t _standard_top = VARIABLE_SPACE;
+    size_t _newNamePosition = 0;
+    size_t _newStringPosition = 0;
     byte *_buffer = NULL;
     char *currentDir;
     char *currentFile;
@@ -106,11 +108,11 @@ class Variables{
     uint16_t getColumnSize( VariableToken vt);
     inline bool isConstant( VariableToken vt){ return vt>_const_top;};
     inline bool isReadOnly( VariableToken vt){
-        if( vt-2 <=_read_only_bottom) return true;
+        if( vt-2 <_read_only_bottom) return true;
         return vt>_standard_top;};
     inline bool isUnremovable( VariableToken vt){
         if( vt < 2) return true; 
-        if( vt-2 <=_standard_bottom) return true;
+        if( vt-2 <_standard_bottom) return true;
         return vt > _standard_top;};
     byte nameEndsWith( VariableToken vt);
     bool isNameBASICReal( VariableToken vt);
@@ -245,7 +247,17 @@ class Variables{
             _RPN_Mantra_( value, pops):
             _nonRPN_Mantra_( value, rets);};
 
+    //
+    // Helps in name and string parsing
+    //
+    void startNewName();
+    void addCharToNewName( byte *ptr);
+    void startNewValue();
+    void addCharToNewValue( byte *ptr);
+    byte *getNewNamePtr();
+
   private:
+    byte _dummyString[1];
     Keywords *_kwds;
     double *_rpnStack = NULL;
     double *_prev = NULL;

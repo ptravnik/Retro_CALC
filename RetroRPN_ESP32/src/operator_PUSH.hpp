@@ -22,7 +22,7 @@ bool Lexer::operator_PUSH(){
   Serial.println((char *)_lexer_position);
   #endif
   // parse expression
-  _lexer_position = _epar->parse(_lexer_position);
+  _lexer_position = _epar->parseAlgebraic(_lexer_position);
   switch( _epar->result ){
     case _RESULT_INTEGER_:
     case _RESULT_REAL_:

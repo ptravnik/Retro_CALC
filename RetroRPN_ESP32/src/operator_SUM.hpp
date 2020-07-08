@@ -34,12 +34,14 @@ bool Lexer::operator_SUM(){
   _vars->pushRPNStack( _vars->nmean[0]);
   _vars->pushRPNStack( _vars->stdev[0]);
   _vars->pushRPNStack( _vars->mean[0]);
+
+  _vars->setRPNLabelZ( LEX_Message_N);
+  _vars->setRPNLabelY( LEX_Message_stDev);
+  _vars->setRPNLabelX( LEX_Message_Mean);
+  _vars->setScrMessage( LEX_Message_SumUpdated);
+  _mbox->setRedrawRequired();
   _rsb->setStackRedrawAll();
-  _rsb->setRPNLabel( 2, LEX_Message_N);
-  _rsb->setRPNLabel( 1, LEX_Message_stDev);
-  _rsb->setRPNLabel( 0, LEX_Message_Mean);
-  _rsb->updateIOM();
-  _mbox->setLabel( LEX_Message_SumUpdated);
+  _rsb->setLabelRedrawAll();
   _skipToNextOperator( _lexer_position);
   return true;
 }

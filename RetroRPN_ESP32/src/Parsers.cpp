@@ -590,9 +590,43 @@ bool ExpressionParser::_parse_ListMember( byte terminator){
 }
 
 //
-// Main parsing entry
+// Main parsing entry for name expression
+// Attempts to parse a name, such as an identifier
+// The pointer returned is past the name if valid
+// or at the origin if not parsed correctly
 //
-byte *ExpressionParser::parse(byte *str){
+byte *ExpressionParser::parseName( byte *str){
+  #ifdef __DEBUG
+  Serial.print("Name parsing: [");
+  Serial.print((char*)str);
+  Serial.println("]");
+  #endif
+  result = _RESULT_UNDEFINED_;
+  _vars->startNewName();
+  byte *ptr = str;
+  
+  // skip empty space
+  while( IsSpacer(*ptr)) ptr++;
+  if( !IsNameStarter(*ptr)) return ptr;
+  str = ptr;
+
+  while( IsNameCharacter(*ptr)){
+    _vars->addCharToNewName( ptr++);
+
+    // dollar or percent must be the last character
+    if( *ptr == _DOLLAR_ || *ptr == _PERCENT_) break;
+  }
+  if( *ptr == _NUL_ || IsNameTerm( *ptr)){
+    result = _RESULT_NAME_;
+    return ptr;
+  }
+  return str;
+}
+
+//
+// Main parsing entry for algebraic expression
+//
+byte *ExpressionParser::parseAlgebraic(byte *str){
   #ifdef __DEBUG
   Serial.print("Parsing: [");
   Serial.print((char*)str);

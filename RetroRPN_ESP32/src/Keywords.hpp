@@ -22,6 +22,7 @@
 #define _RESULT_REAL_       2
 #define _RESULT_STRING_     3
 #define _RESULT_EXECUTED_   4
+#define _RESULT_NAME_       5 
 
 #define _NO_ERROR_     0
 #define _WARNING_      1

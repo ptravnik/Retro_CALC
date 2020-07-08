@@ -22,7 +22,7 @@ static byte _function_Solver_QUAD_( Variables *_vars, double *args, double *rets
     _vars->setScrMessage( FUN_Message_Trivial);
     return _REQUEST_REDRAW_MSG;    
   }
-  
+
   // No roots
   if( _vars->isRPNRegisterZero(2) && _vars->isRPNRegisterZero(1)){
     _vars->setScrMessage( FUN_Message_NoRoots);
@@ -35,7 +35,7 @@ static byte _function_Solver_QUAD_( Variables *_vars, double *args, double *rets
     rets[0] /= -rets[1];
     _vars->setScrMessage( FUN_Message_OneRoot);
     _vars->setRPNLabelX( FUN_Message_Root1);
-    return _REQUEST_REDRAW_X + _REQUEST_REDRAW_LABELS + _REQUEST_DO_IOM;    
+    return _REQUEST_REDRAW_X + _REQUEST_REDRAW_LABELS;    
   }
 
   // Solve as quadratic
@@ -53,7 +53,7 @@ static byte _function_Solver_QUAD_( Variables *_vars, double *args, double *rets
     _vars->setScrMessage( FUN_Message_ComplexRoots);
     _vars->setRPNLabelY( FUN_Message_ComplexPart);
     _vars->setRPNLabelX( FUN_Message_RealPart);
-    return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS  + _REQUEST_DO_IOM;
+    return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS;
   }
   _vars->setRPNLabelY( FUN_Message_Root2);
   _vars->setRPNLabelX( FUN_Message_Root1);
@@ -65,13 +65,15 @@ static byte _function_Solver_QUAD_( Variables *_vars, double *args, double *rets
     rets[0] -= rets[1];
     rets[1] += b;
     _vars->setScrMessage( FUN_Message_TwoRoots);
-    return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS + _REQUEST_DO_IOM;
+    //return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS + _REQUEST_DO_IOM;
+    return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS;
   }
 
   // One real root
   rets[1] = rets[0];
   _vars->setScrMessage( FUN_Message_OneRoot);
-  return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS + _REQUEST_DO_IOM;
+  //return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS + _REQUEST_DO_IOM;
+  return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS;
 }
 
 //
@@ -97,7 +99,7 @@ static byte _function_Solver_GOFF2_( Variables *_vars, double *args, double *ret
   _vars->setScrMessage( FUN_Message_Goff_Solution);
   _vars->setRPNLabelX( FUN_Message_Offset);
   _vars->setRPNLabelY( FUN_Message_Gain);
-  return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS + _REQUEST_DO_IOM;
+  return _REQUEST_REDRAW_ALL + _REQUEST_REDRAW_LABELS;
 }
 
 //

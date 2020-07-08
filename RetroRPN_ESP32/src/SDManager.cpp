@@ -336,7 +336,7 @@ void SDManager::writeFile( const char * path, const char * message){
 bool SDManager::readDouble( double *v){
   *v = 0.0;
   readln( _io_buffer);
-  _epar->parse(_io_buffer);
+  _epar->parseAlgebraic(_io_buffer);
   if(_epar->result == _RESULT_UNDEFINED_) return true;
   *v = _epar->numberParser.realValue();
   return false;

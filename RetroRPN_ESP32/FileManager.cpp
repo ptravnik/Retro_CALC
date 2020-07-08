@@ -10,8 +10,6 @@
 
 //#define __DEBUG
 
-const char FMAN_StatusMessage[] PROGMEM = "FMAN Ready";
-
 //
 // Inits File Manager 
 //
@@ -43,7 +41,7 @@ void FileManager::show(){
   _lcd->wordWrap = false;
   _lcd->scrollLock = true;
   _lcd->clearScreen( _SP_, false);
-  _mbox->setLabel(FMAN_StatusMessage, false);
+  _lex->resetMessageBox();
   _mbox->show();
   _clb->show();
   redraw();

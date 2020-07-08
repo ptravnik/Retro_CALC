@@ -80,9 +80,6 @@ class NameParser{
   public:
     bool result = false;
     byte *parse( byte *str);
-    inline bool isKeyword( const char *kw){
-      return result && (strcmp(kw, (char *)_name)==0);
-    }
     inline byte * Name(){
       return _name;
     }
@@ -129,10 +126,6 @@ class FilenameParser{
     void _locateTerminator( byte *start);
     void _backpedalDirectory();
     uint16_t _name_position;
-    //inline void _add_char_to_name( byte *ptr){
-    //  _name[_name_position++] = *ptr;
-    //  _name[_name_position] = _NUL_;
-    //};
 };
 
 //
@@ -142,7 +135,12 @@ class ExpressionParser{
   public:
     byte result = _RESULT_UNDEFINED_;
     void init( void *components[]);
-    byte *parse( byte *str);
+
+    byte *parseName( byte *str);
+    byte *parseAlgebraic( byte *str);
+
+    inline byte *Name(){ return _vars->getNewNamePtr();};
+
     NumberParser numberParser;
     NameParser nameParser;
     FilenameParser filenameParser;

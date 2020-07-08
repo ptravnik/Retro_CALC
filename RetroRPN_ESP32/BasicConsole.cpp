@@ -10,8 +10,6 @@
 
 //#define __DEBUG
 
-const char BAS_StatusMessage[] PROGMEM = "BASIC Ready";
-
 //
 // Inits console
 //
@@ -43,7 +41,7 @@ void BasicConsole::show(){
   _lcd->wordWrap = false;
   _lcd->scrollLock = true;
   _lcd->clearScreen( _SP_, false);
-  _mbox->setLabel(BAS_StatusMessage, false);
+  _lex->resetMessageBox();
   _mbox->show();
   _clb->show();
   redraw();

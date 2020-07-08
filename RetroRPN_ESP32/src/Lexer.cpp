@@ -39,6 +39,19 @@ const char LEX_Message_Offset[] PROGMEM = "Offset:";
 const char LEX_Message_NewProgram[] PROGMEM = "New program";
 const char LEX_Message_FolderSet[] PROGMEM = "Folder set";
 
+const char LEX_Message_NOTReady[] PROGMEM = "Wait...";
+const char LEX_Message_RPNReady[] PROGMEM = "RPN Ready";
+const char LEX_Message_FMANReady[] PROGMEM = "FMAN Ready";
+const char LEX_Message_EDITReady[] PROGMEM = "EDIT Ready";
+const char LEX_Message_BASICReady[] PROGMEM = "BASIC Ready";
+
+const char *const LEX_Ready_Table[] PROGMEM = {
+  LEX_Message_NOTReady,
+  LEX_Message_RPNReady,
+  LEX_Message_FMANReady,
+  LEX_Message_EDITReady,
+  LEX_Message_BASICReady};
+
 const char LEX_Standard_Variables[] PROGMEM = "/_VARS_.bas";
 const char LEX_Standard_Constants[] PROGMEM = "/_CONST_.bas";
 
@@ -151,7 +164,7 @@ void Lexer::init(void *components[]){
 //
 byte *Lexer::parse(byte *str){
   #ifdef __DEBUG
-  Serial.print("Parsing: [");
+  Serial.print("Lexing: [");
   Serial.print((char*)str);
   Serial.println("]");
   #endif
@@ -207,12 +220,16 @@ void Lexer::_parseOperator(){
   lastKeyword = NULL;
   lastVariable = 0;
   byte *tmpptr = _lexer_position;
+  //_lexer_position = _epar->parseName(_lexer_position); // starts with a name?
   _lexer_position = _epar->nameParser.parse(_lexer_position); // starts with a name?
+  //if(_epar->result == _RESULT_NAME_){
   if(_epar->nameParser.result){
     #ifdef __DEBUG
     Serial.print("name found: ");
+    //Serial.println((char*)_epar->Name());
     Serial.println((char*)_epar->nameParser.Name());
     #endif
+    //lastKeyword = _kwds->getKeyword(_epar->Name());
     lastKeyword = _kwds->getKeyword(_epar->nameParser.Name());
     if( _processKeyword()) return; // name is a function?
     if( _processVariable()) return; // name is an assignment?
@@ -224,7 +241,7 @@ void Lexer::_parseOperator(){
   Serial.print("Direct eval here! |");
   Serial.println((char *)_lexer_position);
   #endif
-  _lexer_position = _epar->parse(_lexer_position);
+  _lexer_position = _epar->parseAlgebraic(_lexer_position);
   result = _epar->result;
 }
   
@@ -258,7 +275,10 @@ bool Lexer::_processRPNKeyword( Keyword *kwd){
   #endif
   if( ret & 0x80) _mbox->setRedrawRequired();
   if( ret & 0x40) _rsb->setLabelRedrawAll();
-  if( ret & 0x20) _rsb->resetRPNLabels();
+  if( ret & 0x20){
+    _rsb->resetRPNLabels();
+    resetMessageBox();
+  }
   if( ret & 0x10) _rsb->updateIOM();
   switch( ret & 0x0F){
     case 0:
@@ -292,6 +312,7 @@ bool Lexer::_processVariable( bool asConstant){
     _lexer_position = ptr;
      return false;
   }
+  //lastVariable = _vars->getOrCreateNumber( asConstant, _epar->Name());
   lastVariable = _vars->getOrCreateNumber( asConstant, _epar->nameParser.Name());
   if( lastVariable == 0){
     _mbox->setLabel(LEX_Error_OutOfMemory);
@@ -305,7 +326,7 @@ bool Lexer::_processVariable( bool asConstant){
   }
 
   // parse from assignment
-  _lexer_position = _epar->parse(_lexer_position);
+  _lexer_position = _epar->parseAlgebraic(_lexer_position);
   switch( _epar->result ){
     case _RESULT_INTEGER_:
       _vars->setValueInteger( lastVariable, _epar->numberParser.integerValue());
@@ -373,7 +394,7 @@ bool Lexer::_validate_NextCharacter( byte c){
 //
 byte Lexer::_parseList( byte maxVal){
   for( byte i=0, j=0; i<10; i++){
-    _lexer_position = _epar->parse(_lexer_position);
+    _lexer_position = _epar->parseAlgebraic(_lexer_position);
     switch( _epar->result ){
       case _RESULT_INTEGER_:
       case _RESULT_REAL_:
@@ -387,23 +408,6 @@ byte Lexer::_parseList( byte maxVal){
   }
   return maxVal;
 }
-
-// //
-// // Returns true if unmatched brackets
-// //
-// byte *ExpressionParser::_bracket_Check(){
-//   byte *ptr = _parser_position;
-//   int8_t bracket_count = 0;
-//   while( *ptr){
-//     if( *ptr == '(') bracket_count++;
-//     if( *ptr == ')') bracket_count--;
-//     _expression_error = bracket_count<0;
-//     if( _expression_error) return ptr;
-//     ptr++; 
-//   }
-//   _expression_error = bracket_count != 0;
-//   return ptr;
-// }
 
 void Lexer::loadState(){
   size_t loadedSize = _sdm->loadBinary( RPN_SaveVariables, _vars->_buffer, _vars->_var_bottom, _vars->_const_top - 2);
@@ -472,3 +476,32 @@ void Lexer::saveState(){
   if( _sdm->writeSettingNumber( LEX_StorageMarker_Cursor_Column, _clb->cursor_column)) return;
   _sdm->closeFile(); // if file has not been closed due to an error;
 }
+
+void Lexer::resetMessageBox(){
+  byte i = currentUI;
+  if( i > 4) i = 0;
+  _mbox->setLabel( LEX_Ready_Table[i], false);
+}
+
+//
+// Returns true if unmatched brackets
+//
+// byte *Lexer::_bracket_Check(){
+//   byte *ptr = _lexer_position;
+//   int8_t cRound = 0;
+//   int8_t cSquare = 0;
+//   int8_t cCurled = 0;
+//   while( *ptr){
+//     if( *ptr == '(') cRound++;
+//     if( *ptr == ')') cRound--;
+//     if( *ptr == '[') cSquare++;
+//     if( *ptr == ']') cSquare--;
+//     if( *ptr == '{') cCurled++;
+//     if( *ptr == '}') cCurled--;
+//     _lexer_error = cRound<0 || cSquare<0 || cCurled<0;
+//     if( _lexer_error) return ptr;
+//     ptr++; 
+//   }
+//   _lexer_error = cRound!=0 || cSquare!=0 || cCurled!=0;
+//   return ptr;
+// }

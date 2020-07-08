@@ -10,7 +10,6 @@
 
 //#define __DEBUG
 
-const char RPN_StatusMessage[] PROGMEM = "RPN Ready";
 const char RPN_Error_NAN[] PROGMEM = "Err: NaN";
 const char RPN_Error_Unknown[] PROGMEM = "Unknown:";
  
@@ -43,7 +42,7 @@ unsigned long RPNCalculator::tick(){
 
 void RPNCalculator::show(){
   _rsb->show();
-  _mbox->setLabel(RPN_StatusMessage, false);
+  _lex->resetMessageBox();
   _mbox->show();
   _clb->show();
 }
@@ -116,7 +115,7 @@ void RPNCalculator::sendChar( byte c) {
       return;
     case _ESC_:
       _clb->processESC();
-      _mbox->setLabel(RPN_StatusMessage, false);
+      _lex->resetMessageBox();
       _rsb->resetRPNLabels();
       updateIOM(true);
       return;
@@ -167,6 +166,10 @@ void RPNCalculator::_processCommand(byte c){
     default:
       break;
   }
+  #ifdef __DEBUG
+  Serial.println("Parse interactive (command):");
+  Serial.println((char*)_clb->getInput());
+  #endif
   _lex->parseInteractive(_clb->getInput());
   switch(_lex->result){
     case _RESULT_INTEGER_  :
@@ -211,6 +214,10 @@ void RPNCalculator::processInput( bool silent) {
     return;
   }
   _clb->copyToPrevious();
+  #ifdef __DEBUG
+  Serial.println("Parse interactive (input):");
+  Serial.println((char*)_clb->getInput());
+  #endif
   _lex->parseInteractive(_clb->getInput()); 
   switch(_lex->result){
     case _RESULT_INTEGER_:
@@ -236,7 +243,6 @@ void RPNCalculator::processInput( bool silent) {
       #ifdef __DEBUG
       Serial.println("Undefined result");
       #endif
-      //_mbox->setLabel( RPN_StatusMessage, true);
       //_mbox->setLabel( RPN_Error_NAN, true);
       return;
     default:
