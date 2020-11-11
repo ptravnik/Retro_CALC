@@ -38,32 +38,36 @@
 //
 // Pin assignment:
 //
-// 01 - TX0 (Not connected)
-// 02 - RX1 (Not connected)
-// 03 - Power off (will be moved to ESP32)
-// 04 - Self-Power Hold
+// 00 - TX0 (Not connected)
+// 01 - RX1 (Not connected)
+// 02 - SDA to DS3231 RT Clock module
+// 03 - SDL to DS3231
+// 04 - Serial activity LED
 // 05 - Piezo PWM Out
 // 06 - LCD PWM Out
 // 07 - Software Serial / operation Block
 // 08 - Software Serial TX
 // 09 - Software Serial RX
-// 10 - Activity LED
-// 14 - 
-// 15 - 
-// 16 - 
-// A0 - Self Power Hold (check)
-// A1 - LCD Power Hold (check)
-// A2 - ESP32 Power Hold (check)
-// A3 - 
+// 10 - KBD LED Clock
+// 14 - KBD LED Reset
+// 15 - KBD Sense
+// 16 - KBD Clock
+// A0 - KBD Reset
+// A1 - Power Hold
+// A2 - Power Button Sense (HIGH - shutdown wanted)
+// A3 - Battery voltage sensor
 //
 ////////////////////////////////////////////////////////
 
 //#define __DEBUG
 
 #include <Arduino.h>
-//#include <SoftwareSerial.h>
-//#include <Keyboard.h>
-//#include <Mouse.h>
+#include <SoftwareSerial.h>
+#include <Keyboard.h>
+#include <Mouse.h>
+
+#include "./src/SelfShutdown.hpp"
+#include "./src/ActivityLED.hpp"
 //#include "./src/CircularBuffer.hpp"
 //#include "./src/CP1251_mod.h" 
 
@@ -74,23 +78,25 @@
 #define PC_BAUD 115200
 #define SERIAL_BAUD 38400
 
-#define POWER_OFF            3 
-#define SELF_POWER_HOLD      4
-#define PIEZO_PWM_OUT        5
-#define LCD_PWM_OUT          6
-#define ACTIVITY_TO_ESP32    7
-#define SERIAL_TX            8
-#define SERIAL_RX            9
-#define ACTIVITY_LED        10
-#define INACTIVITY_INTERVAL 1000
-#define BLINK_INTERVAL 100
+#define RTC_SDA             2
+#define RTC_SDL             3
+#define ACTIVITY_LED        4
+#define PIEZO_PWM_OUT       5
+#define LCD_PWM_OUT         6
+#define ACTIVITY_TO_ESP32   7
+#define SERIAL_TX           8
+#define SERIAL_RX           9
+#define LED_CLK             10
+#define LED_RESET           14
+#define KBD_SIG             15
+#define KBD_CLK             16
+#define KBD_RESET           A0
+#define SELF_POWER_HOLD     A1
+#define POWER_OFF           A2
+#define BATTERY_VOLTAGE     A3
 
 //#define _SS_MAX_RX_BUFF 256
 //SoftwareSerial mySerial(SERIAL_RX, SERIAL_TX);
-
-//static volatile long lastActive = 0;
-//static volatile long lastBlinked = 0;
-//static volatile bool lit = false;
 
 //#define UTF8_BUFFER_LENGTH 64
 //static byte UTF8_buffer[UTF8_BUFFER_LENGTH];
@@ -112,14 +118,15 @@
 //  _YO_CAP_SUB, 
 //  };
 
+static SelfShutdown myShutdown;
+static ActivityLED myActivityLED;
 //static CircularBuffer cb;
 
 //
 // Runs once, upon the power-up
 //
 void setup() {
-  pinMode( SELF_POWER_HOLD, OUTPUT);
-  digitalWrite( SELF_POWER_HOLD, HIGH); // Lock yourself in power-on
+  myShutdown.init( POWER_OFF, SELF_POWER_HOLD);
 
 // PIEZO_PWM_OUT        5
 // LCD_PWM_OUT          6
@@ -127,10 +134,7 @@ void setup() {
   pinMode( ACTIVITY_TO_ESP32, OUTPUT);
   digitalWrite( ACTIVITY_TO_ESP32, LOW);
 
-  pinMode( ACTIVITY_LED, OUTPUT);
-  digitalWrite( ACTIVITY_LED, LOW);
-
-  pinMode( POWER_OFF, INPUT);
+  myActivityLED.init( ACTIVITY_LED);
 
   Serial.begin(PC_BAUD);
   while(Serial.available()) Serial.read();
@@ -140,7 +144,7 @@ void setup() {
   //Mouse.begin();
   //Keyboard.begin();
   delay(50);
-  for( byte i=0; i<3; i++) blinkLED_Short();
+  for( byte i=0; i<3; i++) myActivityLED.blink( 30, 50);
 
   //lastActive = millis();
   // permission to communicate granted to ESP32
@@ -152,10 +156,13 @@ void setup() {
 //
 void loop() {
   checkShutdown();
+  Serial.println("Hello, world! I am alive.");
+  delay(500);
+
   // Eliminate unwanted Tx, Rx lights
   RXLED0;
   TXLED0;
-  blinkLED_Long();
+  myActivityLED.blink( 100, 100);
 
   // char c = 0;
   // long t = millis();
@@ -178,50 +185,12 @@ void loop() {
 }
 
 void checkShutdown(){
-  if( digitalRead(POWER_OFF) == LOW) return;
-  for( int i=10; i>=1; i--){
-    delay(i*10);
-    digitalWrite( ACTIVITY_LED, HIGH);
-    delay(i*10);
-    digitalWrite( ACTIVITY_LED, LOW);
-  }
-  digitalWrite( SELF_POWER_HOLD, LOW);
+  if( !myShutdown.isPowerPressed()) return;
+  Serial.println( "Shutdown requested (but I have USB power!)");
+  for( int i=10; i>=1; i--)
+    myActivityLED.blink( i*10, i*10);
+  myShutdown.shutdown();
 }
-
-void blinkLED_Short(){
-    delay(50); 
-    digitalWrite( ACTIVITY_LED, HIGH);
-    delay(30);
-    digitalWrite( ACTIVITY_LED, LOW);
-}
-
-void blinkLED_Long(){
-  delay(300);
-  digitalWrite( ACTIVITY_LED, HIGH);
-  delay(300);
-  digitalWrite( ACTIVITY_LED, LOW);
-}
-
-// //
-// // blinks external LED only if the serial ports
-// // show any activity
-// //
-// void blink_Activity(){
-//   long t = millis();
-//   if( t - lastActive > INACTIVITY_INTERVAL){
-//     if(lit){
-//       lit = false;
-//       digitalWrite( ACTIVITY_LED, lit);
-//       lastBlinked = t;
-//     }  
-//     return;
-//   }
-//   if( t - lastBlinked < BLINK_INTERVAL) return;
-//   lit = !lit;
-//   digitalWrite( ACTIVITY_LED, lit);  
-//   lastBlinked = t;
-// }
-
 
 // //
 // // Converts the keyboard injection command

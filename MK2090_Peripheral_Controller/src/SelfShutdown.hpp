@@ -6,23 +6,19 @@
 //
 //////////////////////////////////////////////////////////
 
-#ifndef CIRCULAR_BUFFER_HPP
-#define CIRCULAR_BUFFER_HPP
+#ifndef SELF_SHUTDOWN_HPP
+#define SELF_SHUTDOWN_HPP
 
 #include <Arduino.h>
-#define CIRCULAR_BUFFER_LENGTH 512
 
-class CircularBuffer{
+class SelfShutdown{
   public:
-    inline bool available(){
-      return _in != _out;
-      };
-    void push( char c);
-    char pop();
+    void init( uint8_t PortKey, uint8_t PortHold);
+    inline bool isPowerPressed(){ return digitalRead(_portKey) == HIGH;};
+    void shutdown();
   private:
-    size_t _in = 0;
-    size_t _out = 0;
-    char _buffer[CIRCULAR_BUFFER_LENGTH];
+    uint8_t _portKey = 3;
+    uint8_t _portHold = 4;
 };
 
 #endif
