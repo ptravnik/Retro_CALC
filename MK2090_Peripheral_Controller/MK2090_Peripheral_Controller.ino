@@ -41,7 +41,7 @@
 // 00 - TX0 (Not connected)
 // 01 - RX1 (Not connected)
 // 02 - SDA to DS3231 RT Clock module
-// 03 - SDL to DS3231
+// 03 - SCL to DS3231
 // 04 - Serial activity LED
 // 05 - Piezo PWM Out
 // 06 - LCD PWM Out
@@ -63,13 +63,17 @@
 
 #include <Arduino.h>
 #include <SoftwareSerial.h>
+#include <Wire.h>
+#include <RtcDS3231.h>
 #include <Keyboard.h>
 #include <Mouse.h>
 
+#include "./src/CP1251_mod.h" 
 #include "./src/SelfShutdown.hpp"
 #include "./src/ActivityLED.hpp"
-//#include "./src/CircularBuffer.hpp"
-//#include "./src/CP1251_mod.h" 
+#include "./src/VoltageSensor.hpp"
+#include "./src/CircularBuffer.hpp"
+#include "./src/Commander.hpp"
 
 // Uncomment for debugging
 //#define __DEBUG
@@ -79,7 +83,7 @@
 #define SERIAL_BAUD 38400
 
 #define RTC_SDA             2
-#define RTC_SDL             3
+#define RTC_SCL             3
 #define ACTIVITY_LED        4
 #define PIEZO_PWM_OUT       5
 #define LCD_PWM_OUT         6
@@ -120,7 +124,10 @@
 
 static SelfShutdown myShutdown;
 static ActivityLED myActivityLED;
-//static CircularBuffer cb;
+static VoltageSensor myVoltageSensor;
+static RtcDS3231<TwoWire> Rtc(Wire); // Wire is declared inside the Wire.h
+static CircularBuffer cb;
+static Commander comm;
 
 //
 // Runs once, upon the power-up
@@ -135,6 +142,7 @@ void setup() {
   digitalWrite( ACTIVITY_TO_ESP32, LOW);
 
   myActivityLED.init( ACTIVITY_LED);
+  myVoltageSensor.init( BATTERY_VOLTAGE, 6600, 0); // We use 20M:20M dividor in 3.3 V processor
 
   Serial.begin(PC_BAUD);
   while(Serial.available()) Serial.read();
@@ -143,8 +151,17 @@ void setup() {
   //while(mySerial.available()) mySerial.read();
   //Mouse.begin();
   //Keyboard.begin();
+
+  comm.init( &cb);
+  comm.addCommand( (byte)COMMAND_GET_COMPILE_TIME, printCompileTime);
+  comm.addCommand( (byte)COMMAND_GET_VOLTAGE, printVoltageSensor);
+  comm.addCommand( (byte)COMMAND_GET_DATETIME, printDateTime);
+  comm.addCommand( (byte)COMMAND_GET_TEMPERATURE, printTemperature);
+  comm.addCommand( (byte)COMMAND_SET_DATETIME, setDateTime);
   delay(50);
   for( byte i=0; i<3; i++) myActivityLED.blink( 30, 50);
+
+  initRTC();
 
   //lastActive = millis();
   // permission to communicate granted to ESP32
@@ -156,7 +173,11 @@ void setup() {
 //
 void loop() {
   checkShutdown();
-  Serial.println("Hello, world! I am alive.");
+
+  //Serial.print( "Battery Voltage = ");
+  //Serial.println( myVoltageSensor.read());
+  //readRTC();
+  comm.read();
   delay(500);
 
   // Eliminate unwanted Tx, Rx lights
@@ -190,6 +211,69 @@ void checkShutdown(){
   for( int i=10; i>=1; i--)
     myActivityLED.blink( i*10, i*10);
   myShutdown.shutdown();
+}
+
+void printCompileTime( char *buff, byte n){
+  snprintf_P(buff, n, PSTR("%s %s"),  __DATE__,  __TIME__);
+}
+
+void printVoltageSensor( char *buff, byte n){
+  snprintf_P(buff, n, PSTR("%04u"), myVoltageSensor.read());
+}
+
+void printDateTime( char *buff, byte n){
+  if (RTC_Check(buff, n)) return; 
+  RtcDateTime dt = Rtc.GetDateTime();
+  snprintf_P(buff, n,
+    PSTR("%02u/%02u/%04u %02u:%02u:%02u"),
+    dt.Day(), dt.Month(), dt.Year(),
+    dt.Hour(), dt.Minute(), dt.Second() );
+}
+
+void printTemperature( char *buff, byte n){
+  if (RTC_Check(buff, n)) return; 
+  RtcTemperature temp = Rtc.GetTemperature();
+  Serial.printf( temp.AsFloatDegC());
+  snprintf_P(buff, n,
+    PSTR("%5.2fC"), temp.AsFloatDegC());
+}
+
+void setDateTime( char *buff, byte n){
+    char *ptr = comm._inputBuff;
+    for( byte i=0; i<INPUT_BUFFER_LENGTH-1; i++){
+        if( !Serial.available()) break;
+        char c = Serial.read();
+        if( c == _CR_) break;
+        *ptr++ = c;
+    }
+    *ptr = _NUL_;
+}
+
+void initRTC(){
+    // 
+    // With no modification and no battery the module takes 1.90 mA; running at 1.56 mA
+    // installing battery makes no difference
+    Rtc.Begin();
+    if( RTC_Check( comm._inputBuff, INPUT_BUFFER_LENGTH)){
+        if (Rtc.LastError() == 0) Rtc.SetDateTime(RtcDateTime( __DATE__, __TIME__));
+        return;
+    }
+
+    if (!Rtc.GetIsRunning()) Rtc.SetIsRunning(true);
+
+    // As a security precaution, never assume the Rtc was last configured by you, so
+    // just clear them to your needed state
+    Rtc.Enable32kHzPin(false);
+    Rtc.SetSquareWavePin(DS3231SquareWavePin_ModeNone); 
+}
+
+bool RTC_Check( char *buff, byte n){
+    if (Rtc.IsDateTimeValid()) return false; 
+    if (Rtc.LastError())
+        snprintf_P(buff, n, PSTR("I2C ERR %02u"), Rtc.LastError());
+    else
+        snprintf_P(buff, n, PSTR("TIME LOST"));
+    return true;
 }
 
 // //

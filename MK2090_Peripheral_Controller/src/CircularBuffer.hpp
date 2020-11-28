@@ -10,6 +10,7 @@
 #define CIRCULAR_BUFFER_HPP
 
 #include <Arduino.h>
+
 #define CIRCULAR_BUFFER_LENGTH 512
 
 class CircularBuffer{

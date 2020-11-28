@@ -17,8 +17,8 @@ class SelfShutdown{
     inline bool isPowerPressed(){ return digitalRead(_portKey) == HIGH;};
     void shutdown();
   private:
-    uint8_t _portKey = 3;
-    uint8_t _portHold = 4;
+    uint8_t _portKey = A2;
+    uint8_t _portHold = A1;
 };
 
 #endif

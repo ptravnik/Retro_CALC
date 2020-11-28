@@ -11,7 +11,7 @@
 //
 
 #ifndef CP1254MOD_H
-#define CP1254MOD_HPP
+#define CP1254MOD_H
 
 #define _NUL_        0
 #define _BEL_        7
