@@ -233,7 +233,7 @@ void printDateTime( char *buff, byte n){
 void printTemperature( char *buff, byte n){
   if (RTC_Check(buff, n)) return; 
   RtcTemperature temp = Rtc.GetTemperature();
-  Serial.printf( temp.AsFloatDegC());
+  Serial.println( temp.AsFloatDegC());
   snprintf_P(buff, n,
     PSTR("%5.2fC"), temp.AsFloatDegC());
 }

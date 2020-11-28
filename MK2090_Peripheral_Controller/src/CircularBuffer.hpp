@@ -20,6 +20,7 @@ class CircularBuffer{
       };
     void push( char c);
     char pop();
+    char peek();
   private:
     size_t _in = 0;
     size_t _out = 0;

@@ -6,22 +6,18 @@
 //
 //////////////////////////////////////////////////////////
 
-#include "VoltageSensor.hpp"
+#include "RTCData.hpp"
 
 //
-// Voltage sensor reads from Port
-// The formula is V = gain * reading + offset
+// Starts I2C two-wire comm
 // 
-void VoltageSensor::init( uint8_t Port, int16_t gain, int16_t offset){
-    _port = Port;
-    _gain = gain;
-    _offset = offset;
+void RTCData::init(){
 }
 
 //
 // Reads voltage, performs conversion
 //
-int32_t VoltageSensor::read(){
+int32_t RTCData::read(){
     lastRead = analogRead( _port);
     delay(5);
     lastRead += analogRead( _port);

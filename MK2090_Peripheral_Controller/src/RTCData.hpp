@@ -6,23 +6,20 @@
 //
 //////////////////////////////////////////////////////////
 
-#ifndef VOLTAGE_SENSOR_HPP
-#define VOLTAGE_SENSOR_HPP
+#ifndef RTCDATA_HPP
+#define RTCDATA_HPP
 
 #include <Arduino.h>
 
-#define SCALE_VOLTAGE 3300
-#define OFFSET_VOLTAGE 0
-
-class VoltageSensor{
+class RTCData{
   public:
     int32_t lastRead = 0; // mV
-    void init( uint8_t Port, int16_t gain=SCALE_VOLTAGE, int16_t offset=OFFSET_VOLTAGE);
+    void init();
     int32_t read();
   private:
-    uint8_t _port = 10;
-    uint16_t _gain = SCALE_VOLTAGE;
-    uint16_t _offset = OFFSET_VOLTAGE;
+    uint8_t _port = A3;
+    uint16_t _gain = 1;
+    uint16_t _offset = 1;
 };
 
 #endif
