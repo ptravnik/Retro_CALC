@@ -10,16 +10,16 @@
 #define COMMANDER_HPP
 
 #include <Arduino.h>
-#include <RtcDS3231.h>
 #include "CircularBuffer.hpp"
 
 #define NCOMMANDS                 10
 #define INPUT_BUFFER_LENGTH       40
 #define COMMAND_SET_DATETIME      'A'
 #define COMMAND_GET_DATETIME      'B'
-#define COMMAND_GET_COMPILE_TIME  'C'
+#define COMMAND_GET_TEMPERATURE   'C'
 #define COMMAND_GET_VOLTAGE       'D'
-#define COMMAND_GET_TEMPERATURE   'E'
+#define COMMAND_IS_SHUTDOWN       'E'
+#define COMMAND_SHUTDOWN          'F'
 
 struct Command{
     uint8_t code;
@@ -31,7 +31,6 @@ class Commander{
     void init( CircularBuffer *buffer);
     void addCommand( uint8_t code, void (*action)( char *, uint8_t));
     void read();
-    void _printDateTime(const RtcDateTime& dt);
     char _inputBuff[INPUT_BUFFER_LENGTH];
   private:
     uint8_t _ncomm = 0;

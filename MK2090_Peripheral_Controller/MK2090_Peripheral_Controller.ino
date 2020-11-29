@@ -63,16 +63,15 @@
 
 #include <Arduino.h>
 #include <SoftwareSerial.h>
-#include <Wire.h>
-#include <RtcDS3231.h>
-#include <Keyboard.h>
-#include <Mouse.h>
+//#include <Keyboard.h>
+//#include <Mouse.h>
 
 #include "./src/CP1251_mod.h" 
 #include "./src/SelfShutdown.hpp"
 #include "./src/ActivityLED.hpp"
 #include "./src/VoltageSensor.hpp"
 #include "./src/CircularBuffer.hpp"
+#include "./src/RTCData.hpp"
 #include "./src/Commander.hpp"
 
 // Uncomment for debugging
@@ -125,7 +124,8 @@
 static SelfShutdown myShutdown;
 static ActivityLED myActivityLED;
 static VoltageSensor myVoltageSensor;
-static RtcDS3231<TwoWire> Rtc(Wire); // Wire is declared inside the Wire.h
+//static RtcDS3231<TwoWire> Rtc(Wire); // Wire is declared inside the Wire.h
+static DS3231_Data myDS3231;
 static CircularBuffer cb;
 static Commander comm;
 
@@ -153,11 +153,11 @@ void setup() {
   //Keyboard.begin();
 
   comm.init( &cb);
-  comm.addCommand( (byte)COMMAND_GET_COMPILE_TIME, printCompileTime);
-  comm.addCommand( (byte)COMMAND_GET_VOLTAGE, printVoltageSensor);
-  comm.addCommand( (byte)COMMAND_GET_DATETIME, printDateTime);
-  comm.addCommand( (byte)COMMAND_GET_TEMPERATURE, printTemperature);
-  comm.addCommand( (byte)COMMAND_SET_DATETIME, setDateTime);
+  comm.addCommand( (byte)COMMAND_SET_DATETIME, setDateTime); //AYYYY-MM-DD HH:MM:SS
+  comm.addCommand( (byte)COMMAND_GET_DATETIME, getDateTime); //B
+  comm.addCommand( (byte)COMMAND_GET_TEMPERATURE, getTemperature); //C
+  comm.addCommand( (byte)COMMAND_GET_VOLTAGE, getBatteryVoltage); //D
+  comm.addCommand( (byte)COMMAND_SHUTDOWN, orderShutdown); //F
   delay(50);
   for( byte i=0; i<3; i++) myActivityLED.blink( 30, 50);
 
@@ -207,72 +207,71 @@ void loop() {
 
 void checkShutdown(){
   if( !myShutdown.isPowerPressed()) return;
-  Serial.println( "Shutdown requested (but I have USB power!)");
+  Serial.println( "Shutdown key, but USB on...");
   for( int i=10; i>=1; i--)
     myActivityLED.blink( i*10, i*10);
   myShutdown.shutdown();
 }
 
-void printCompileTime( char *buff, byte n){
-  snprintf_P(buff, n, PSTR("%s %s"),  __DATE__,  __TIME__);
-}
-
-void printVoltageSensor( char *buff, byte n){
-  snprintf_P(buff, n, PSTR("%04u"), myVoltageSensor.read());
-}
-
-void printDateTime( char *buff, byte n){
-  if (RTC_Check(buff, n)) return; 
-  RtcDateTime dt = Rtc.GetDateTime();
-  snprintf_P(buff, n,
-    PSTR("%02u/%02u/%04u %02u:%02u:%02u"),
-    dt.Day(), dt.Month(), dt.Year(),
-    dt.Hour(), dt.Minute(), dt.Second() );
-}
-
-void printTemperature( char *buff, byte n){
-  if (RTC_Check(buff, n)) return; 
-  RtcTemperature temp = Rtc.GetTemperature();
-  Serial.println( temp.AsFloatDegC());
-  snprintf_P(buff, n,
-    PSTR("%5.2fC"), temp.AsFloatDegC());
-}
-
 void setDateTime( char *buff, byte n){
-    char *ptr = comm._inputBuff;
-    for( byte i=0; i<INPUT_BUFFER_LENGTH-1; i++){
+    char *ptr = buff;
+    for( byte i=0; i<n-1; i++){
         if( !Serial.available()) break;
         char c = Serial.read();
         if( c == _CR_) break;
         *ptr++ = c;
     }
     *ptr = _NUL_;
+    DS3231_DateTime dt = DS3231_DateTime((const char*)buff);
+    dt.print( buff, n);
+    myDS3231.setDateTime(dt);
+}
+
+void getDateTime( char *buff, byte n){
+    if (RTC_Check(buff, n)) return; 
+    DS3231_DateTime dt = myDS3231.getDateTime();
+    Serial.println( dt.daysSince2000_01_01());
+    dt.print( buff, n);
+}
+
+void getTemperature( char *buff, byte n){
+  if (RTC_Check(buff, n)) return; 
+  DS3231_Temperature temp = myDS3231.getTemperature();
+  temp.print( buff, n);
+}
+
+void getBatteryVoltage( char *buff, byte n){
+  snprintf_P(buff, n, PSTR("%04u"), myVoltageSensor.read());
+}
+
+void orderShutdown( char *buff, byte n){
+  snprintf_P(buff, n,
+    PSTR("Shutdown from ESP32, but USB on..."));
+  for( int i=10; i>=1; i--)
+    myActivityLED.blink( i*10, i*10);
+  myShutdown.shutdown();
 }
 
 void initRTC(){
     // 
     // With no modification and no battery the module takes 1.90 mA; running at 1.56 mA
     // installing battery makes no difference
-    Rtc.Begin();
+    myDS3231.init(); // just starts the Wire I2C comm 
     if( RTC_Check( comm._inputBuff, INPUT_BUFFER_LENGTH)){
-        if (Rtc.LastError() == 0) Rtc.SetDateTime(RtcDateTime( __DATE__, __TIME__));
+        if (myDS3231.lastError == 5) myDS3231.setDateTime(DS3231_DateTime());
         return;
     }
-
-    if (!Rtc.GetIsRunning()) Rtc.SetIsRunning(true);
+    myDS3231.startClock();
 
     // As a security precaution, never assume the Rtc was last configured by you, so
     // just clear them to your needed state
-    Rtc.Enable32kHzPin(false);
-    Rtc.SetSquareWavePin(DS3231SquareWavePin_ModeNone); 
+    myDS3231.stop32kHz();
+    myDS3231.setSQW( DS3231_SWC_NONE);
 }
 
 bool RTC_Check( char *buff, byte n){
-    if (Rtc.IsDateTimeValid()) return false; 
-    if (Rtc.LastError())
-        snprintf_P(buff, n, PSTR("I2C ERR %02u"), Rtc.LastError());
-    else
-        snprintf_P(buff, n, PSTR("TIME LOST"));
+    if( myDS3231.isDateTimeValid()) return false;
+    snprintf_P(buff, n, PSTR("RTCERR %02u"), myDS3231.lastError);
     return true;
 }
 

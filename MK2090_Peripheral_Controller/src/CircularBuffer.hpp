@@ -11,7 +11,7 @@
 
 #include <Arduino.h>
 
-#define CIRCULAR_BUFFER_LENGTH 512
+#define CIRCULAR_BUFFER_LENGTH 256
 
 class CircularBuffer{
   public:
