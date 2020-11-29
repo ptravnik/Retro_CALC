@@ -28,7 +28,9 @@ The code is fully ported and tested on the ESP-32 platform. Final version of Key
 1. ESP32 Dev Module
 1. Micro SD card reader on VSPI 5, 18, 19, 23
 1. Hardware keyboard on lines 25-27 and 32, 33; pin 34 is used for power switch
-1. TFT screen 480x320 pixels on HSPI 12-15 
+1. TFT screen 480x320 pixels on HSPI 12-15
+1. 2xLiPo batteries (4000 mAh), charger and power management
+1. Real-Time Clock based on DS3231 chip
 1. Arduino Micro Pro 3.3V, 8 MHz as a "peripheral controller"
 
 This mockup is under development. Both BW LCD and Color TFT are likely to be supported. 
