@@ -11,7 +11,7 @@ The ultimate goal is to build a powerful RPN calculator, programmable in BASIC-l
 1. Hardware keyboard on lines A0-A4
 1. LCD screen 128x64 pixels on SPI
 
-The code development for this version is currently suspended and is likely to be deprecated.
+This code development is abandoned.
 
 ## The SECOND mockup version:
 
@@ -21,7 +21,17 @@ The code development for this version is currently suspended and is likely to be
 1. LCD screen 128x64 pixels on HSPI 12-15 
 1. Arduino Micro Pro 3.3V, 8 MHz as a "keyboard/mouse injector"
 
-The code is partially ported and tested on the ESP-32 platform. Production PCBs from China are delayed due to Novel Coronavirus outbreak; the Keyboard PCB (KBD-2090) has been received, assembled and tested.
+The code is fully ported and tested on the ESP-32 platform. Final version of Keyboard PCB (KBD-2090) has been tested.
+
+## The THIRD mockup version:
+
+1. ESP32 Dev Module
+1. Micro SD card reader on VSPI 5, 18, 19, 23
+1. Hardware keyboard on lines 25-27 and 32, 33; pin 34 is used for power switch
+1. TFT screen 480x320 pixels on HSPI 12-15 
+1. Arduino Micro Pro 3.3V, 8 MHz as a "peripheral controller"
+
+This mockup is under development. Both BW LCD and Color TFT are likely to be supported. 
 
 # Build Instructions
 
@@ -38,10 +48,10 @@ The code is partially ported and tested on the ESP-32 platform. Production PCBs 
 1. Validate which version of hardware keyboard is connected: the production layout uses different h file as the buttons\' position is different from the early mock-up.
 1. Select the board as **ESP32 Dev Module**, compile and upload as usual. Dev module requires you to hold **BOOT** down for security reasons; on my module (v 1) this pin is not exposed, so must be done with the button on the module itself. Your board may have this on GPIO 00 pin - wiring to an external button is recommended.
 
-## To build the Keyboard Injector:
+## To build the Keyboard Injector or Peripheral Controller:
 1. Tested only with cheap Chinese clones of Sparkfun Pro Micro on Arduino IDE 1.18.10 and 1.18.12.
 1. Carefully follow the [install instructions from Sparkfun](https://learn.sparkfun.com/tutorials/pro-micro--fio-v3-hookup-guide/all)
-1. Download the [code from github](https://github.com/ptravnik/Retro_CALC/tree/master/Keyboard_Injector_Micro)
+1. Download the [code from github](https://github.com/ptravnik/Retro_CALC/tree/master/Keyboard_Injector_Micro or https://github.com/ptravnik/Retro_CALC/tree/master/MK2090_Peripheral_Controller) 
 1. Select the board as **Sparkfun Pro Micro** and the processor as **ATMega 32U4 3.3V, 8MHz** or **ATMega 5.0V 16MHz** version (depending on the one you have); **CAUTION** "Leonardo" may work for 5V / 16 MHz boards, but will surely brick a 3.3V version!
 1. Select the board's port
 1. Upload to board (shorting Reset to Ground may be required after the interface says "Uploading...")
