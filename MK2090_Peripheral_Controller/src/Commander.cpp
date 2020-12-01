@@ -9,11 +9,12 @@
 #include "CP1251_mod.h"
 #include "Commander.hpp"
 
-void Commander::init( CircularBuffer *buffer){
+void Commander::begin( CircularBuffer *buffer){
     _buffer = buffer;
 }
 
 void Commander::addCommand( uint8_t code, void (*action)( char *, uint8_t)){
+    if( _ncomm >= NCOMMANDS) return;
     Command *c = _commands + _ncomm;
     c->code = code;
     c->action = action;

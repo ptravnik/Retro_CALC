@@ -13,7 +13,7 @@
 
 class SelfShutdown{
   public:
-    void init( uint8_t PortKey, uint8_t PortHold);
+    void begin( uint8_t PortKey, uint8_t PortHold);
     inline bool isPowerPressed(){ return digitalRead(_portKey) == HIGH;};
     void shutdown();
   private:

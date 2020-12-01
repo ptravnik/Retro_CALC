@@ -11,7 +11,7 @@
 //
 // Blinker LED is attached to Port and set to LOW
 // 
-void ActivityLED::init( byte Port){
+void ActivityLED::begin( byte Port){
     _port = Port;
     pinMode( _port, OUTPUT);
     digitalWrite( _port, LOW);

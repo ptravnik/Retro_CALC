@@ -59,8 +59,6 @@
 //
 ////////////////////////////////////////////////////////
 
-//#define __DEBUG
-
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 //#include <Keyboard.h>
@@ -71,7 +69,7 @@
 #include "./src/ActivityLED.hpp"
 #include "./src/VoltageSensor.hpp"
 #include "./src/CircularBuffer.hpp"
-#include "./src/RTCData.hpp"
+#include "./src/DS3231.hpp"
 #include "./src/Commander.hpp"
 
 // Uncomment for debugging
@@ -124,8 +122,7 @@
 static SelfShutdown myShutdown;
 static ActivityLED myActivityLED;
 static VoltageSensor myVoltageSensor;
-//static RtcDS3231<TwoWire> Rtc(Wire); // Wire is declared inside the Wire.h
-static DS3231_Data myDS3231;
+static DS3231_Controller myDS3231;
 static CircularBuffer cb;
 static Commander comm;
 
@@ -133,87 +130,152 @@ static Commander comm;
 // Runs once, upon the power-up
 //
 void setup() {
-  myShutdown.init( POWER_OFF, SELF_POWER_HOLD);
+    myShutdown.begin( POWER_OFF, SELF_POWER_HOLD);
 
-// PIEZO_PWM_OUT        5
-// LCD_PWM_OUT          6
+    // PIEZO_PWM_OUT        5
+    // LCD_PWM_OUT          6
 
-  pinMode( ACTIVITY_TO_ESP32, OUTPUT);
-  digitalWrite( ACTIVITY_TO_ESP32, LOW);
+    pinMode( ACTIVITY_TO_ESP32, OUTPUT);
+    digitalWrite( ACTIVITY_TO_ESP32, LOW);
 
-  myActivityLED.init( ACTIVITY_LED);
-  myVoltageSensor.init( BATTERY_VOLTAGE, 6600, 0); // We use 20M:20M dividor in 3.3 V processor
+    myActivityLED.begin( ACTIVITY_LED);
+    myVoltageSensor.begin( BATTERY_VOLTAGE, 6600, 0); // We use 20M:20M dividor and 3.3 V processor
 
-  Serial.begin(PC_BAUD);
-  while(Serial.available()) Serial.read();
+    Serial.begin(PC_BAUD);
+    while(Serial.available()) Serial.read();
 
-  //mySerial.begin(SERIAL_BAUD);
-  //while(mySerial.available()) mySerial.read();
-  //Mouse.begin();
-  //Keyboard.begin();
+    //mySerial.begin(SERIAL_BAUD);
+    //while(mySerial.available()) mySerial.read();
+    //Mouse.begin();
+    //Keyboard.begin();
 
-  comm.init( &cb);
-  comm.addCommand( (byte)COMMAND_SET_DATETIME, setDateTime); //AYYYY-MM-DD HH:MM:SS
-  comm.addCommand( (byte)COMMAND_GET_DATETIME, getDateTime); //B
-  comm.addCommand( (byte)COMMAND_GET_TEMPERATURE, getTemperature); //C
-  comm.addCommand( (byte)COMMAND_GET_VOLTAGE, getBatteryVoltage); //D
-  comm.addCommand( (byte)COMMAND_SHUTDOWN, orderShutdown); //F
-  delay(50);
-  for( byte i=0; i<3; i++) myActivityLED.blink( 30, 50);
+    comm.begin( &cb);
+    comm.addCommand( (byte)COMMAND_SET_DATETIME, setDateTime); //AYYMMDDHHMMSS
+    comm.addCommand( (byte)COMMAND_GET_DATETIME, getDateTime); //B
+    comm.addCommand( (byte)COMMAND_GET_TEMPERATURE, getTemperature); //C
+    comm.addCommand( (byte)COMMAND_GET_VOLTAGE, getBatteryVoltage); //D
+    comm.addCommand( (byte)COMMAND_SHUTDOWN, orderShutdown); //F
+    comm.addCommand( (byte)COMMAND_SETALARM, setAlarm); //GTDDHHMMSS
+    comm.addCommand( (byte)COMMAND_GETALARM1, getAlarm1); //H
+    comm.addCommand( (byte)COMMAND_GETALARM2, getAlarm2); //I
+    comm.addCommand( (byte)COMMAND_WAKE_ALARMS, getWakeAlarms); //J
+    comm.addCommand( (byte)COMMAND_CHECK_ALARMS, checkAlarms); //K
 
-  initRTC();
+    myDS3231.begin();
 
-  //lastActive = millis();
-  // permission to communicate granted to ESP32
-  digitalWrite( ACTIVITY_TO_ESP32, HIGH);
+    delay(50);
+    for( byte i=0; i<3; i++) myActivityLED.blink( 30, 50);
+
+    //lastActive = millis();
+    // permission to communicate granted to ESP32
+    digitalWrite( ACTIVITY_TO_ESP32, HIGH);
 }
 
 //
 // Runs continuously
 //
 void loop() {
-  checkShutdown();
+    checkShutdown();
 
-  //Serial.print( "Battery Voltage = ");
-  //Serial.println( myVoltageSensor.read());
-  //readRTC();
-  comm.read();
-  delay(500);
+    //Serial.print( "Battery Voltage = ");
+    //Serial.println( myVoltageSensor.read());
+    //readRTC();
+    comm.read();
+    delay(500);
 
-  // Eliminate unwanted Tx, Rx lights
-  RXLED0;
-  TXLED0;
-  myActivityLED.blink( 100, 100);
+    // Eliminate unwanted Tx, Rx lights
+    RXLED0;
+    TXLED0;
+    myActivityLED.blink( 100, 100);
 
-  // char c = 0;
-  // long t = millis();
-  // blink_Activity();
-  // if( Serial.available()){
-  //   lastActive = t;
-  //   c = Serial.read();
-  //   if( c != 0)
-  //     sendToESP32Serial(c);
-  // }
-  // while( mySerial.available()){
-  //   c = mySerial.read();
-  //   if( !sendToPCKeyboard(c) && c!=0)
-  //     cb.push(c);
-  // }
-  // while( cb.available()){
-  //   lastActive = t;
-  //   Serial.write(cb.pop());
-  // }
+    // char c = 0;
+    // long t = millis();
+    // blink_Activity();
+    // if( Serial.available()){
+    //   lastActive = t;
+    //   c = Serial.read();
+    //   if( c != 0)
+    //     sendToESP32Serial(c);
+    // }
+    // while( mySerial.available()){
+    //   c = mySerial.read();
+    //   if( !sendToPCKeyboard(c) && c!=0)
+    //     cb.push(c);
+    // }
+    // while( cb.available()){
+    //   lastActive = t;
+    //   Serial.write(cb.pop());
+    // }
 }
 
 void checkShutdown(){
-  if( !myShutdown.isPowerPressed()) return;
-  Serial.println( "Shutdown key, but USB on...");
-  for( int i=10; i>=1; i--)
-    myActivityLED.blink( i*10, i*10);
-  myShutdown.shutdown();
+    if( !myShutdown.isPowerPressed()) return;
+    Serial.println( "Shutdown key, but USB on...");
+    for( int i=10; i>=1; i--)
+        myActivityLED.blink( i*10, i*10);
+    myShutdown.shutdown();
 }
 
 void setDateTime( char *buff, byte n){
+    getCommand(buff, n);
+    DS3231_DateTime dt = DS3231_DateTime((const char*)buff);
+    dt.printHI( buff, n);
+    myDS3231.setDateTime(dt);
+}
+
+void getDateTime( char *buff, byte n){
+    if (RTC_Check(buff, n)) return; 
+    DS3231_DateTime dt = myDS3231.getDateTime();
+    #ifdef __DEBUG
+    Serial.println( dt.daysSince2000_01_01());
+    #endif
+    dt.printHI( buff, n);
+}
+
+void getTemperature( char *buff, byte n){
+    DS3231_Temperature temp = myDS3231.getTemperature();
+    temp.printHI( buff, n);
+}
+
+void getBatteryVoltage( char *buff, byte n){
+    snprintf_P(buff, n, PSTR("%04u"), myVoltageSensor.read());
+}
+
+void orderShutdown( char *buff, byte n){
+    snprintf_P(buff, n,
+        PSTR("Shutdown from ESP32, but USB on..."));
+    for( int i=10; i>=1; i--)
+        myActivityLED.blink( i*10, i*10);
+    myShutdown.shutdown();
+}
+
+void setAlarm( char *buff, byte n){
+    getCommand(buff, n);
+    DS3231_Alarm alr = DS3231_Alarm((const char*)buff);
+    alr.printHI( buff, n);
+    myDS3231.setAlarm(alr);
+}
+
+void getAlarm1( char *buff, byte n){
+    DS3231_Alarm alr = myDS3231.getAlarm1();
+    alr.printHI( buff, n);
+}
+
+void getAlarm2( char *buff, byte n){
+    DS3231_Alarm alr = myDS3231.getAlarm2();
+    alr.printHI( buff, n);
+}
+
+void getWakeAlarms( char *buff, byte n){
+    snprintf_P(buff, n, PSTR("A%1u"), myDS3231.lastAlarms);
+}
+
+void checkAlarms( char *buff, byte n){
+    myDS3231.latchAlarms();
+    getWakeAlarms( buff, n);
+}
+
+void getCommand(char *buff, byte n){
     char *ptr = buff;
     for( byte i=0; i<n-1; i++){
         if( !Serial.available()) break;
@@ -222,51 +284,6 @@ void setDateTime( char *buff, byte n){
         *ptr++ = c;
     }
     *ptr = _NUL_;
-    DS3231_DateTime dt = DS3231_DateTime((const char*)buff);
-    dt.print( buff, n);
-    myDS3231.setDateTime(dt);
-}
-
-void getDateTime( char *buff, byte n){
-    if (RTC_Check(buff, n)) return; 
-    DS3231_DateTime dt = myDS3231.getDateTime();
-    Serial.println( dt.daysSince2000_01_01());
-    dt.print( buff, n);
-}
-
-void getTemperature( char *buff, byte n){
-  if (RTC_Check(buff, n)) return; 
-  DS3231_Temperature temp = myDS3231.getTemperature();
-  temp.print( buff, n);
-}
-
-void getBatteryVoltage( char *buff, byte n){
-  snprintf_P(buff, n, PSTR("%04u"), myVoltageSensor.read());
-}
-
-void orderShutdown( char *buff, byte n){
-  snprintf_P(buff, n,
-    PSTR("Shutdown from ESP32, but USB on..."));
-  for( int i=10; i>=1; i--)
-    myActivityLED.blink( i*10, i*10);
-  myShutdown.shutdown();
-}
-
-void initRTC(){
-    // 
-    // With no modification and no battery the module takes 1.90 mA; running at 1.56 mA
-    // installing battery makes no difference
-    myDS3231.init(); // just starts the Wire I2C comm 
-    if( RTC_Check( comm._inputBuff, INPUT_BUFFER_LENGTH)){
-        if (myDS3231.lastError == 5) myDS3231.setDateTime(DS3231_DateTime());
-        return;
-    }
-    myDS3231.startClock();
-
-    // As a security precaution, never assume the Rtc was last configured by you, so
-    // just clear them to your needed state
-    myDS3231.stop32kHz();
-    myDS3231.setSQW( DS3231_SWC_NONE);
 }
 
 bool RTC_Check( char *buff, byte n){

@@ -17,7 +17,7 @@
 class VoltageSensor{
   public:
     int32_t lastRead = 0; // mV
-    void init( uint8_t Port, int16_t gain=SCALE_VOLTAGE, int16_t offset=OFFSET_VOLTAGE);
+    void begin( uint8_t Port, int16_t gain=SCALE_VOLTAGE, int16_t offset=OFFSET_VOLTAGE);
     int32_t read();
   private:
     uint8_t _port = 10;

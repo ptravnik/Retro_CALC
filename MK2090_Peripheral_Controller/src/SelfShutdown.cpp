@@ -12,7 +12,7 @@
 // Power button is at PortKey and goes high if pressed
 // Solid state relay is attached to PortHold, if held high, battery power is connected
 // 
-void SelfShutdown::init( uint8_t PortKey, uint8_t PortHold){
+void SelfShutdown::begin( uint8_t PortKey, uint8_t PortHold){
     uint8_t _portKey = PortKey;
     uint8_t _portHold = PortHold;
     pinMode( _portHold, OUTPUT);

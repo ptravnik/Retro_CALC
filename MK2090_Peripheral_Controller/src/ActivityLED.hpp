@@ -18,7 +18,7 @@ class ActivityLED{
   public:
     long lastActive = 0L;
     long lastBlinked = 0L;
-    void init( uint8_t Port);
+    void begin( uint8_t Port);
     inline void blink( uint16_t d1, uint16_t d2){
         delay(d1); digitalWrite( _port, HIGH);
         delay(d2); digitalWrite( _port, LOW);};

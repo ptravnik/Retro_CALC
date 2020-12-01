@@ -12,7 +12,7 @@
 #include <Arduino.h>
 #include "CircularBuffer.hpp"
 
-#define NCOMMANDS                 10
+#define NCOMMANDS                 16
 #define INPUT_BUFFER_LENGTH       40
 #define COMMAND_SET_DATETIME      'A'
 #define COMMAND_GET_DATETIME      'B'
@@ -20,6 +20,11 @@
 #define COMMAND_GET_VOLTAGE       'D'
 #define COMMAND_IS_SHUTDOWN       'E'
 #define COMMAND_SHUTDOWN          'F'
+#define COMMAND_SETALARM          'G'
+#define COMMAND_GETALARM1         'H'
+#define COMMAND_GETALARM2         'I'
+#define COMMAND_WAKE_ALARMS       'J'
+#define COMMAND_CHECK_ALARMS      'K'
 
 struct Command{
     uint8_t code;
@@ -28,7 +33,7 @@ struct Command{
 
 class Commander{
   public:
-    void init( CircularBuffer *buffer);
+    void begin( CircularBuffer *buffer);
     void addCommand( uint8_t code, void (*action)( char *, uint8_t));
     void read();
     char _inputBuff[INPUT_BUFFER_LENGTH];

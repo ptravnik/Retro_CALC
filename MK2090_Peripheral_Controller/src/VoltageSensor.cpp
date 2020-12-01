@@ -12,7 +12,7 @@
 // Voltage sensor reads from Port
 // The formula is V = gain * reading + offset
 // 
-void VoltageSensor::init( uint8_t Port, int16_t gain, int16_t offset){
+void VoltageSensor::begin( uint8_t Port, int16_t gain, int16_t offset){
     _port = Port;
     _gain = gain;
     _offset = offset;
