@@ -53,8 +53,9 @@
 #define DS3231_BBSQW_MASK     0x40
 #define DS3231_EOSC_MASK      0x80
 
-// Default control - battey oscillator ON and both alarms ENABLED
-#define DS3231_CONTROL_DEF    0x07
+// Default control - battery oscillator ON and Alarm 1 ENABLED
+#define DS3231_CONTROL_DEF    0x04
+#define DS3231_CONTROL_ALR    0x05
 
 // DS3231 Status Register Bits
 #define DS3231_A1F_MASK       0x01
@@ -63,6 +64,9 @@
 #define DS3231_BSY_MASK       0x04
 #define DS3231_EN32KHZ_MASK   0x08
 #define DS3231_OSF_MASK       0x80
+
+// Default status - all clear
+#define DS3231_STATUS_DEF    0x00
 
 // DS3231 Square Wave Clock Rate
 #define DS3231_SWC_1HZ        0x00 
@@ -79,36 +83,21 @@
 
 class DS3231_Controller{
   public:
+    bool firstRun = true;
     uint8_t lastError = 0;
-    uint8_t lastAlarms = 0;
+    uint8_t wakeupStatus = 0;
 
     void begin();
     bool isRunning();
-    bool isDateTimeValid();
     void setDateTime( DS3231_DateTime datetime);
     DS3231_DateTime getDateTime();
     DS3231_Temperature getTemperature();
-    void setAlarm(DS3231_Alarm alr);
-    DS3231_Alarm getAlarm1();
-    DS3231_Alarm getAlarm2();
-    
-    inline void startClock(){
-        _clearFlag( DS3231_REG_CONTROL, DS3231_EOSC_MASK);};
-    inline void stopClock(){
-        _setFlag( DS3231_REG_CONTROL, DS3231_EOSC_MASK);};
-    inline void start32kHz(){
-        _setFlag( DS3231_REG_STATUS, DS3231_EN32KHZ_MASK);};
-    inline void stop32kHz(){
-        _clearFlag( DS3231_REG_STATUS, DS3231_EN32KHZ_MASK);};
-    void setSQW( uint8_t mode, bool enableOnBattery = true);
-    void setSQWFrequency( uint8_t freq);
-    void latchAlarms();
+    void setWakeUp(DS3231_Alarm alr);
+    DS3231_Alarm getWakeUp();
 
   private:
     uint8_t _getRegister(uint8_t address, uint8_t n=1, uint8_t *data=NULL);
-    uint8_t _setRegister(uint8_t address, uint8_t value);
-    void _setFlag( uint8_t Register, uint8_t Mask, uint16_t d=0);
-    void _clearFlag( uint8_t Register, uint8_t Mask, uint16_t d=0);
+    uint8_t _setRegister(uint8_t address, uint8_t n, uint8_t *data=NULL);
 };
 
 #endif

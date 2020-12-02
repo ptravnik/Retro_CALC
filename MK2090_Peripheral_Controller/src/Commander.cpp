@@ -35,12 +35,3 @@ void Commander::read(){
     Serial.print( "Unknown: ");
     Serial.println( b);
 }
-
-// void Commander::_printDateTime(const RtcDateTime& dt){
-//     char tmp[20];
-//     snprintf_P(tmp, 20,
-//         PSTR("%02u/%02u/%04u %02u:%02u:%02u"),
-//         dt.Day(), dt.Month(), dt.Year(),
-//         dt.Hour(), dt.Minute(), dt.Second() );
-//     Serial.print(tmp);
-// }

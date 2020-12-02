@@ -20,11 +20,8 @@
 #define COMMAND_GET_VOLTAGE       'D'
 #define COMMAND_IS_SHUTDOWN       'E'
 #define COMMAND_SHUTDOWN          'F'
-#define COMMAND_SETALARM          'G'
-#define COMMAND_GETALARM1         'H'
-#define COMMAND_GETALARM2         'I'
-#define COMMAND_WAKE_ALARMS       'J'
-#define COMMAND_CHECK_ALARMS      'K'
+#define COMMAND_SETWAKEUP         'G'
+#define COMMAND_GETWAKEUP         'H'
 
 struct Command{
     uint8_t code;

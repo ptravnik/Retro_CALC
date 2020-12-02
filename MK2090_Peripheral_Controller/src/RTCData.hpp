@@ -14,7 +14,7 @@
 //
 // Alarm 1 codes:
 // A1M4 DY/DT A1M3 A1M2 A1M1
-// ALARM1_OPS and ALARM1_S are not used in this hardware 
+// Only ALARM1_DHMS is used in this hardware configuration 
 //
 #define ALARM1_DHMS (uint8_t)0x00
 #define ALARM1_OPS  (uint8_t)0x17
@@ -27,7 +27,7 @@
 // Alarm 2 codes:
 // A2M4 DY/DT A2M3 A2M2
 // Additonal top bit indicates that the code belongs to Alarm2
-// ALARM2_OPM and ALARM2_M are not used in this hardware 
+// ALARM2 not used in this hardware configuration 
 //
 #define ALARM2_DHM  (uint8_t)0x80
 #define ALARM2_OPM  (uint8_t)0x8b
@@ -37,7 +37,7 @@
 
 class DS3231_Temperature{
   public:
-    DS3231_Temperature( uint8_t *data);
+    DS3231_Temperature( int8_t *data);
     int16_t tempC_hundreds();
     inline float tempC(){
       return (float)tempC_hundreds() * 0.01f;};
@@ -50,10 +50,28 @@ class DS3231_Temperature{
     int8_t _fracC = 0;
 };
 
+class DS3231_Alarm{
+  public:
+    bool valid = false;
+    uint8_t day = 0; // day of the month
+    uint8_t hour = 0;
+    uint8_t minute = 0;
+    uint8_t second = 0; // not used for Alarm 2
+    DS3231_Alarm();
+    DS3231_Alarm( uint8_t *data);
+    DS3231_Alarm( const char *command_line);
+    void print( char *buff, byte n);
+    void printHI( char *buff, byte n);
+    void getSetting( uint8_t *buff);
+  private:
+    void _checkValidity();
+};
+
 class DS3231_DateTime{
   public:
     bool valid = false;
-    uint8_t year = 0; // presume +2000
+    uint8_t status = 0;   // 8 - confidence, 1 - wake on alarm
+    uint8_t year = 0;     // presume +2000
     uint8_t month = 1;
     uint8_t day = 1;
     uint8_t hour = 0;
@@ -65,27 +83,7 @@ class DS3231_DateTime{
     void print( char *buff, byte n);
     void printHI( char *buff, byte n);
     void getSetting( uint8_t *buff);
-    uint16_t daysSince2000_01_01();
-    uint8_t weekday();
-  private:
-    void _checkValidity();
-};
-
-class DS3231_Alarm{
-  public:
-    bool valid = false;
-    uint8_t code = ALARM1_DHMS; // alarm code includes the alarm number
-    uint8_t day = 1; // day of the week or day of the month
-    uint8_t hour = 0;
-    uint8_t minute = 0;
-    uint8_t second = 0; // not used for Alarm 2
-    DS3231_Alarm( uint8_t c);
-    DS3231_Alarm( uint8_t *data, uint8_t c);
-    DS3231_Alarm( const char *command_line);
-    void print( char *buff, byte n);
-    void printHI( char *buff, byte n);
-    void getSetting( uint8_t *buff);
-    inline bool isAlarm1(){ return (code & 0x80) == 0;};
+    DS3231_Alarm getNextAlarm( uint32_t dt);
   private:
     void _checkValidity();
 };

@@ -144,6 +144,8 @@ void setup() {
     Serial.begin(PC_BAUD);
     while(Serial.available()) Serial.read();
 
+    myDS3231.begin();
+
     //mySerial.begin(SERIAL_BAUD);
     //while(mySerial.available()) mySerial.read();
     //Mouse.begin();
@@ -155,13 +157,9 @@ void setup() {
     comm.addCommand( (byte)COMMAND_GET_TEMPERATURE, getTemperature); //C
     comm.addCommand( (byte)COMMAND_GET_VOLTAGE, getBatteryVoltage); //D
     comm.addCommand( (byte)COMMAND_SHUTDOWN, orderShutdown); //F
-    comm.addCommand( (byte)COMMAND_SETALARM, setAlarm); //GTDDHHMMSS
-    comm.addCommand( (byte)COMMAND_GETALARM1, getAlarm1); //H
-    comm.addCommand( (byte)COMMAND_GETALARM2, getAlarm2); //I
-    comm.addCommand( (byte)COMMAND_WAKE_ALARMS, getWakeAlarms); //J
-    comm.addCommand( (byte)COMMAND_CHECK_ALARMS, checkAlarms); //K
-
-    myDS3231.begin();
+    comm.addCommand( (byte)COMMAND_SETWAKEUP, setWakeUp); //GDDHHMMSS
+    comm.addCommand( (byte)COMMAND_GETWAKEUP, getWakeUp); //H
+    comm.addCommand( (byte)'I', makeWakeUp);              //I
 
     delay(50);
     for( byte i=0; i<3; i++) myActivityLED.blink( 30, 50);
@@ -211,6 +209,11 @@ void loop() {
 void checkShutdown(){
     if( !myShutdown.isPowerPressed()) return;
     Serial.println( "Shutdown key, but USB on...");
+
+    // This code is for checking the wake-up functionality
+    DS3231_DateTime dt = myDS3231.getDateTime();
+    myDS3231.setWakeUp( dt.getNextAlarm( 300)); // wake up in 5 minutes
+
     for( int i=10; i>=1; i--)
         myActivityLED.blink( i*10, i*10);
     myShutdown.shutdown();
@@ -224,7 +227,6 @@ void setDateTime( char *buff, byte n){
 }
 
 void getDateTime( char *buff, byte n){
-    if (RTC_Check(buff, n)) return; 
     DS3231_DateTime dt = myDS3231.getDateTime();
     #ifdef __DEBUG
     Serial.println( dt.daysSince2000_01_01());
@@ -249,30 +251,23 @@ void orderShutdown( char *buff, byte n){
     myShutdown.shutdown();
 }
 
-void setAlarm( char *buff, byte n){
+void setWakeUp( char *buff, byte n){
     getCommand(buff, n);
     DS3231_Alarm alr = DS3231_Alarm((const char*)buff);
     alr.printHI( buff, n);
-    myDS3231.setAlarm(alr);
+    myDS3231.setWakeUp(alr);
 }
 
-void getAlarm1( char *buff, byte n){
-    DS3231_Alarm alr = myDS3231.getAlarm1();
+void getWakeUp( char *buff, byte n){
+    DS3231_Alarm alr = myDS3231.getWakeUp();
     alr.printHI( buff, n);
 }
 
-void getAlarm2( char *buff, byte n){
-    DS3231_Alarm alr = myDS3231.getAlarm2();
+void makeWakeUp( char *buff, byte n){
+    DS3231_DateTime dt = myDS3231.getDateTime();
+    DS3231_Alarm alr = dt.getNextAlarm( 600);
+    myDS3231.setWakeUp( alr);
     alr.printHI( buff, n);
-}
-
-void getWakeAlarms( char *buff, byte n){
-    snprintf_P(buff, n, PSTR("A%1u"), myDS3231.lastAlarms);
-}
-
-void checkAlarms( char *buff, byte n){
-    myDS3231.latchAlarms();
-    getWakeAlarms( buff, n);
 }
 
 void getCommand(char *buff, byte n){
@@ -284,12 +279,6 @@ void getCommand(char *buff, byte n){
         *ptr++ = c;
     }
     *ptr = _NUL_;
-}
-
-bool RTC_Check( char *buff, byte n){
-    if( myDS3231.isDateTimeValid()) return false;
-    snprintf_P(buff, n, PSTR("RTCERR %02u"), myDS3231.lastError);
-    return true;
 }
 
 // //
