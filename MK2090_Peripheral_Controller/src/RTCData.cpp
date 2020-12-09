@@ -8,34 +8,11 @@
 
 #include "CP1251_mod.h" 
 #include "RTCData.hpp"
+#include "Utilities.hpp"
 
 //#define __DEBUG
 
 const uint8_t _daysPerMonth[] PROGMEM = { 31,28,31,30,31,30,31,31,30,31,30,31};
-
-//
-// Utilities for converting into the DS3231 internal formats
-//
-uint8_t _BCD_To_UInt8(uint8_t val){
-    return val - 6 * (val >> 4);
-    }
-uint8_t _UInt8_To_BCD(uint8_t val){
-    return val + 6 * (val / 10);
-    }
-uint8_t _convertPair( const char *ptr){
-    if( *ptr < 0x30) return _NUL_;
-    uint8_t tmp1 = (uint8_t)(*ptr++) - 0x30;
-    if( tmp1 > 9) return _NUL_;
-    if( *ptr < 0x30) return _NUL_;
-    uint8_t tmp2 = (uint8_t)(*ptr) - 0x30;
-    if( tmp2 > 9) return _NUL_;
-    return tmp1*10 + tmp2;
-}
-bool _checkPrintInvalid( bool valid, char *buff, byte n){
-    if( valid) return false;
-    snprintf_P(buff, n, PSTR("INVALID"));
-    return true;
-}
 
 //
 // Converts the temperature representation
@@ -89,12 +66,12 @@ DS3231_DateTime::DS3231_DateTime( uint8_t *data){
 DS3231_DateTime::DS3231_DateTime( const char *command_line){
     valid = false;
     if( strlen( command_line) < 12) return;
-    year = _convertPair( command_line);
-    month = _convertPair( command_line + 2);
-    day = _convertPair( command_line + 4);
-    hour = _convertPair( command_line + 6);
-    minute = _convertPair( command_line + 8);
-    second = _convertPair( command_line + 10);
+    year = _convert2Digits( command_line);
+    month = _convert2Digits( command_line + 2);
+    day = _convert2Digits( command_line + 4);
+    hour = _convert2Digits( command_line + 6);
+    minute = _convert2Digits( command_line + 8);
+    second = _convert2Digits( command_line + 10);
     _checkValidity();
 }
 
@@ -185,10 +162,10 @@ DS3231_Alarm::DS3231_Alarm( uint8_t *data){
 DS3231_Alarm::DS3231_Alarm( const char *command_line){
     valid = false;
     if( strlen(command_line) < 8) return;
-    day = _convertPair( command_line + 0);
-    hour = _convertPair( command_line + 2);
-    minute = _convertPair( command_line + 4);
-    second = _convertPair( command_line + 6);
+    day = _convert2Digits( command_line + 0);
+    hour = _convert2Digits( command_line + 2);
+    minute = _convert2Digits( command_line + 4);
+    second = _convert2Digits( command_line + 6);
     _checkValidity();
 }
 

@@ -32,4 +32,3 @@ int32_t VoltageSensor::read(){
     lastRead += _offset;
     return lastRead;
 }
-

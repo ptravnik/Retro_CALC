@@ -22,6 +22,9 @@
 #define COMMAND_SHUTDOWN          'F'
 #define COMMAND_SETWAKEUP         'G'
 #define COMMAND_GETWAKEUP         'H'
+#define COMMAND_SETLCDDUTYCYCLE   'I'
+#define COMMAND_GETLCDDUTYCYCLE   'J'
+#define COMMAND_PLAYTONE          'K'
 
 struct Command{
     uint8_t code;

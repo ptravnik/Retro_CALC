@@ -43,16 +43,16 @@
 // 02 - SDA to DS3231 RT Clock module
 // 03 - SCL to DS3231
 // 04 - Serial activity LED
-// 05 - Piezo PWM Out
-// 06 - LCD PWM Out
+// 05 - KBD LED Clock 
+// 06 - LCD PWM Out (note: 5 and 6 do not support low duty cycles, but this is not required)  
 // 07 - Software Serial / operation Block
 // 08 - Software Serial TX
-// 09 - Software Serial RX
-// 10 - KBD LED Clock
-// 14 - KBD LED Reset
-// 15 - KBD Sense
-// 16 - KBD Clock
-// A0 - KBD Reset
+// 09 - Software Serial RX (Choice for RX: 8, 9, 10, 11, 14 (MISO), 15 (SCK), 16 (MOSI)) 
+// 10 - Piezo PWM Out (note: low duty cycle is required)
+// 14 - KBD LED Reset (Also MISO for ISP programming)
+// 15 - KBD Reset (Also SCK for ISP programming)
+// 16 - KBD Clock (Also MOSI for ISP programming)
+// A0 - KBD Sense
 // A1 - Power Hold
 // A2 - Power Button Sense (HIGH - shutdown wanted)
 // A3 - Battery voltage sensor
@@ -61,12 +61,14 @@
 
 #include <Arduino.h>
 #include <SoftwareSerial.h>
-//#include <Keyboard.h>
-//#include <Mouse.h>
+#include <Keyboard.h>
+#include <Mouse.h>
 
 #include "./src/CP1251_mod.h" 
 #include "./src/SelfShutdown.hpp"
 #include "./src/ActivityLED.hpp"
+#include "./src/PiezoController.hpp"
+#include "./src/PWMController.hpp"
 #include "./src/VoltageSensor.hpp"
 #include "./src/CircularBuffer.hpp"
 #include "./src/DS3231.hpp"
@@ -82,22 +84,24 @@
 #define RTC_SDA             2
 #define RTC_SCL             3
 #define ACTIVITY_LED        4
-#define PIEZO_PWM_OUT       5
+#define LED_CLK             5
 #define LCD_PWM_OUT         6
 #define ACTIVITY_TO_ESP32   7
 #define SERIAL_TX           8
 #define SERIAL_RX           9
-#define LED_CLK             10
+#define PIEZO_PWM_OUT       10
 #define LED_RESET           14
-#define KBD_SIG             15
+#define KBD_RESET           15
 #define KBD_CLK             16
-#define KBD_RESET           A0
+#define KBD_SIG             A0
 #define SELF_POWER_HOLD     A1
 #define POWER_OFF           A2
 #define BATTERY_VOLTAGE     A3
 
-//#define _SS_MAX_RX_BUFF 256
-//SoftwareSerial mySerial(SERIAL_RX, SERIAL_TX);
+#define N_TEST_LOOPS        100
+
+#define _SS_MAX_RX_BUFF 256
+SoftwareSerial mySerial(SERIAL_RX, SERIAL_TX);
 
 //#define UTF8_BUFFER_LENGTH 64
 //static byte UTF8_buffer[UTF8_BUFFER_LENGTH];
@@ -121,35 +125,35 @@
 
 static SelfShutdown myShutdown;
 static ActivityLED myActivityLED;
+static PiezoController myPiezoController;
+static PWMController myPWMController;
 static VoltageSensor myVoltageSensor;
 static DS3231_Controller myDS3231;
 static CircularBuffer cb;
 static Commander comm;
+static volatile int loopCount = N_TEST_LOOPS;
 
 //
 // Runs once, upon the power-up
 //
 void setup() {
     myShutdown.begin( POWER_OFF, SELF_POWER_HOLD);
-
-    // PIEZO_PWM_OUT        5
-    // LCD_PWM_OUT          6
+    myPiezoController.begin(PIEZO_PWM_OUT);
+    myPWMController.begin( LCD_PWM_OUT);
 
     pinMode( ACTIVITY_TO_ESP32, OUTPUT);
     digitalWrite( ACTIVITY_TO_ESP32, LOW);
 
     myActivityLED.begin( ACTIVITY_LED);
     myVoltageSensor.begin( BATTERY_VOLTAGE, 6600, 0); // We use 20M:20M dividor and 3.3 V processor
+    myDS3231.begin();
 
     Serial.begin(PC_BAUD);
     while(Serial.available()) Serial.read();
-
-    myDS3231.begin();
-
-    //mySerial.begin(SERIAL_BAUD);
-    //while(mySerial.available()) mySerial.read();
-    //Mouse.begin();
-    //Keyboard.begin();
+    mySerial.begin(SERIAL_BAUD);
+    while(mySerial.available()) mySerial.read();
+    Mouse.begin();
+    Keyboard.begin();
 
     comm.begin( &cb);
     comm.addCommand( (byte)COMMAND_SET_DATETIME, setDateTime); //AYYMMDDHHMMSS
@@ -159,7 +163,9 @@ void setup() {
     comm.addCommand( (byte)COMMAND_SHUTDOWN, orderShutdown); //F
     comm.addCommand( (byte)COMMAND_SETWAKEUP, setWakeUp); //GDDHHMMSS
     comm.addCommand( (byte)COMMAND_GETWAKEUP, getWakeUp); //H
-    comm.addCommand( (byte)'I', makeWakeUp);              //I
+    comm.addCommand( (byte)COMMAND_SETLCDDUTYCYCLE, setLCDDuty); //Iddd
+    comm.addCommand( (byte)COMMAND_GETLCDDUTYCYCLE, getLCDDuty); //J
+    comm.addCommand( (byte)COMMAND_PLAYTONE, playTone); //Kffffddd
 
     delay(50);
     for( byte i=0; i<3; i++) myActivityLED.blink( 30, 50);
@@ -185,6 +191,19 @@ void loop() {
     RXLED0;
     TXLED0;
     myActivityLED.blink( 100, 100);
+    
+    loopCount--;
+    if( loopCount > 1) return;
+
+    // Proceed to programmatic shutdown
+    DS3231_DateTime dt = myDS3231.getDateTime();
+    myDS3231.setWakeUp( dt.getNextAlarm( 300)); // wake up in 5 minutes
+    
+    for(uint8_t i=0; i<=100; i+=10){
+        myPWMController.set( i);
+        myPiezoController.play( 1000, 100);
+    }
+    myShutdown.shutdown();
 
     // char c = 0;
     // long t = millis();
@@ -240,7 +259,8 @@ void getTemperature( char *buff, byte n){
 }
 
 void getBatteryVoltage( char *buff, byte n){
-    snprintf_P(buff, n, PSTR("%04u"), myVoltageSensor.read());
+    myVoltageSensor.read();
+    myVoltageSensor.printHI( buff, n);
 }
 
 void orderShutdown( char *buff, byte n){
@@ -263,11 +283,20 @@ void getWakeUp( char *buff, byte n){
     alr.printHI( buff, n);
 }
 
-void makeWakeUp( char *buff, byte n){
-    DS3231_DateTime dt = myDS3231.getDateTime();
-    DS3231_Alarm alr = dt.getNextAlarm( 600);
-    myDS3231.setWakeUp( alr);
-    alr.printHI( buff, n);
+void setLCDDuty( char *buff, byte n){
+    getCommand(buff, n);
+    myPWMController.set( (const char *)buff);
+    myPWMController.printHI( buff, n);
+}
+
+void getLCDDuty( char *buff, byte n){
+    myPWMController.printHI( buff, n);
+}
+
+void playTone( char *buff, byte n){
+    getCommand(buff, n);
+    myPiezoController.play( buff, n);
+    myPiezoController.print( buff, n);
 }
 
 void getCommand(char *buff, byte n){
